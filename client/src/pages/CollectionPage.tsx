@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { getCollectionSchema } from '../schema/registry'
 import type { CollectionSchema } from '../schema/types'
 import { applyTableQuery } from '../lib/tableQuery'
+import { exportCollectionToExcel } from '../lib/exportCollectionExcel'
 import { useTableQueryState } from '../hooks/useTableQueryState'
 import { useCollectionList } from '../hooks/collections/useCollectionList'
 import {
@@ -108,6 +109,10 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
     [updateMutation],
   )
 
+  const handleExportExcel = useCallback(() => {
+    exportCollectionToExcel(schema, visibleRows)
+  }, [schema, visibleRows])
+
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return
     try {
@@ -136,6 +141,7 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
           selectedCount={tableQuery.state.selectedIds.length}
           isDeleting={bulkDeleteMutation.isPending}
           onAdd={openCreate}
+          onGlobalSearchChange={tableQuery.setGlobalSearch}
           onSortChange={(field, direction) => {
             if (!field) tableQuery.setSort('', direction)
             else tableQuery.setSort(field, direction)
@@ -146,6 +152,8 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
               ids: tableQuery.state.selectedIds,
             })
           }
+          exportDisabled={isLoading || isError}
+          onExportExcel={handleExportExcel}
         />
       </header>
 

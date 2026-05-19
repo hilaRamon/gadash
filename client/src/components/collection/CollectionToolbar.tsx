@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CollectionSchema } from "../../schema/types";
 import type { TableQueryState } from "../../schema/tableQuery";
+import { DownloadIcon } from "./Icons";
 import "./Collection.css";
 
 type CollectionToolbarProps = {
@@ -8,9 +9,12 @@ type CollectionToolbarProps = {
   queryState: TableQueryState;
   selectedCount: number;
   isDeleting?: boolean;
+  exportDisabled?: boolean;
   onAdd: () => void;
+  onGlobalSearchChange: (value: string) => void;
   onSortChange: (field: string, direction: "asc" | "desc") => void;
   onBulkDelete: () => void;
+  onExportExcel: () => void;
 };
 
 export function CollectionToolbar({
@@ -18,9 +22,12 @@ export function CollectionToolbar({
   queryState,
   selectedCount,
   isDeleting = false,
+  exportDisabled = false,
   onAdd,
+  onGlobalSearchChange,
   onSortChange,
   onBulkDelete,
+  onExportExcel,
 }: CollectionToolbarProps) {
   const sortableColumns = schema.columns.filter((c) => c.sortable !== false);
 
@@ -155,6 +162,30 @@ export function CollectionToolbar({
             </div>
           </div>
         )}
+      </div>
+      <button
+        type="button"
+        className="btn btn-export"
+        onClick={onExportExcel}
+        disabled={exportDisabled}
+        aria-label="ייצוא לאקסל"
+        title="ייצוא לאקסל"
+      >
+        <DownloadIcon />
+        <span className="btn-export-label">ייצוא לאקסל</span>
+      </button>
+      <div className="collection-toolbar-search-group">
+        <div className="collection-toolbar-search">
+          <input
+            type="text"
+            className="collection-global-search"
+            value={queryState.globalSearch ?? ""}
+            onChange={(e) => onGlobalSearchChange(e.target.value)}
+            placeholder="חיפוש בכל השדות..."
+            aria-label="חיפוש בכל השדות"
+            dir="rtl"
+          />
+        </div>
       </div>
 
       {selectedCount > 0 && (

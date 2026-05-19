@@ -1,6 +1,7 @@
 export type SortDirection = 'asc' | 'desc'
 
 export type TableQueryState = {
+  globalSearch: string
   columnSearch: Partial<Record<string, string>>
   sort: { field: string; direction: SortDirection } | null
   filter: {
@@ -21,6 +22,7 @@ export function createInitialTableQueryState(
   defaultSort?: { field: string; direction: SortDirection } | null,
 ): TableQueryState {
   return {
+    globalSearch: '',
     columnSearch: {},
     sort: defaultSort ?? null,
     filter: null,

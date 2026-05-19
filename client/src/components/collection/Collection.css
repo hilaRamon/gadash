@@ -35,6 +35,37 @@
   justify-content: flex-start;
 }
 
+.collection-toolbar-search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.collection-toolbar-search {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  min-width: 10rem;
+  width: 14rem;
+}
+
+.collection-global-search {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.collection-global-search:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .collection-toolbar-sort {
   position: relative;
 }
@@ -42,7 +73,8 @@
 .collection-sort-popper {
   position: absolute;
   top: calc(100% + 0.35rem);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -145,6 +177,21 @@
 
 .btn-secondary {
   background: transparent;
+}
+
+.btn-export {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-export-label {
+  display: inline;
+}
+
+@media (max-width: 640px) {
+  .btn-export-label {
+    display: none;
+  }
 }
 
 .btn-icon {

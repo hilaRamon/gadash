@@ -11,53 +11,67 @@ export function useTableQueryState(schema: CollectionSchema) {
     createInitialTableQueryState(schema.defaultSort ?? null),
   )
 
-  const setColumnSearch = useCallback((key: string, value: string) => {
-    setState((prev) => ({
-      ...prev,
-      columnSearch: { ...prev.columnSearch, [key]: value },
-    }))
-  }, [])
-
-  const setSort = useCallback(
-    (field: string | '', direction: SortDirection = 'asc') => {
-      setState((prev) => ({
-        ...prev,
-        sort: field ? { field, direction } : null,
-      }))
+  const patchState = useCallback(
+    (patch: Partial<TableQueryState> | ((prev: TableQueryState) => TableQueryState)) => {
+      setState((prev) => {
+        const next = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch }
+        return { ...next, globalSearch: next.globalSearch ?? '' }
+      })
     },
     [],
   )
 
+  const setGlobalSearch = useCallback((value: string) => {
+    patchState({ globalSearch: value })
+  }, [patchState])
+
+  const setColumnSearch = useCallback((key: string, value: string) => {
+    patchState((prev) => ({
+      ...prev,
+      columnSearch: { ...prev.columnSearch, [key]: value },
+    }))
+  }, [patchState])
+
+  const setSort = useCallback(
+    (field: string | '', direction: SortDirection = 'asc') => {
+      patchState((prev) => ({
+        ...prev,
+        sort: field ? { field, direction } : null,
+      }))
+    },
+    [patchState],
+  )
+
   const setSortDirection = useCallback((direction: SortDirection) => {
-    setState((prev) =>
+    patchState((prev) =>
       prev.sort ? { ...prev, sort: { ...prev.sort, direction } } : prev,
     )
-  }, [])
+  }, [patchState])
 
   const setFilter = useCallback(
     (
       filter: TableQueryState['filter'],
     ) => {
-      setState((prev) => ({ ...prev, filter }))
+      patchState({ filter })
     },
-    [],
+    [patchState],
   )
 
   const toggleSelected = useCallback((id: string) => {
-    setState((prev) => {
+    patchState((prev) => {
       const selected = new Set(prev.selectedIds)
       if (selected.has(id)) selected.delete(id)
       else selected.add(id)
       return { ...prev, selectedIds: [...selected] }
     })
-  }, [])
+  }, [patchState])
 
   const setSelectedIds = useCallback((ids: string[]) => {
-    setState((prev) => ({ ...prev, selectedIds: ids }))
-  }, [])
+    patchState({ selectedIds: ids })
+  }, [patchState])
 
   const toggleSelectAll = useCallback((visibleIds: string[]) => {
-    setState((prev) => {
+    patchState((prev) => {
       const allSelected =
         visibleIds.length > 0 &&
         visibleIds.every((id) => prev.selectedIds.includes(id))
@@ -66,14 +80,15 @@ export function useTableQueryState(schema: CollectionSchema) {
         selectedIds: allSelected ? [] : [...visibleIds],
       }
     })
-  }, [])
+  }, [patchState])
 
   const resetSelection = useCallback(() => {
-    setState((prev) => ({ ...prev, selectedIds: [] }))
-  }, [])
+    patchState({ selectedIds: [] })
+  }, [patchState])
 
   return {
     state,
+    setGlobalSearch,
     setColumnSearch,
     setSort,
     setSortDirection,

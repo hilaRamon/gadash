@@ -22,6 +22,21 @@ function formatCell(row: CollectionDocument, column: ColumnDef): string {
   return String(value)
 }
 
+function matchesGlobalSearch(
+  row: CollectionDocument,
+  schema: CollectionSchema,
+  search: string,
+): boolean {
+  const trimmed = search.trim()
+  if (!trimmed) return true
+
+  const needle = trimmed.toLowerCase()
+  return schema.columns.some((column) => {
+    if (column.searchable === false) return false
+    return formatCell(row, column).toLowerCase().includes(needle)
+  })
+}
+
 function matchesColumnSearch(
   row: CollectionDocument,
   column: ColumnDef,
@@ -176,6 +191,13 @@ export function applyTableQuery(
   state: TableQueryState,
 ): CollectionDocument[] {
   let result = [...rows]
+
+  const globalSearch = state.globalSearch ?? ''
+  if (globalSearch.trim()) {
+    result = result.filter((row) =>
+      matchesGlobalSearch(row, schema, globalSearch),
+    )
+  }
 
   for (const column of schema.columns) {
     if (column.searchable === false) continue
