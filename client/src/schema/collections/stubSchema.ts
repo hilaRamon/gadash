@@ -27,6 +27,14 @@ export function createStubSchema(
   }
 }
 
-export const stubSchemas: CollectionSchema[] = dataCollections.map((item) =>
-  createStubSchema(item.id, item.collection, item.label),
-)
+const dedicatedSchemaIds = new Set([
+  'employees',
+  'customers',
+  'contractors',
+  'tractors',
+  'plots',
+])
+
+export const stubSchemas: CollectionSchema[] = dataCollections
+  .filter((item) => !dedicatedSchemaIds.has(item.id))
+  .map((item) => createStubSchema(item.id, item.collection, item.label))

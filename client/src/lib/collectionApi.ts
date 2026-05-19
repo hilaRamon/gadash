@@ -1,4 +1,9 @@
 import api from './api'
+import { contractorsSeedData } from '../data/contractorsSeed'
+import { customersSeedData } from '../data/customersSeed'
+import { employeesSeedData } from '../data/employeesSeed'
+import { plotsSeedData } from '../data/plotsSeed'
+import { tractorsSeedData } from '../data/tractorsSeed'
 import type { CollectionDocument } from '../schema/types'
 import type { TableQueryParams } from '../schema/tableQuery'
 
@@ -7,6 +12,22 @@ const useMock = import.meta.env.VITE_USE_MOCK !== 'false'
 const mockStores = new Map<string, CollectionDocument[]>()
 
 function seedMockData(collection: string): CollectionDocument[] {
+  if (collection === 'employees') {
+    return employeesSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'customers') {
+    return customersSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'contractors') {
+    return contractorsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'tractors') {
+    return tractorsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'plots') {
+    return plotsSeedData.map((row) => ({ ...row }))
+  }
+
   const labels: Record<string, string> = {
     employees: 'עובד',
     customers: 'לקוח',
@@ -22,7 +43,7 @@ function seedMockData(collection: string): CollectionDocument[] {
   const prefix = labels[collection] ?? 'פריט'
 
   return Array.from({ length: 5 }, (_, i) => ({
-    id: `${collection}-${i + 1}`,
+    _id: `${collection.padEnd(12, '0').slice(0, 12)}${String(i + 1).padStart(12, '0')}`,
     name: `${prefix} ${i + 1}`,
     notes: i % 2 === 0 ? 'הערה לדוגמה' : '',
   }))
@@ -47,9 +68,9 @@ async function createMock(
   await delay(150)
   const store = getMockStore(collection)
   const doc: CollectionDocument = {
-    id: `${collection}-${Date.now()}`,
+    _id: crypto.randomUUID().replace(/-/g, '').slice(0, 24),
     ...body,
-  }
+  } as CollectionDocument
   store.push(doc)
   return doc
 }
@@ -61,16 +82,16 @@ async function updateMock(
 ): Promise<CollectionDocument> {
   await delay(150)
   const store = getMockStore(collection)
-  const index = store.findIndex((d) => d.id === id)
+  const index = store.findIndex((d) => d._id === id)
   if (index === -1) throw new Error('לא נמצא')
-  store[index] = { ...store[index], ...body, id }
+  store[index] = { ...store[index], ...body, _id: id }
   return store[index]
 }
 
 async function removeMock(collection: string, id: string): Promise<void> {
   await delay(150)
   const store = getMockStore(collection)
-  const index = store.findIndex((d) => d.id === id)
+  const index = store.findIndex((d) => d._id === id)
   if (index !== -1) store.splice(index, 1)
 }
 
@@ -78,7 +99,7 @@ async function removeManyMock(collection: string, ids: string[]): Promise<void> 
   await delay(200)
   const store = getMockStore(collection)
   for (const id of ids) {
-    const index = store.findIndex((d) => d.id === id)
+    const index = store.findIndex((d) => d._id === id)
     if (index !== -1) store.splice(index, 1)
   }
 }

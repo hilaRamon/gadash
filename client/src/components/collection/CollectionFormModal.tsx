@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CollectionSchema, CollectionDocument } from '../../schema/types'
 import type { FormFieldDef } from '../../schema/types'
+import { ReferenceFieldSelect } from './ReferenceFieldSelect'
 import './Collection.css'
 
 type CollectionFormModalProps = {
@@ -20,9 +21,42 @@ function getInitialValues(
   const values: Record<string, string> = {}
   for (const field of fields) {
     const raw = row?.[field.key]
-    values[field.key] = raw == null ? '' : String(raw)
+    if (field.type === 'boolean') {
+      values[field.key] = raw === true || raw === 'true' ? 'true' : 'false'
+    } else if (field.type === 'enum') {
+      values[field.key] = raw == null || raw === '' ? '' : String(raw)
+    } else {
+      values[field.key] = raw == null ? '' : String(raw)
+    }
   }
   return values
+}
+
+function buildPayload(
+  fields: FormFieldDef[],
+  values: Record<string, string>,
+): Record<string, unknown> | null {
+  const payload: Record<string, unknown> = {}
+
+  for (const field of fields) {
+    const val = values[field.key] ?? ''
+
+    if (field.required && !String(val).trim()) {
+      return null
+    }
+
+    if (field.type === 'boolean') {
+      payload[field.key] = val === 'true'
+    } else if (field.type === 'number') {
+      payload[field.key] = val === '' ? '' : Number(val)
+    } else if (field.type === 'enum') {
+      payload[field.key] = val === '' ? null : val
+    } else {
+      payload[field.key] = val
+    }
+  }
+
+  return payload
 }
 
 export function CollectionFormModal({
@@ -50,12 +84,8 @@ export function CollectionFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const payload: Record<string, unknown> = {}
-    for (const field of schema.form.fields) {
-      const val = values[field.key] ?? ''
-      if (field.required && !val.trim()) return
-      payload[field.key] = val
-    }
+    const payload = buildPayload(schema.form.fields, values)
+    if (!payload) return
     onSubmit(payload)
   }
 
@@ -88,6 +118,27 @@ export function CollectionFormModal({
                   }
                   required={field.required}
                 />
+              ) : field.type === 'reference' && field.referenceCollection ? (
+                <ReferenceFieldSelect
+                  collection={field.referenceCollection}
+                  value={values[field.key] ?? ''}
+                  required={field.required}
+                  onChange={(value) =>
+                    setValues((prev) => ({ ...prev, [field.key]: value }))
+                  }
+                />
+              ) : field.type === 'boolean' ? (
+                <select
+                  id={`field-${field.key}`}
+                  className="form-input"
+                  value={values[field.key] ?? 'true'}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
+                  }
+                >
+                  <option value="true">פעיל</option>
+                  <option value="false">לא פעיל</option>
+                </select>
               ) : field.type === 'select' || field.type === 'enum' ? (
                 <select
                   id={`field-${field.key}`}
@@ -98,7 +149,7 @@ export function CollectionFormModal({
                   }
                   required={field.required}
                 >
-                  <option value="">בחר...</option>
+                  <option value="">ללא</option>
                   {field.enumOptions?.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}

@@ -1,0 +1,18 @@
+import type { NextFunction, Request, Response } from 'express';
+
+export function errorHandler(
+  err: unknown,
+  _req: Request,
+  res: Response,
+  _next: NextFunction,
+): void {
+  const message = err instanceof Error ? err.message : 'Internal server error';
+  const status =
+    err instanceof Error && 'status' in err && typeof err.status === 'number'
+      ? err.status
+      : message === 'לא נמצא' || message === 'Not found'
+        ? 404
+        : 500;
+
+  res.status(status).json({ error: message });
+}

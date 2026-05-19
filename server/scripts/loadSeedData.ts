@@ -1,0 +1,26 @@
+import { contractorsSeedData } from '../../client/src/data/contractorsSeed';
+import { customersSeedData } from '../../client/src/data/customersSeed';
+import { employeesSeedData } from '../../client/src/data/employeesSeed';
+import { plotsSeedRows } from '../../client/src/data/plotsSeed';
+import { tractorsSeedData } from '../../client/src/data/tractorsSeed';
+import type { ApiDocument } from '../src/types/apiDocument';
+
+export function loadContractorsSeed(): ApiDocument[] {
+  return contractorsSeedData;
+}
+
+export function loadCustomersSeed(): ApiDocument[] {
+  return customersSeedData;
+}
+
+export function loadEmployeesSeed(): ApiDocument[] {
+  return employeesSeedData;
+}
+
+export function loadTractorsSeed(): ApiDocument[] {
+  return tractorsSeedData;
+}
+
+export function loadPlotsSeedRows() {
+  return plotsSeedRows;
+}

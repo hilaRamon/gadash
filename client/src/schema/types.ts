@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 export type DocumentBase = {
-  id: string
+  _id: string
 }
 
 export type CollectionDocument = DocumentBase & Record<string, unknown>
@@ -27,6 +27,8 @@ export type ColumnDef<T extends DocumentBase = CollectionDocument> = {
   format?: (value: unknown, row: T) => string
   render?: (value: unknown, row: T) => ReactNode
   enumOptions?: { value: string; label: string }[]
+  /** When true, enum cells/filters may use null (shown as —). Defaults from matching optional form field. */
+  nullable?: boolean
 }
 
 export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
@@ -35,6 +37,7 @@ export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
   type: ColumnType | 'textarea' | 'select'
   required?: boolean
   enumOptions?: { value: string; label: string }[]
+  referenceCollection?: string
 }
 
 export type FormSchema<T extends DocumentBase = CollectionDocument> = {

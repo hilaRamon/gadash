@@ -86,7 +86,7 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
       setFormError(null)
       try {
         if (editingRow) {
-          await updateMutation.mutateAsync({ id: editingRow.id, body: values })
+          await updateMutation.mutateAsync({ id: editingRow._id, body: values })
         } else {
           await createMutation.mutateAsync(values)
         }
@@ -98,11 +98,21 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
     [editingRow, updateMutation, createMutation, closeModal],
   )
 
+  const handleCellChange = useCallback(
+    async (row: CollectionDocument, key: string, value: unknown) => {
+      await updateMutation.mutateAsync({
+        id: row._id,
+        body: { [key]: value },
+      })
+    },
+    [updateMutation],
+  )
+
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return
     try {
       if (deleteTarget.type === 'single') {
-        await deleteMutation.mutateAsync(deleteTarget.row.id)
+        await deleteMutation.mutateAsync(deleteTarget.row._id)
       } else {
         await bulkDeleteMutation.mutateAsync(deleteTarget.ids)
         tableQuery.resetSelection()
@@ -150,6 +160,7 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
           isError={isError}
           errorMessage={error?.message}
           onColumnSearchChange={tableQuery.setColumnSearch}
+          onCellChange={handleCellChange}
           onToggleSelect={tableQuery.toggleSelected}
           onToggleSelectAll={tableQuery.toggleSelectAll}
           onEdit={openEdit}

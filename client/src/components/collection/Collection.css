@@ -166,6 +166,119 @@
   font-size: 0.75rem;
 }
 
+.column-filter-select {
+  cursor: pointer;
+}
+
+.cell-select {
+  width: 100%;
+  min-width: 4rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: inherit;
+}
+
+.cell-select-inline {
+  min-width: 0;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.cell-boolean-true,
+.cell-boolean-false {
+  display: inline-block;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+}
+
+.cell-boolean-true {
+  background-color: rgba(72, 187, 120, 0.22);
+}
+
+.cell-boolean-false {
+  background-color: rgba(245, 101, 101, 0.22);
+}
+
+.cell-select-inline.cell-boolean-true:hover {
+  border-color: transparent;
+  background-color: rgba(72, 187, 120, 0.3);
+}
+
+.cell-select-inline.cell-boolean-false:hover {
+  border-color: transparent;
+  background-color: rgba(245, 101, 101, 0.3);
+}
+
+.cell-select-inline:hover:not(.cell-boolean-true):not(.cell-boolean-false) {
+  border-color: var(--border-color);
+  background-color: var(--page-bg);
+}
+
+.cell-select-inline:focus,
+.cell-select-inline:focus-visible {
+  border-color: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+.cell-select-inline.cell-boolean-true:focus,
+.cell-select-inline.cell-boolean-true:focus-visible {
+  background-color: rgba(72, 187, 120, 0.22);
+}
+
+.cell-select-inline.cell-boolean-false:focus,
+.cell-select-inline.cell-boolean-false:focus-visible {
+  background-color: rgba(245, 101, 101, 0.22);
+}
+
+.cell-select-inline:focus:not(.cell-boolean-true):not(.cell-boolean-false),
+.cell-select-inline:focus-visible:not(.cell-boolean-true):not(.cell-boolean-false) {
+  background-color: transparent;
+}
+
+.cell-editable-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.cell-select-saving {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.cell-saving-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.cell-saving-spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: cell-saving-spin 0.65s linear infinite;
+}
+
+@keyframes cell-saving-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .table-empty,
 .table-loading,
 .table-error {

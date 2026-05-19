@@ -1,5 +1,13 @@
-import type { CollectionSchema, CollectionDocument, ColumnDef } from '../schema/types'
+import type {
+  CollectionSchema,
+  CollectionDocument,
+  ColumnDef,
+  FormSchema,
+} from '../schema/types'
 import type { TableQueryState } from '../schema/tableQuery'
+
+export const ENUM_NULL_FILTER = '__null__'
+export const ENUM_NULL_LABEL = '—'
 
 function getCellValue(row: CollectionDocument, column: ColumnDef): unknown {
   if (column.getValue) return column.getValue(row)
@@ -18,9 +26,76 @@ function matchesColumnSearch(
   row: CollectionDocument,
   column: ColumnDef,
   search: string,
+  form?: FormSchema,
 ): boolean {
+  const trimmed = search.trim()
+  if (!trimmed) return true
+
+  const raw = getCellValue(row, column)
+
+  if (column.type === 'boolean') {
+    return Boolean(raw) === (trimmed === 'true')
+  }
+
+  if (column.type === 'enum') {
+    if (trimmed === ENUM_NULL_FILTER && enumAllowsNull(column, form)) {
+      return raw == null || raw === ''
+    }
+    return String(raw ?? '') === trimmed
+  }
+
   const haystack = formatCell(row, column).toLowerCase()
-  return haystack.includes(search.trim().toLowerCase())
+  return haystack.includes(trimmed.toLowerCase())
+}
+
+export function enumAllowsNull(column: ColumnDef, form?: FormSchema): boolean {
+  if (column.type !== 'enum') return false
+  if (column.nullable === true) return true
+  if (column.nullable === false) return false
+  const field = form?.fields.find((f) => f.key === column.key)
+  return field ? field.required !== true : false
+}
+
+export function parseEnumSelectValue(
+  column: ColumnDef,
+  raw: string,
+  form?: FormSchema,
+): unknown {
+  if (raw === '' && enumAllowsNull(column, form)) return null
+  return raw
+}
+
+export function isDiscreteColumn(column: ColumnDef): boolean {
+  return (
+    column.type === 'boolean' ||
+    (column.type === 'enum' && (column.enumOptions?.length ?? 0) > 0)
+  )
+}
+
+export function getDiscreteColumnOptions(
+  column: ColumnDef,
+  form?: FormSchema,
+): { value: string; label: string }[] {
+  if (column.type === 'enum' && column.enumOptions) {
+    const options = [...column.enumOptions]
+    if (enumAllowsNull(column, form)) {
+      return [{ value: '', label: ENUM_NULL_LABEL }, ...options]
+    }
+    return options
+  }
+  if (column.type === 'boolean') {
+    if (column.format) {
+      return [
+        { value: 'true', label: column.format(true) },
+        { value: 'false', label: column.format(false) },
+      ]
+    }
+    return [
+      { value: 'true', label: 'כן' },
+      { value: 'false', label: 'לא' },
+    ]
+  }
+  return []
 }
 
 function compareValues(
@@ -106,7 +181,9 @@ export function applyTableQuery(
     if (column.searchable === false) continue
     const search = state.columnSearch[column.key]
     if (!search?.trim()) continue
-    result = result.filter((row) => matchesColumnSearch(row, column, search))
+    result = result.filter((row) =>
+      matchesColumnSearch(row, column, search, schema.form),
+    )
   }
 
   if (state.filter) {
