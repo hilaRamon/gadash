@@ -128,11 +128,8 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
 
   return (
     <div className="page page-collection">
-      <header className="page-header">
+      <header className="collection-page-header">
         <h1 className="page-title">{schema.label}</h1>
-      </header>
-
-      <section className="page-body page-body-flush">
         <CollectionToolbar
           schema={schema}
           queryState={tableQuery.state}
@@ -143,7 +140,6 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
             if (!field) tableQuery.setSort('', direction)
             else tableQuery.setSort(field, direction)
           }}
-          onFilterChange={tableQuery.setFilter}
           onBulkDelete={() =>
             setDeleteTarget({
               type: 'bulk',
@@ -151,7 +147,9 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
             })
           }
         />
+      </header>
 
+      <section className="page-body page-body-flush">
         <DataTable
           schema={schema}
           rows={visibleRows}
