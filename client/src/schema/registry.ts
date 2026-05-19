@@ -5,6 +5,7 @@ import { employeesSchema } from './collections/employeesSchema'
 import { plotsSchema } from './collections/plotsSchema'
 import { agriculturalSeasonsSchema } from './collections/agriculturalSeasonsSchema'
 import { fuelTanksSchema } from './collections/fuelTanksSchema'
+import { operationsSchema } from './collections/operationsSchema'
 import { tractorsSchema } from './collections/tractorsSchema'
 import { stubSchemas } from './collections/stubSchema'
 
@@ -12,6 +13,7 @@ const allSchemas: CollectionSchema[] = [
   employeesSchema,
   customersSchema,
   contractorsSchema,
+  operationsSchema,
   tractorsSchema,
   plotsSchema,
   agriculturalSeasonsSchema,

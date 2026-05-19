@@ -8,6 +8,7 @@ import { AgriculturalSeasonModel } from '../src/models/AgriculturalSeason';
 import { FuelTankModel } from '../src/models/FuelTank';
 import { fuelTankRepository } from '../src/repositories/fuelTankRepository';
 import type { FuelTankInput } from '../src/repositories/fuelTankRepository';
+import { OperationModel } from '../src/models/Operation';
 import { TractorModel } from '../src/models/Tractor';
 import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSeasonRepository';
 import type { AgriculturalSeasonInput } from '../src/repositories/agriculturalSeasonRepository';
@@ -17,6 +18,8 @@ import { customerRepository } from '../src/repositories/customerRepository';
 import type { CustomerInput } from '../src/repositories/customerRepository';
 import { employeeRepository } from '../src/repositories/employeeRepository';
 import type { EmployeeInput } from '../src/repositories/employeeRepository';
+import { operationRepository } from '../src/repositories/operationRepository';
+import type { OperationInput } from '../src/repositories/operationRepository';
 import { tractorRepository } from '../src/repositories/tractorRepository';
 import type { TractorInput } from '../src/repositories/tractorRepository';
 import {
@@ -25,6 +28,7 @@ import {
   loadEmployeesSeed,
   loadAgriculturalSeasonsSeed,
   loadFuelTanksSeed,
+  loadOperationsSeed,
   loadTractorsSeed,
 } from './loadSeedData';
 import { seedPlotsIntoDb } from './seed-plots-lib';
@@ -42,6 +46,7 @@ async function seedAll() {
     ContractorModel.syncIndexes(),
     CustomerModel.syncIndexes(),
     EmployeeModel.syncIndexes(),
+    OperationModel.syncIndexes(),
     TractorModel.syncIndexes(),
     PlotModel.syncIndexes(),
     AgriculturalSeasonModel.syncIndexes(),
@@ -67,6 +72,21 @@ async function seedAll() {
   await tractorRepository.deleteAll();
   await tractorRepository.insertMany(tractors);
   console.log(`Seeded ${tractors.length} tractors`);
+
+  const operations = toSeedInput<Record<string, unknown>>(loadOperationsSeed()).map((row) => ({
+    operationNumber: row.operationNumber as number,
+    name: row.name as string,
+    pricingForm: row.pricingForm as OperationInput['pricingForm'],
+    operationType: row.operationType as OperationInput['operationType'],
+    currentCost: row.currentCost as number,
+    costHistory: (row.costHistory as { cost: number; effectiveFrom: string }[]).map((entry) => ({
+      cost: entry.cost,
+      effectiveFrom: new Date(entry.effectiveFrom),
+    })),
+  }));
+  await operationRepository.deleteAll();
+  await operationRepository.insertMany(operations);
+  console.log(`Seeded ${operations.length} operations`);
 
   const plotCount = await seedPlotsIntoDb();
   console.log(`Seeded ${plotCount} plots`);
