@@ -4,7 +4,13 @@ import { ContractorModel } from '../src/models/Contractor';
 import { CustomerModel } from '../src/models/Customer';
 import { EmployeeModel } from '../src/models/Employee';
 import { PlotModel } from '../src/models/Plot';
+import { AgriculturalSeasonModel } from '../src/models/AgriculturalSeason';
+import { FuelTankModel } from '../src/models/FuelTank';
+import { fuelTankRepository } from '../src/repositories/fuelTankRepository';
+import type { FuelTankInput } from '../src/repositories/fuelTankRepository';
 import { TractorModel } from '../src/models/Tractor';
+import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSeasonRepository';
+import type { AgriculturalSeasonInput } from '../src/repositories/agriculturalSeasonRepository';
 import { contractorRepository } from '../src/repositories/contractorRepository';
 import type { ContractorInput } from '../src/repositories/contractorRepository';
 import { customerRepository } from '../src/repositories/customerRepository';
@@ -17,6 +23,8 @@ import {
   loadContractorsSeed,
   loadCustomersSeed,
   loadEmployeesSeed,
+  loadAgriculturalSeasonsSeed,
+  loadFuelTanksSeed,
   loadTractorsSeed,
 } from './loadSeedData';
 import { seedPlotsIntoDb } from './seed-plots-lib';
@@ -36,6 +44,8 @@ async function seedAll() {
     EmployeeModel.syncIndexes(),
     TractorModel.syncIndexes(),
     PlotModel.syncIndexes(),
+    AgriculturalSeasonModel.syncIndexes(),
+    FuelTankModel.syncIndexes(),
   ]);
 
   const contractors = toSeedInput<ContractorInput>(loadContractorsSeed());
@@ -60,6 +70,16 @@ async function seedAll() {
 
   const plotCount = await seedPlotsIntoDb();
   console.log(`Seeded ${plotCount} plots`);
+
+  const seasons = toSeedInput<AgriculturalSeasonInput>(loadAgriculturalSeasonsSeed());
+  await agriculturalSeasonRepository.deleteAll();
+  await agriculturalSeasonRepository.insertMany(seasons);
+  console.log(`Seeded ${seasons.length} agricultural seasons`);
+
+  const fuelTanks = toSeedInput<FuelTankInput>(loadFuelTanksSeed());
+  await fuelTankRepository.deleteAll();
+  await fuelTankRepository.insertMany(fuelTanks);
+  console.log(`Seeded ${fuelTanks.length} fuel tanks`);
 
   await mongoose.disconnect();
   console.log('Done');

@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { contractorRouter } from './contractorRouter';
 import { customerRouter } from './customerRouter';
 import { employeeRouter } from './employeeRouter';
+import { agriculturalSeasonRouter } from './agriculturalSeasonRouter';
+import { fuelTankRouter } from './fuelTankRouter';
 import { plotRouter } from './plotRouter';
 import { tractorRouter } from './tractorRouter';
 
@@ -12,3 +14,5 @@ apiRouter.use('/customers', customerRouter);
 apiRouter.use('/employees', employeeRouter);
 apiRouter.use('/tractors', tractorRouter);
 apiRouter.use('/plots', plotRouter);
+apiRouter.use('/agriculturalSeasons', agriculturalSeasonRouter);
+apiRouter.use('/fuelTanks', fuelTankRouter);

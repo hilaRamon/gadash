@@ -3,6 +3,8 @@ import { contractorsSeedData } from '../data/contractorsSeed'
 import { customersSeedData } from '../data/customersSeed'
 import { employeesSeedData } from '../data/employeesSeed'
 import { plotsSeedData } from '../data/plotsSeed'
+import { agriculturalSeasonsSeedData } from '../data/agriculturalSeasonsSeed'
+import { fuelTanksSeedData } from '../data/fuelTanksSeed'
 import { tractorsSeedData } from '../data/tractorsSeed'
 import type { CollectionDocument } from '../schema/types'
 import type { TableQueryParams } from '../schema/tableQuery'
@@ -26,6 +28,12 @@ function seedMockData(collection: string): CollectionDocument[] {
   }
   if (collection === 'plots') {
     return plotsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'agriculturalSeasons') {
+    return agriculturalSeasonsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'fuelTanks') {
+    return fuelTanksSeedData.map((row) => ({ ...row }))
   }
 
   const labels: Record<string, string> = {

@@ -125,10 +125,7 @@ function EditableDiscreteCell({
   );
   const options = getDiscreteColumnOptions(column, form);
   const selectValue = pendingSelectValue ?? serverSelectValue;
-  const booleanToneClass = getBooleanToneClass(
-    column,
-    selectValue === "true",
-  );
+  const booleanToneClass = getBooleanToneClass(column, selectValue === "true");
 
   const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     const next =
@@ -247,7 +244,7 @@ export function DataTable({
               </th>
             ))}
             <th className="col-actions" scope="col">
-              פעולות
+              {/* פעולות */}
             </th>
           </tr>
         </thead>
@@ -293,9 +290,7 @@ export function DataTable({
                             }
                           />
                         ) : col.type === "boolean" ? (
-                          <span
-                            className={getBooleanToneClass(col, value)}
-                          >
+                          <span className={getBooleanToneClass(col, value)}>
                             {formatCell(row, col)}
                           </span>
                         ) : (

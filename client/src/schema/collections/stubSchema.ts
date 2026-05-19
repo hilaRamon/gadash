@@ -33,6 +33,8 @@ const dedicatedSchemaIds = new Set([
   'contractors',
   'tractors',
   'plots',
+  'seasons',
+  'fuel-tanks',
 ])
 
 export const stubSchemas: CollectionSchema[] = dataCollections

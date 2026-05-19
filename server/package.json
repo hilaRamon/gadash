@@ -11,7 +11,9 @@
     "seed:customers": "tsx scripts/seed-customers.ts",
     "seed:employees": "tsx scripts/seed-employees.ts",
     "seed:tractors": "tsx scripts/seed-tractors.ts",
-    "seed:plots": "tsx scripts/seed-plots.ts"
+    "seed:plots": "tsx scripts/seed-plots.ts",
+    "seed:agricultural-seasons": "tsx scripts/seed-agricultural-seasons.ts",
+    "seed:fuel-tanks": "tsx scripts/seed-fuel-tanks.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
