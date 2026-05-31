@@ -5,17 +5,32 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "seed": "tsx scripts/seed-all.ts",
+    "seed:contractors": "tsx scripts/seed-contractors.ts",
+    "seed:customers": "tsx scripts/seed-customers.ts",
+    "seed:employees": "tsx scripts/seed-employees.ts",
+    "seed:tractors": "tsx scripts/seed-tractors.ts",
+    "seed:operations": "tsx scripts/seed-operations.ts",
+    "seed:materials": "tsx scripts/seed-materials.ts",
+    "seed:bales": "tsx scripts/seed-bales.ts",
+    "seed:plots": "tsx scripts/seed-plots.ts",
+    "seed:agricultural-seasons": "tsx scripts/seed-agricultural-seasons.ts",
+    "seed:fuel-tanks": "tsx scripts/seed-fuel-tanks.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "mongoose": "^9.6.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsx": "^4.22.1",
     "typescript": "^5.7.2"
   }
 }

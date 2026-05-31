@@ -46,6 +46,7 @@ Desktop.ini
 
 # Vite
 client/dist/
+.vite/
 
 # TypeScript cache
 *.tsbuildinfo
