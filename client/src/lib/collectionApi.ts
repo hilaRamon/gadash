@@ -5,6 +5,8 @@ import { employeesSeedData } from '../data/employeesSeed'
 import { plotsSeedData } from '../data/plotsSeed'
 import { agriculturalSeasonsSeedData } from '../data/agriculturalSeasonsSeed'
 import { fuelTanksSeedData } from '../data/fuelTanksSeed'
+import { materialsSeedData } from '../data/materialsSeed'
+import { balesSeedData } from '../data/balesSeed'
 import { operationsSeedData } from '../data/operationsSeed'
 import { tractorsSeedData } from '../data/tractorsSeed'
 import type { CollectionDocument } from '../schema/types'
@@ -29,6 +31,12 @@ function seedMockData(collection: string): CollectionDocument[] {
   }
   if (collection === 'operations') {
     return operationsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'materials') {
+    return materialsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'bales') {
+    return balesSeedData.map((row) => ({ ...row }))
   }
   if (collection === 'plots') {
     return plotsSeedData.map((row) => ({ ...row }))

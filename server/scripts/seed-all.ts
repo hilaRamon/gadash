@@ -8,6 +8,8 @@ import { AgriculturalSeasonModel } from '../src/models/AgriculturalSeason';
 import { FuelTankModel } from '../src/models/FuelTank';
 import { fuelTankRepository } from '../src/repositories/fuelTankRepository';
 import type { FuelTankInput } from '../src/repositories/fuelTankRepository';
+import { MaterialModel } from '../src/models/Material';
+import { BaleModel } from '../src/models/Bale';
 import { OperationModel } from '../src/models/Operation';
 import { TractorModel } from '../src/models/Tractor';
 import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSeasonRepository';
@@ -18,6 +20,10 @@ import { customerRepository } from '../src/repositories/customerRepository';
 import type { CustomerInput } from '../src/repositories/customerRepository';
 import { employeeRepository } from '../src/repositories/employeeRepository';
 import type { EmployeeInput } from '../src/repositories/employeeRepository';
+import { materialRepository } from '../src/repositories/materialRepository';
+import type { MaterialInput } from '../src/repositories/materialRepository';
+import { baleRepository } from '../src/repositories/baleRepository';
+import type { BaleInput } from '../src/repositories/baleRepository';
 import { operationRepository } from '../src/repositories/operationRepository';
 import type { OperationInput } from '../src/repositories/operationRepository';
 import { tractorRepository } from '../src/repositories/tractorRepository';
@@ -28,6 +34,8 @@ import {
   loadEmployeesSeed,
   loadAgriculturalSeasonsSeed,
   loadFuelTanksSeed,
+  loadMaterialsSeed,
+  loadBalesSeed,
   loadOperationsSeed,
   loadTractorsSeed,
 } from './loadSeedData';
@@ -46,6 +54,8 @@ async function seedAll() {
     ContractorModel.syncIndexes(),
     CustomerModel.syncIndexes(),
     EmployeeModel.syncIndexes(),
+    MaterialModel.syncIndexes(),
+    BaleModel.syncIndexes(),
     OperationModel.syncIndexes(),
     TractorModel.syncIndexes(),
     PlotModel.syncIndexes(),
@@ -87,6 +97,29 @@ async function seedAll() {
   await operationRepository.deleteAll();
   await operationRepository.insertMany(operations);
   console.log(`Seeded ${operations.length} operations`);
+
+  const materials = toSeedInput<Record<string, unknown>>(loadMaterialsSeed()).map((row) => ({
+    name: row.name as string,
+    billingUnit: row.billingUnit as MaterialInput['billingUnit'],
+    currentQuantity: row.currentQuantity as number,
+    currentBuyingCost: row.currentBuyingCost as number,
+    currentSalePercent: row.currentSalePercent as number,
+    pricingHistory: (
+      row.pricingHistory as { cost: number; percent: number; effectiveFrom: string }[]
+    ).map((entry) => ({
+      cost: entry.cost,
+      percent: entry.percent,
+      effectiveFrom: new Date(entry.effectiveFrom),
+    })),
+  }));
+  await materialRepository.deleteAll();
+  await materialRepository.insertMany(materials);
+  console.log(`Seeded ${materials.length} materials`);
+
+  const bales = toSeedInput<BaleInput>(loadBalesSeed());
+  await baleRepository.deleteAll();
+  await baleRepository.insertMany(bales);
+  console.log(`Seeded ${bales.length} bales`);
 
   const plotCount = await seedPlotsIntoDb();
   console.log(`Seeded ${plotCount} plots`);

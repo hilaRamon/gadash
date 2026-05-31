@@ -32,6 +32,8 @@ const dedicatedSchemaIds = new Set([
   'customers',
   'contractors',
   'operations',
+  'materials',
+  'bales',
   'tractors',
   'plots',
   'seasons',

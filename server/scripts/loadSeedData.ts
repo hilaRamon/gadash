@@ -4,6 +4,8 @@ import { employeesSeedData } from '../../client/src/data/employeesSeed';
 import { plotsSeedRows } from '../../client/src/data/plotsSeed';
 import { agriculturalSeasonsSeedData } from '../../client/src/data/agriculturalSeasonsSeed';
 import { fuelTanksSeedData } from '../../client/src/data/fuelTanksSeed';
+import { materialsSeedData } from '../../client/src/data/materialsSeed';
+import { balesSeedData } from '../../client/src/data/balesSeed';
 import { operationsSeedData } from '../../client/src/data/operationsSeed';
 import { tractorsSeedData } from '../../client/src/data/tractorsSeed';
 import type { ApiDocument } from '../src/types/apiDocument';
@@ -26,6 +28,14 @@ export function loadTractorsSeed(): ApiDocument[] {
 
 export function loadOperationsSeed(): ApiDocument[] {
   return operationsSeedData;
+}
+
+export function loadMaterialsSeed(): ApiDocument[] {
+  return materialsSeedData;
+}
+
+export function loadBalesSeed(): ApiDocument[] {
+  return balesSeedData;
 }
 
 export function loadAgriculturalSeasonsSeed(): ApiDocument[] {
