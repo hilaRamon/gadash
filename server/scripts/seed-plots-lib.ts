@@ -18,7 +18,6 @@ export async function seedPlotsIntoDb(): Promise<number> {
     }
 
     rows.push({
-      plotNumber: row.plotNumber,
       name: row.name,
       customer: customer._id as PlotInput['customer'],
       dunam: row.dunam,

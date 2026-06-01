@@ -17,14 +17,6 @@ export const operationsSchema: CollectionSchema = {
   collection: 'operations',
   label: 'פעולות',
   columns: [
-    {
-      key: 'operationNumber',
-      label: 'מס\'',
-      type: 'number',
-      searchable: true,
-      sortable: true,
-      width: '4.5rem',
-    },
     textColumn('name', 'שם', { searchable: true }),
     {
       key: 'currentCost',
@@ -48,12 +40,11 @@ export const operationsSchema: CollectionSchema = {
       filterable: true,
     },
   ],
-  defaultSort: { field: 'operationNumber', direction: 'asc' },
+  defaultSort: { field: 'name', direction: 'asc' },
   form: {
     createTitle: 'הוספת פעולה',
     editTitle: 'עריכת פעולה',
     fields: [
-      { key: 'operationNumber', label: 'מס\'', type: 'number', required: true },
       { key: 'name', label: 'שם', type: 'text', required: true },
       {
         key: 'pricingForm',

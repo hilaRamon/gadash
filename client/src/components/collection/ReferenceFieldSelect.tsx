@@ -10,7 +10,6 @@ type ReferenceFieldSelectProps = {
 
 function getOptionLabel(row: CollectionDocument): string {
   if (typeof row.name === 'string' && row.name) return row.name
-  if (typeof row.customerNumber === 'number') return String(row.customerNumber)
   return String(row._id)
 }
 

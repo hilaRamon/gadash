@@ -2,7 +2,6 @@ import { CustomerModel } from '../models/Customer';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type CustomerInput = {
-  customerNumber: number;
   name: string;
   mobile?: string;
   email?: string;
@@ -11,7 +10,7 @@ export type CustomerInput = {
 
 export const customerRepository = {
   findAll() {
-    return CustomerModel.find().sort({ customerNumber: 1 }).lean();
+    return CustomerModel.find().sort({ name: 1 }).lean();
   },
 
   findById(id: string) {

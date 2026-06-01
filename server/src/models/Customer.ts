@@ -2,7 +2,6 @@ import { Schema, model, type InferSchemaType } from 'mongoose';
 
 const customerSchema = new Schema(
   {
-    customerNumber: { type: Number, required: true, unique: true, index: true },
     name: { type: String, required: true },
     mobile: { type: String, default: '' },
     email: { type: String, default: '' },

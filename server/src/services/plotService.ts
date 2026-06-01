@@ -33,11 +33,9 @@ async function resolveCustomerObjectId(customerId: string): Promise<Types.Object
   return customer._id as Types.ObjectId;
 }
 
-async function pickPlotFields(
-  body: Record<string, unknown>,
-): Promise<Omit<PlotInput, 'plotNumber'>> {
+async function pickPlotFields(body: Record<string, unknown>): Promise<PlotInput> {
   const patch = await buildPlotPatch(body, { requireAll: true });
-  return patch as Omit<PlotInput, 'plotNumber'>;
+  return patch as PlotInput;
 }
 
 async function buildPlotPatch(
@@ -81,14 +79,6 @@ async function buildPlotPatch(
     patch.active = parseActive(body.active);
   }
 
-  if (mustHave('plotNumber')) {
-    const plotNumber = Number(body.plotNumber);
-    if (!Number.isFinite(plotNumber)) {
-      throw new Error('מספר חלקה הוא שדה חובה');
-    }
-    patch.plotNumber = plotNumber;
-  }
-
   return patch;
 }
 
@@ -100,17 +90,7 @@ export const plotService = {
 
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const fields = await pickPlotFields(body);
-    const plotNumber = Number(body.plotNumber);
-    if (!Number.isFinite(plotNumber)) {
-      throw new Error('מספר חלקה הוא שדה חובה');
-    }
-
-    const doc: PlotInput = {
-      plotNumber,
-      ...fields,
-    };
-
-    const created = await plotRepository.create(doc);
+    const created = await plotRepository.create(fields);
     const populated = await plotRepository.findById(String(created._id));
     return plotToApiDocument((populated ?? created.toObject()) as Record<string, unknown>);
   },

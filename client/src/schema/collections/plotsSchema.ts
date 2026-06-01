@@ -11,14 +11,6 @@ export const plotsSchema: CollectionSchema = {
   collection: 'plots',
   label: 'חלקות',
   columns: [
-    {
-      key: 'plotNumber',
-      label: 'מס\'',
-      type: 'number',
-      searchable: true,
-      sortable: true,
-      width: '4.5rem',
-    },
     textColumn('name', 'שם', { searchable: true }),
     {
       key: 'customer',
@@ -50,12 +42,11 @@ export const plotsSchema: CollectionSchema = {
       format: (value) => (value ? 'פעיל' : 'לא פעיל'),
     },
   ],
-  defaultSort: { field: 'plotNumber', direction: 'asc' },
+  defaultSort: { field: 'name', direction: 'asc' },
   form: {
     createTitle: 'הוספת חלקה',
     editTitle: 'עריכת חלקה',
     fields: [
-      { key: 'plotNumber', label: 'מס\'', type: 'number', required: true },
       { key: 'name', label: 'שם', type: 'text', required: true },
       {
         key: 'customer',

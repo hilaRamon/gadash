@@ -31,14 +31,6 @@ function parseOperationType(value: unknown): OperationType {
   throw new Error('סוג פעולה לא תקין');
 }
 
-function parseOperationNumber(value: unknown): number {
-  const num = Number(value);
-  if (!Number.isFinite(num) || num <= 0) {
-    throw new Error('מספר פעולה הוא שדה חובה');
-  }
-  return num;
-}
-
 function parseCost(value: unknown): number {
   const num = Number(value);
   if (!Number.isFinite(num) || num < 0) {
@@ -68,10 +60,6 @@ function buildOperationPatch(
   const mustHave = (key: string) =>
     requireAll || Object.prototype.hasOwnProperty.call(body, key);
 
-  if (mustHave('operationNumber')) {
-    patch.operationNumber = parseOperationNumber(body.operationNumber);
-  }
-
   if (mustHave('name')) {
     const name = String(body.name ?? '').trim();
     if (!name) {
@@ -90,7 +78,6 @@ function buildOperationPatch(
 
   if (requireAll) {
     const required: (keyof OperationMetadataPatch)[] = [
-      'operationNumber',
       'name',
       'pricingForm',
       'operationType',

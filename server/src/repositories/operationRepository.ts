@@ -8,7 +8,6 @@ export type CostHistoryEntryInput = {
 };
 
 export type OperationInput = {
-  operationNumber: number;
   name: string;
   pricingForm: PricingForm;
   operationType: OperationType;
@@ -18,12 +17,12 @@ export type OperationInput = {
 
 export type OperationMetadataPatch = Pick<
   OperationInput,
-  'operationNumber' | 'name' | 'pricingForm' | 'operationType'
+  'name' | 'pricingForm' | 'operationType'
 >;
 
 export const operationRepository = {
   findAll() {
-    return OperationModel.find().sort({ operationNumber: 1 }).lean();
+    return OperationModel.find().sort({ name: 1 }).lean();
   },
 
   findById(id: string) {

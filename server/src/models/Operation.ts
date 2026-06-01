@@ -16,7 +16,6 @@ const costHistoryEntrySchema = new Schema(
 
 const operationSchema = new Schema(
   {
-    operationNumber: { type: Number, required: true, unique: true, index: true },
     name: { type: String, required: true },
     pricingForm: { type: String, required: true, enum: PRICING_FORMS },
     operationType: { type: String, required: true, enum: OPERATION_TYPES },
