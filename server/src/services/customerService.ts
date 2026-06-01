@@ -3,12 +3,13 @@ import {
   type CustomerInput,
 } from '../repositories/customerRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 function pickCustomerFields(body: Record<string, unknown>): CustomerInput {
   return {
     name: String(body.name ?? ''),
-    mobile: String(body.mobile ?? ''),
+    mobile: pickMobileFromBody(body),
     email: String(body.email ?? ''),
     notes: String(body.notes ?? ''),
   };

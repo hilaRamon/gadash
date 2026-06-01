@@ -101,8 +101,8 @@ export function getDiscreteColumnOptions(
   if (column.type === 'boolean') {
     if (column.format) {
       return [
-        { value: 'true', label: column.format(true) },
-        { value: 'false', label: column.format(false) },
+        { value: 'true', label: column.format(true, {} as CollectionDocument) },
+        { value: 'false', label: column.format(false, {} as CollectionDocument) },
       ]
     }
     return [

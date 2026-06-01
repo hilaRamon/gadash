@@ -1,4 +1,5 @@
 import { textColumn } from '../columnHelpers'
+import { formatMobileDisplay } from '../../lib/mobileFormat'
 import type { CollectionSchema } from '../types'
 
 export const contractorsSchema: CollectionSchema = {
@@ -7,7 +8,10 @@ export const contractorsSchema: CollectionSchema = {
   label: 'קבלנים ונותני שירות',
   columns: [
     textColumn('name', 'שם', { searchable: true }),
-    textColumn('mobile', 'פלאפון', { searchable: true }),
+    textColumn('mobile', 'פלאפון', {
+      searchable: true,
+      format: (value) => formatMobileDisplay(String(value ?? '')),
+    }),
     textColumn('email', 'אימייל', { searchable: true }),
     textColumn('notes', 'הערות', { searchable: true }),
   ],
@@ -17,7 +21,7 @@ export const contractorsSchema: CollectionSchema = {
     editTitle: 'עריכת קבלן',
     fields: [
       { key: 'name', label: 'שם', type: 'text', required: true },
-      { key: 'mobile', label: 'פלאפון', type: 'text' },
+      { key: 'mobile', label: 'פלאפון', type: 'phone' },
       { key: 'email', label: 'אימייל', type: 'text' },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],

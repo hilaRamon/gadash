@@ -3,12 +3,13 @@ import {
   type ContractorInput,
 } from '../repositories/contractorRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 function pickContractorFields(body: Record<string, unknown>): ContractorInput {
   return {
     name: String(body.name ?? ''),
-    mobile: String(body.mobile ?? ''),
+    mobile: pickMobileFromBody(body),
     email: String(body.email ?? ''),
     notes: String(body.notes ?? ''),
   };

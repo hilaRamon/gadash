@@ -3,13 +3,14 @@ import {
   type EmployeeInput,
 } from '../repositories/employeeRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 function pickEmployeeFields(body: Record<string, unknown>): EmployeeInput {
   return {
     name: String(body.name ?? ''),
     email: String(body.email ?? ''),
-    mobile: String(body.mobile ?? ''),
+    mobile: pickMobileFromBody(body),
     notes: String(body.notes ?? ''),
   };
 }

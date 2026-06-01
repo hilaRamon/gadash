@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { CollectionSchema, CollectionDocument } from '../../schema/types'
 import type { FormFieldDef } from '../../schema/types'
+import {
+  formatMobileDisplay,
+  MOBILE_INVALID_ERROR,
+  normalizeMobile,
+} from '../../lib/mobileFormat'
+import { PhoneField } from './PhoneField'
 import { ReferenceFieldSelect } from './ReferenceFieldSelect'
 import './Collection.css'
 
@@ -25,6 +31,9 @@ function getInitialValues(
       values[field.key] = raw === true || raw === 'true' ? 'true' : 'false'
     } else if (field.type === 'enum') {
       values[field.key] = raw == null || raw === '' ? '' : String(raw)
+    } else if (field.type === 'phone') {
+      values[field.key] =
+        raw == null || raw === '' ? '' : formatMobileDisplay(String(raw))
     } else {
       values[field.key] = raw == null ? '' : String(raw)
     }
@@ -35,7 +44,7 @@ function getInitialValues(
 function buildPayload(
   fields: FormFieldDef[],
   values: Record<string, string>,
-): Record<string, unknown> | null {
+): Record<string, unknown> | { error: string } | null {
   const payload: Record<string, unknown> = {}
 
   for (const field of fields) {
@@ -51,6 +60,17 @@ function buildPayload(
       payload[field.key] = val === '' ? '' : Number(val)
     } else if (field.type === 'enum') {
       payload[field.key] = val === '' ? null : val
+    } else if (field.type === 'phone') {
+      const trimmed = String(val).trim()
+      if (!trimmed) {
+        payload[field.key] = ''
+      } else {
+        try {
+          payload[field.key] = normalizeMobile(trimmed)
+        } catch {
+          return { error: MOBILE_INVALID_ERROR }
+        }
+      }
     } else {
       payload[field.key] = val
     }
@@ -69,10 +89,12 @@ export function CollectionFormModal({
   onSubmit,
 }: CollectionFormModalProps) {
   const [values, setValues] = useState<Record<string, string>>({})
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setValues(getInitialValues(schema.form.fields, editingRow))
+      setValidationError(null)
     }
   }, [open, editingRow, schema.form.fields])
 
@@ -86,6 +108,11 @@ export function CollectionFormModal({
     e.preventDefault()
     const payload = buildPayload(schema.form.fields, values)
     if (!payload) return
+    if ('error' in payload && typeof payload.error === 'string') {
+      setValidationError(payload.error)
+      return
+    }
+    setValidationError(null)
     onSubmit(payload)
   }
 
@@ -156,6 +183,15 @@ export function CollectionFormModal({
                     </option>
                   ))}
                 </select>
+              ) : field.type === 'phone' ? (
+                <PhoneField
+                  id={`field-${field.key}`}
+                  value={values[field.key] ?? ''}
+                  required={field.required}
+                  onChange={(value) =>
+                    setValues((prev) => ({ ...prev, [field.key]: value }))
+                  }
+                />
               ) : (
                 <input
                   id={`field-${field.key}`}
@@ -171,7 +207,9 @@ export function CollectionFormModal({
             </div>
           ))}
 
-          {error && <p className="form-error">{error}</p>}
+          {(validationError || error) && (
+            <p className="form-error">{validationError ?? error}</p>
+          )}
 
           <div className="modal-actions">
             <button
