@@ -12,6 +12,8 @@ import { MaterialModel } from '../src/models/Material';
 import { BaleModel } from '../src/models/Bale';
 import { OperationModel } from '../src/models/Operation';
 import { TractorModel } from '../src/models/Tractor';
+import { SupplierModel } from '../src/models/Supplier';
+import { MaterialPurchaseTrackingModel } from '../src/models/MaterialPurchaseTracking';
 import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSeasonRepository';
 import type { AgriculturalSeasonInput } from '../src/repositories/agriculturalSeasonRepository';
 import { contractorRepository } from '../src/repositories/contractorRepository';
@@ -28,6 +30,10 @@ import { operationRepository } from '../src/repositories/operationRepository';
 import type { OperationInput } from '../src/repositories/operationRepository';
 import { tractorRepository } from '../src/repositories/tractorRepository';
 import type { TractorInput } from '../src/repositories/tractorRepository';
+import { supplierRepository } from '../src/repositories/supplierRepository';
+import type { SupplierInput } from '../src/repositories/supplierRepository';
+import { materialPurchaseTrackingRepository } from '../src/repositories/materialPurchaseTrackingRepository';
+import type { MaterialPurchaseTrackingInput } from '../src/repositories/materialPurchaseTrackingRepository';
 import {
   loadContractorsSeed,
   loadCustomersSeed,
@@ -38,6 +44,8 @@ import {
   loadBalesSeed,
   loadOperationsSeed,
   loadTractorsSeed,
+  loadSuppliersSeed,
+  loadMaterialPurchaseTrackingsSeed,
 } from './loadSeedData';
 import { seedPlotsIntoDb } from './seed-plots-lib';
 import { toSeedInput } from './seed-utils';
@@ -58,6 +66,8 @@ async function seedAll() {
     BaleModel.syncIndexes(),
     OperationModel.syncIndexes(),
     TractorModel.syncIndexes(),
+    SupplierModel.syncIndexes(),
+    MaterialPurchaseTrackingModel.syncIndexes(),
     PlotModel.syncIndexes(),
     AgriculturalSeasonModel.syncIndexes(),
     FuelTankModel.syncIndexes(),
@@ -82,6 +92,11 @@ async function seedAll() {
   await tractorRepository.deleteAll();
   await tractorRepository.insertMany(tractors);
   console.log(`Seeded ${tractors.length} tractors`);
+
+  const suppliers = toSeedInput<SupplierInput>(loadSuppliersSeed());
+  await supplierRepository.deleteAll();
+  await supplierRepository.insertMany(suppliers);
+  console.log(`Seeded ${suppliers.length} suppliers`);
 
   const operations = toSeedInput<Record<string, unknown>>(loadOperationsSeed()).map((row) => ({
     name: row.name as string,
@@ -132,6 +147,20 @@ async function seedAll() {
   await fuelTankRepository.deleteAll();
   await fuelTankRepository.insertMany(fuelTanks);
   console.log(`Seeded ${fuelTanks.length} fuel tanks`);
+
+  const materialPurchaseTrackings = toSeedInput<Record<string, unknown>>(
+    loadMaterialPurchaseTrackingsSeed(),
+  ).map((row) => ({
+    date: new Date(String(row.date ?? '')),
+    material: row.material as MaterialPurchaseTrackingInput['material'],
+    supplier: row.supplier as MaterialPurchaseTrackingInput['supplier'],
+    unitPrice: Number(row.unitPrice),
+    amount: Number(row.amount),
+    finalPrice: Number(row.finalPrice),
+  }));
+  await materialPurchaseTrackingRepository.deleteAll();
+  await materialPurchaseTrackingRepository.insertMany(materialPurchaseTrackings);
+  console.log(`Seeded ${materialPurchaseTrackings.length} material purchase trackings`);
 
   await mongoose.disconnect();
   console.log('Done');

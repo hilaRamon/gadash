@@ -9,12 +9,15 @@ import { materialsSchema } from './collections/materialsSchema'
 import { balesSchema } from './collections/balesSchema'
 import { operationsSchema } from './collections/operationsSchema'
 import { tractorsSchema } from './collections/tractorsSchema'
+import { suppliersSchema } from './collections/suppliersSchema'
+import { materialPurchaseTrackingsSchema } from './collections/materialPurchaseTrackingsSchema'
 import { stubSchemas } from './collections/stubSchema'
 
 const allSchemas: CollectionSchema[] = [
   employeesSchema,
   customersSchema,
   contractorsSchema,
+  suppliersSchema,
   operationsSchema,
   materialsSchema,
   balesSchema,
@@ -22,6 +25,7 @@ const allSchemas: CollectionSchema[] = [
   plotsSchema,
   agriculturalSeasonsSchema,
   fuelTanksSchema,
+  materialPurchaseTrackingsSchema,
   ...stubSchemas,
 ]
 

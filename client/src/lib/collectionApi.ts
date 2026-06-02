@@ -9,6 +9,8 @@ import { materialsSeedData } from '../data/materialsSeed'
 import { balesSeedData } from '../data/balesSeed'
 import { operationsSeedData } from '../data/operationsSeed'
 import { tractorsSeedData } from '../data/tractorsSeed'
+import { suppliersSeedData } from '../data/suppliersSeed'
+import { materialPurchaseTrackingsSeedData } from '../data/materialPurchaseTrackingsSeed'
 import type { CollectionDocument } from '../schema/types'
 import type { TableQueryParams } from '../schema/tableQuery'
 
@@ -25,6 +27,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   }
   if (collection === 'contractors') {
     return contractorsSeedData.map((row) => ({ ...row }))
+  }
+  if (collection === 'suppliers') {
+    return suppliersSeedData.map((row) => ({ ...row }))
   }
   if (collection === 'tractors') {
     return tractorsSeedData.map((row) => ({ ...row }))
@@ -47,11 +52,15 @@ function seedMockData(collection: string): CollectionDocument[] {
   if (collection === 'fuelTanks') {
     return fuelTanksSeedData.map((row) => ({ ...row }))
   }
+  if (collection === 'materialPurchaseTrackings') {
+    return materialPurchaseTrackingsSeedData.map((row) => ({ ...row }))
+  }
 
   const labels: Record<string, string> = {
     employees: 'עובד',
     customers: 'לקוח',
     contractors: 'קבלן',
+    suppliers: 'ספק',
     operations: 'פעולה',
     materials: 'חומר',
     bales: 'חבילה',
@@ -59,6 +68,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     plots: 'חלקה',
     fuelTanks: 'מיכל',
     agriculturalSeasons: 'עונה',
+    materialPurchaseTrackings: 'רכש חומר',
   }
   const prefix = labels[collection] ?? 'פריט'
 

@@ -1,4 +1,4 @@
-import { dataCollections } from '../../config/navigation'
+import { dataCollections, trackingCollections } from '../../config/navigation'
 import { textColumn } from '../columnHelpers'
 import type { CollectionSchema } from '../types'
 
@@ -31,6 +31,7 @@ const dedicatedSchemaIds = new Set([
   'employees',
   'customers',
   'contractors',
+  'suppliers',
   'operations',
   'materials',
   'bales',
@@ -38,8 +39,9 @@ const dedicatedSchemaIds = new Set([
   'plots',
   'seasons',
   'fuel-tanks',
+  'material-purchase-trackings',
 ])
 
-export const stubSchemas: CollectionSchema[] = dataCollections
+export const stubSchemas: CollectionSchema[] = [...dataCollections, ...trackingCollections]
   .filter((item) => !dedicatedSchemaIds.has(item.id))
   .map((item) => createStubSchema(item.id, item.collection, item.label))

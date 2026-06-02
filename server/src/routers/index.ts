@@ -9,10 +9,13 @@ import { baleRouter } from './baleRouter';
 import { operationRouter } from './operationRouter';
 import { plotRouter } from './plotRouter';
 import { tractorRouter } from './tractorRouter';
+import { supplierRouter } from './supplierRouter';
+import { materialPurchaseTrackingRouter } from './materialPurchaseTrackingRouter';
 
 export const apiRouter = Router();
 
 apiRouter.use('/contractors', contractorRouter);
+apiRouter.use('/suppliers', supplierRouter);
 apiRouter.use('/customers', customerRouter);
 apiRouter.use('/employees', employeeRouter);
 apiRouter.use('/tractors', tractorRouter);
@@ -22,3 +25,6 @@ apiRouter.use('/bales', baleRouter);
 apiRouter.use('/plots', plotRouter);
 apiRouter.use('/agriculturalSeasons', agriculturalSeasonRouter);
 apiRouter.use('/fuelTanks', fuelTankRouter);
+apiRouter.use('/materialPurchaseTrackings', materialPurchaseTrackingRouter);
+apiRouter.use('/material-purchase-trackings', materialPurchaseTrackingRouter);
+apiRouter.use('/materialUsageTrackings', materialPurchaseTrackingRouter);

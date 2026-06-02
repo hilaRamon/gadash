@@ -8,6 +8,8 @@ import { materialsSeedData } from '../../client/src/data/materialsSeed';
 import { balesSeedData } from '../../client/src/data/balesSeed';
 import { operationsSeedData } from '../../client/src/data/operationsSeed';
 import { tractorsSeedData } from '../../client/src/data/tractorsSeed';
+import { suppliersSeedData } from '../../client/src/data/suppliersSeed';
+import { materialPurchaseTrackingsSeedData } from '../../client/src/data/materialPurchaseTrackingsSeed';
 import type { ApiDocument } from '../src/types/apiDocument';
 
 export function loadContractorsSeed(): ApiDocument[] {
@@ -24,6 +26,10 @@ export function loadEmployeesSeed(): ApiDocument[] {
 
 export function loadTractorsSeed(): ApiDocument[] {
   return tractorsSeedData;
+}
+
+export function loadSuppliersSeed(): ApiDocument[] {
+  return suppliersSeedData;
 }
 
 export function loadOperationsSeed(): ApiDocument[] {
@@ -48,4 +54,8 @@ export function loadFuelTanksSeed(): ApiDocument[] {
 
 export function loadPlotsSeedRows() {
   return plotsSeedRows;
+}
+
+export function loadMaterialPurchaseTrackingsSeed(): ApiDocument[] {
+  return materialPurchaseTrackingsSeedData;
 }
