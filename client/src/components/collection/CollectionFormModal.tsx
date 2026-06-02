@@ -25,6 +25,7 @@ function getInitialValues(
   row: CollectionDocument | null,
 ): Record<string, string> {
   const values: Record<string, string> = {}
+  const today = new Date().toISOString().slice(0, 10)
   for (const field of fields) {
     const raw = row?.[field.key]
     if (field.type === 'boolean') {
@@ -34,6 +35,12 @@ function getInitialValues(
     } else if (field.type === 'phone') {
       values[field.key] =
         raw == null || raw === '' ? '' : formatMobileDisplay(String(raw))
+    } else if (field.type === 'date') {
+      if (raw == null || raw === '') {
+        values[field.key] = row ? '' : today
+      } else {
+        values[field.key] = String(raw).slice(0, 10)
+      }
     } else {
       values[field.key] = raw == null ? '' : String(raw)
     }
@@ -195,7 +202,13 @@ export function CollectionFormModal({
               ) : (
                 <input
                   id={`field-${field.key}`}
-                  type={field.type === 'number' ? 'number' : 'text'}
+                  type={
+                    field.type === 'number'
+                      ? 'number'
+                      : field.type === 'date'
+                        ? 'date'
+                        : 'text'
+                  }
                   className="form-input"
                   value={values[field.key] ?? ''}
                   onChange={(e) =>
