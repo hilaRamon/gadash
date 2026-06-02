@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { getCollectionSchema } from '../schema/registry'
 import type { CollectionSchema } from '../schema/types'
 import { applyTableQuery } from '../lib/tableQuery'
+import { getDocumentLabel } from '../lib/documentLabel'
 import { exportCollectionToExcel } from '../lib/exportCollectionExcel'
 import { useTableQueryState } from '../hooks/useTableQueryState'
 import { useCollectionList } from '../hooks/collections/useCollectionList'
@@ -131,6 +132,43 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending
 
+  const deleteDialog = useMemo(() => {
+    if (!deleteTarget) return null
+
+    if (deleteTarget.type === 'single') {
+      const name = getDocumentLabel(schema, deleteTarget.row)
+      return {
+        title: 'מחיקת פריט',
+        message: (
+          <>
+            האם למחוק את <strong>{name}</strong> מתוך {schema.label}?
+            <br />
+            לא ניתן לשחזר.
+          </>
+        ),
+      }
+    }
+
+    const targetRows = deleteTarget.ids
+      .map((id) => rows.find((row) => row._id === id))
+      .filter((row): row is CollectionDocument => Boolean(row))
+
+    return {
+      title: 'מחיקת פריטים נבחרים',
+      message: (
+        <>
+          האם למחוק {deleteTarget.ids.length} פריטים מתוך {schema.label}?
+          <ul className="dialog-list">
+            {targetRows.map((row) => (
+              <li key={row._id}>{getDocumentLabel(schema, row)}</li>
+            ))}
+          </ul>
+          לא ניתן לשחזר.
+        </>
+      ),
+    }
+  }, [deleteTarget, rows, schema])
+
   return (
     <div className="page page-collection">
       <header className="collection-page-header">
@@ -186,16 +224,8 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={
-          deleteTarget?.type === 'bulk'
-            ? 'מחיקת פריטים נבחרים'
-            : 'מחיקת פריט'
-        }
-        message={
-          deleteTarget?.type === 'bulk'
-            ? `האם למחוק ${deleteTarget.ids.length} פריטים?`
-            : 'האם למחוק פריט זה? לא ניתן לשחזר.'
-        }
+        title={deleteDialog?.title ?? ''}
+        message={deleteDialog?.message ?? ''}
         confirmLabel="מחק"
         isPending={isDeletePending}
         onConfirm={handleDeleteConfirm}

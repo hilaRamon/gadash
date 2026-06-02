@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react'
 import './Collection.css'
 
 type ConfirmDialogProps = {
   open: boolean
   title: string
-  message: string
+  message: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   isPending?: boolean
@@ -35,7 +36,7 @@ export function ConfirmDialog({
         <h2 id="dialog-title" className="dialog-title">
           {title}
         </h2>
-        <p className="dialog-message">{message}</p>
+        <div className="dialog-message">{message}</div>
         <div className="dialog-actions">
           <button
             type="button"
