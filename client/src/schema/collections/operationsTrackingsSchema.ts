@@ -121,8 +121,8 @@ const baseForm = {
       required: true,
       referenceCollection: 'employees',
     },
-    { key: 'startTime', label: 'שעת התחלה', type: 'text', required: true },
-    { key: 'endTime', label: 'שעת סיום', type: 'text', required: true },
+    { key: 'startTime', label: 'שעת התחלה', type: 'time', required: true },
+    { key: 'endTime', label: 'שעת סיום', type: 'time', required: true },
     {
       key: 'tractor',
       label: 'טרקטור',
