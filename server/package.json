@@ -16,7 +16,9 @@
     "seed:bales": "tsx scripts/seed-bales.ts",
     "seed:plots": "tsx scripts/seed-plots.ts",
     "seed:agricultural-seasons": "tsx scripts/seed-agricultural-seasons.ts",
-    "seed:fuel-tanks": "tsx scripts/seed-fuel-tanks.ts"
+    "seed:fuel-tanks": "tsx scripts/seed-fuel-tanks.ts",
+    "migrate:unset-number-fields": "tsx scripts/unset-legacy-number-fields.ts",
+    "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

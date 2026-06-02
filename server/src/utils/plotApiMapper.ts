@@ -5,7 +5,6 @@ import { toApiDocument } from './toApiDocument';
 type PopulatedCustomer = {
   _id?: unknown;
   name?: string;
-  customerNumber?: number;
 };
 
 export function plotToApiDocument(doc: Record<string, unknown>): ApiDocument {

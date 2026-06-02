@@ -84,7 +84,6 @@ async function seedAll() {
   console.log(`Seeded ${tractors.length} tractors`);
 
   const operations = toSeedInput<Record<string, unknown>>(loadOperationsSeed()).map((row) => ({
-    operationNumber: row.operationNumber as number,
     name: row.name as string,
     pricingForm: row.pricingForm as OperationInput['pricingForm'],
     operationType: row.operationType as OperationInput['operationType'],

@@ -4,7 +4,6 @@ import type { PlotType } from '../models/Plot';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type PlotInput = {
-  plotNumber: number;
   name: string;
   customer: Types.ObjectId;
   dunam: number;
@@ -12,11 +11,11 @@ export type PlotInput = {
   active: boolean;
 };
 
-const customerPopulate = { path: 'customer', select: '_id name customerNumber' };
+const customerPopulate = { path: 'customer', select: '_id name' };
 
 export const plotRepository = {
   findAll() {
-    return PlotModel.find().populate(customerPopulate).sort({ plotNumber: 1 }).lean();
+    return PlotModel.find().populate(customerPopulate).sort({ name: 1 }).lean();
   },
 
   findById(id: string) {

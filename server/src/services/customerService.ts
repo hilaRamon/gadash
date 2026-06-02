@@ -3,14 +3,13 @@ import {
   type CustomerInput,
 } from '../repositories/customerRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 function pickCustomerFields(body: Record<string, unknown>): CustomerInput {
-  const customerNumber = Number(body.customerNumber);
   return {
-    customerNumber: Number.isFinite(customerNumber) ? customerNumber : 0,
     name: String(body.name ?? ''),
-    mobile: String(body.mobile ?? ''),
+    mobile: pickMobileFromBody(body),
     email: String(body.email ?? ''),
     notes: String(body.notes ?? ''),
   };
@@ -27,9 +26,6 @@ export const customerService = {
     if (!fields.name.trim()) {
       throw new Error('שם הוא שדה חובה');
     }
-    if (!fields.customerNumber) {
-      throw new Error('מספר לקוח הוא שדה חובה');
-    }
 
     const created = await customerRepository.create(fields);
     return toApiDocument(created.toObject() as Record<string, unknown>);
@@ -39,9 +35,6 @@ export const customerService = {
     const fields = pickCustomerFields(body);
     if (!fields.name.trim()) {
       throw new Error('שם הוא שדה חובה');
-    }
-    if (!fields.customerNumber) {
-      throw new Error('מספר לקוח הוא שדה חובה');
     }
 
     const updated = await customerRepository.update(id, fields);

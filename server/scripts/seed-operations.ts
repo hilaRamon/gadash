@@ -15,7 +15,6 @@ function toOperationInput(rows: ReturnType<typeof loadOperationsSeed>): Operatio
     );
 
     return {
-      operationNumber: row.operationNumber as number,
       name: row.name as string,
       pricingForm: row.pricingForm as OperationInput['pricingForm'],
       operationType: row.operationType as OperationInput['operationType'],

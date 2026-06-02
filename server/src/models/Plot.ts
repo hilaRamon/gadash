@@ -5,7 +5,6 @@ export type PlotType = (typeof PLOT_TYPES)[number];
 
 const plotSchema = new Schema(
   {
-    plotNumber: { type: Number, required: true, unique: true, index: true },
     name: { type: String, required: true },
     customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
     dunam: { type: Number, required: true },

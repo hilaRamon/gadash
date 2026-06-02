@@ -1,0 +1,1 @@
+export { CollectionToolbar } from './CollectionToolbar'
