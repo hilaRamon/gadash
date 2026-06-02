@@ -105,11 +105,47 @@ function enrichMaterialUsageRow(row: CollectionDocument): CollectionDocument {
   return { ...row, finalPrice }
 }
 
+function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
+  if (row.billable === false) return 0
+
+  const operation = operationsSeedData.find(
+    (item) => String(item._id) === String(row.operation ?? ''),
+  )
+  const plot = plotsSeedData.find((item) => String(item._id) === String(row.plot ?? ''))
+  const unitCost = Number(operation?.currentCost ?? 0)
+  const dunam = Number(plot?.dunam ?? 0)
+  if (!Number.isFinite(unitCost) || !Number.isFinite(dunam) || unitCost < 0 || dunam < 0) {
+    return 0
+  }
+  return Number((dunam * unitCost).toFixed(2))
+}
+
+function enrichOperationTrackingRow(row: CollectionDocument): CollectionDocument {
+  const operation = operationsSeedData.find((item) => String(item._id) === String(row.operation ?? ''))
+  const plot = plotsSeedData.find((item) => String(item._id) === String(row.plot ?? ''))
+  const employee = employeesSeedData.find((item) => String(item._id) === String(row.employee ?? ''))
+  const tractor = tractorsSeedData.find((item) => String(item._id) === String(row.tractor ?? ''))
+  return {
+    ...row,
+    operationName: String(operation?.name ?? ''),
+    operationType: String(operation?.operationType ?? ''),
+    customer: plot?.customer ?? '',
+    customerName: String(plot?.customerName ?? ''),
+    plotName: String(plot?.name ?? ''),
+    employeeName: String(employee?.name ?? ''),
+    tractorName: String(tractor?.name ?? ''),
+    finalPrice: calcOperationTrackingFinalPrice(row),
+  }
+}
+
 async function listMock(collection: string): Promise<CollectionDocument[]> {
   await delay(200)
   const rows = [...getMockStore(collection)]
   if (collection === 'materialUsageTrackings') {
     return rows.map(enrichMaterialUsageRow)
+  }
+  if (collection === 'operationsTrackings') {
+    return rows.map(enrichOperationTrackingRow)
   }
   return rows
 }
@@ -133,6 +169,12 @@ async function createMock(
   if (collection === 'materialUsageTrackings') {
     return enrichMaterialUsageRow(doc)
   }
+  if (collection === 'operationsTrackings') {
+    const plot = plotsSeedData.find((p) => String(p._id) === String(doc.plot ?? ''))
+    doc.customer = plot?.customer ?? ''
+    doc.customerName = String(plot?.customerName ?? '')
+    return enrichOperationTrackingRow(doc)
+  }
   return doc
 }
 
@@ -151,6 +193,12 @@ async function updateMock(
     store[index].customer = plot?.customer ?? ''
     store[index].customerName = String(plot?.customerName ?? '')
     return enrichMaterialUsageRow(store[index])
+  }
+  if (collection === 'operationsTrackings') {
+    const plot = plotsSeedData.find((p) => String(p._id) === String(store[index].plot ?? ''))
+    store[index].customer = plot?.customer ?? ''
+    store[index].customerName = String(plot?.customerName ?? '')
+    return enrichOperationTrackingRow(store[index])
   }
   return store[index]
 }

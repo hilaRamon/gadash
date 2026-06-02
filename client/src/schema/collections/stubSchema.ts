@@ -41,6 +41,9 @@ const dedicatedSchemaIds = new Set([
   'fuel-tanks',
   'material-purchase-trackings',
   'material-usage-trackings',
+  'operations-trackings-all',
+  'operations-trackings-field-work',
+  'operations-trackings-admin',
 ])
 
 export const stubSchemas: CollectionSchema[] = [...dataCollections, ...trackingCollections]

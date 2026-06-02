@@ -1,20 +1,35 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
-import { dataCollections, sidebarSections, trackingCollections } from '../config/navigation'
+import {
+  dataCollections,
+  materialTrackingCollections,
+  operationsTrackingCollections,
+  sidebarSections,
+} from '../config/navigation'
 
 export function Sidebar() {
   const location = useLocation()
-  const hasActiveTracking = trackingCollections.some((item) =>
+  const hasActiveMaterialTracking = materialTrackingCollections.some((item) =>
     location.pathname.startsWith(item.path),
   )
-  const [isMaterialsOpen, setIsMaterialsOpen] = useState(hasActiveTracking)
+  const hasActiveOperationsTracking = operationsTrackingCollections.some((item) =>
+    location.pathname.startsWith(item.path),
+  )
+  const [isMaterialsOpen, setIsMaterialsOpen] = useState(hasActiveMaterialTracking)
+  const [isOperationsOpen, setIsOperationsOpen] = useState(hasActiveOperationsTracking)
 
   useEffect(() => {
-    if (hasActiveTracking) {
+    if (hasActiveMaterialTracking) {
       setIsMaterialsOpen(true)
     }
-  }, [hasActiveTracking])
+  }, [hasActiveMaterialTracking])
+
+  useEffect(() => {
+    if (hasActiveOperationsTracking) {
+      setIsOperationsOpen(true)
+    }
+  }, [hasActiveOperationsTracking])
 
   return (
     <SidebarContainer aria-label="ניווט ראשי">
@@ -49,7 +64,28 @@ export function Sidebar() {
           >
             <SidebarGroupSummary>חומרים</SidebarGroupSummary>
             <SidebarListNested>
-              {trackingCollections.map((item) => (
+              {materialTrackingCollections.map((item) => (
+                <li key={item.id}>
+                  <SidebarNestedLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
+                    }
+                  >
+                    {item.label}
+                  </SidebarNestedLink>
+                </li>
+              ))}
+            </SidebarListNested>
+          </SidebarGroup>
+
+          <SidebarGroup
+            open={isOperationsOpen}
+            onToggle={(event) => setIsOperationsOpen(event.currentTarget.open)}
+          >
+            <SidebarGroupSummary>משימות</SidebarGroupSummary>
+            <SidebarListNested>
+              {operationsTrackingCollections.map((item) => (
                 <li key={item.id}>
                   <SidebarNestedLink
                     to={item.path}

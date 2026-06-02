@@ -29,6 +29,21 @@ type DeleteTarget =
   | { type: 'bulk'; ids: string[] }
   | null
 
+function matchesOperationTrackingPageFilter(
+  collectionId: string,
+  row: CollectionDocument,
+): boolean {
+  if (!collectionId.startsWith('operations-trackings-')) return true
+  const operationType = String(row.operationType ?? '')
+  if (collectionId === 'operations-trackings-field-work') {
+    return operationType === 'עיבוד'
+  }
+  if (collectionId === 'operations-trackings-admin') {
+    return operationType === 'מנהלה'
+  }
+  return true
+}
+
 export function CollectionPage({ collectionId }: CollectionPageProps) {
   const schema = getCollectionSchema(collectionId)
 
@@ -40,10 +55,22 @@ export function CollectionPage({ collectionId }: CollectionPageProps) {
     )
   }
 
-  return <CollectionPageContent key={schema.collection} schema={schema} />
+  return (
+    <CollectionPageContent
+      key={schema.id}
+      schema={schema}
+      collectionId={collectionId}
+    />
+  )
 }
 
-function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
+function CollectionPageContent({
+  schema,
+  collectionId,
+}: {
+  schema: CollectionSchema
+  collectionId: string
+}) {
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -61,8 +88,13 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
   const bulkDeleteMutation = useBulkDeleteDocuments(schema.collection)
 
   const visibleRows = useMemo(
-    () => applyTableQuery(rows, schema, tableQuery.state),
-    [rows, schema, tableQuery.state],
+    () =>
+      applyTableQuery(
+        rows.filter((row) => matchesOperationTrackingPageFilter(collectionId, row)),
+        schema,
+        tableQuery.state,
+      ),
+    [rows, schema, tableQuery.state, collectionId],
   )
 
   const openCreate = useCallback(() => {

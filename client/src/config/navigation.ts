@@ -76,7 +76,7 @@ export const dataCollections: DataCollection[] = [
   },
 ];
 
-export const trackingCollections: TrackingCollection[] = [
+export const materialTrackingCollections: TrackingCollection[] = [
   {
     id: "material-usage-trackings",
     label: "שימוש בחומרים",
@@ -89,6 +89,32 @@ export const trackingCollections: TrackingCollection[] = [
     path: "/trackings/material-purchase",
     collection: "materialPurchaseTrackings",
   },
+];
+
+export const operationsTrackingCollections: TrackingCollection[] = [
+  {
+    id: "operations-trackings-all",
+    label: "הכל",
+    path: "/trackings/operations/all",
+    collection: "operationsTrackings",
+  },
+  {
+    id: "operations-trackings-field-work",
+    label: "עיבודים",
+    path: "/trackings/operations/field-work",
+    collection: "operationsTrackings",
+  },
+  {
+    id: "operations-trackings-admin",
+    label: "מנהלות",
+    path: "/trackings/operations/admin",
+    collection: "operationsTrackings",
+  },
+];
+
+export const trackingCollections: TrackingCollection[] = [
+  ...materialTrackingCollections,
+  ...operationsTrackingCollections,
 ];
 
 export const sidebarSections = [

@@ -12,6 +12,7 @@ import { tractorRouter } from './tractorRouter';
 import { supplierRouter } from './supplierRouter';
 import { materialPurchaseTrackingRouter } from './materialPurchaseTrackingRouter';
 import { materialUsageTrackingRouter } from './materialUsageTrackingRouter';
+import { operationTrackingRouter } from './operationTrackingRouter';
 
 export const apiRouter = Router();
 
@@ -30,3 +31,5 @@ apiRouter.use('/materialPurchaseTrackings', materialPurchaseTrackingRouter);
 apiRouter.use('/material-purchase-trackings', materialPurchaseTrackingRouter);
 apiRouter.use('/materialUsageTrackings', materialUsageTrackingRouter);
 apiRouter.use('/material-usage-trackings', materialUsageTrackingRouter);
+apiRouter.use('/operationsTrackings', operationTrackingRouter);
+apiRouter.use('/operations-trackings', operationTrackingRouter);
