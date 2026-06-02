@@ -39,7 +39,7 @@ export function CollectionPage({ collectionId }: CollectionPageProps) {
     )
   }
 
-  return <CollectionPageContent schema={schema} />
+  return <CollectionPageContent key={schema.collection} schema={schema} />
 }
 
 function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
