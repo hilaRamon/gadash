@@ -232,7 +232,7 @@
 
 .data-table th,
 .data-table td {
-  padding: 0.65rem 0.75rem;
+  padding: 0.55rem 0.6rem;
   border-bottom: 1px solid var(--border-color);
   text-align: start;
   vertical-align: middle;
