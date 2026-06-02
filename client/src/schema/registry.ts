@@ -11,6 +11,7 @@ import { operationsSchema } from './collections/operationsSchema'
 import { tractorsSchema } from './collections/tractorsSchema'
 import { suppliersSchema } from './collections/suppliersSchema'
 import { materialPurchaseTrackingsSchema } from './collections/materialPurchaseTrackingsSchema'
+import { materialUsageTrackingsSchema } from './collections/materialUsageTrackingsSchema'
 import { stubSchemas } from './collections/stubSchema'
 
 const allSchemas: CollectionSchema[] = [
@@ -26,6 +27,7 @@ const allSchemas: CollectionSchema[] = [
   agriculturalSeasonsSchema,
   fuelTanksSchema,
   materialPurchaseTrackingsSchema,
+  materialUsageTrackingsSchema,
   ...stubSchemas,
 ]
 

@@ -1,8 +1,4 @@
 import {
-  BILLING_UNITS,
-  type BillingUnit,
-} from '../models/Material';
-import {
   materialRepository,
   type MaterialInput,
   type MaterialMetadataPatch,
@@ -23,14 +19,6 @@ function parseName(value: unknown): string {
     throw new Error('שם הוא שדה חובה');
   }
   return name;
-}
-
-function parseBillingUnit(value: unknown): BillingUnit {
-  const str = String(value ?? '').trim();
-  if ((BILLING_UNITS as readonly string[]).includes(str)) {
-    return str as BillingUnit;
-  }
-  throw new Error('שיטת חיוב לא תקינה');
 }
 
 function parseBuyingCost(value: unknown): number {
@@ -100,9 +88,6 @@ function buildMetadataPatch(
   if (mustHave('name')) {
     patch.name = parseName(body.name);
   }
-  if (mustHave('billingUnit')) {
-    patch.billingUnit = parseBillingUnit(body.billingUnit);
-  }
   if (mustHave('currentQuantity')) {
     patch.currentQuantity = parseCurrentQuantity(body.currentQuantity);
   }
@@ -110,7 +95,6 @@ function buildMetadataPatch(
   if (requireAll) {
     if (
       patch.name == null ||
-      patch.billingUnit == null ||
       patch.currentQuantity == null
     ) {
       throw new Error('שדות חובה חסרים');

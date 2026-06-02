@@ -1,8 +1,5 @@
 import { Schema, model, type InferSchemaType } from 'mongoose';
 
-export const BILLING_UNITS = ['קג/ליטר'] as const;
-export type BillingUnit = (typeof BILLING_UNITS)[number];
-
 const pricingHistoryEntrySchema = new Schema(
   {
     cost: { type: Number, required: true },
@@ -15,7 +12,6 @@ const pricingHistoryEntrySchema = new Schema(
 const materialSchema = new Schema(
   {
     name: { type: String, required: true },
-    billingUnit: { type: String, required: true, enum: BILLING_UNITS },
     currentQuantity: { type: Number, required: true, default: 0 },
     currentBuyingCost: { type: Number, required: true },
     currentSalePercent: { type: Number, required: true, default: 15 },

@@ -29,7 +29,11 @@ function getInitialValues(
   for (const field of fields) {
     const raw = row?.[field.key]
     if (field.type === 'boolean') {
-      values[field.key] = raw === true || raw === 'true' ? 'true' : 'false'
+      if (raw == null || raw === '') {
+        values[field.key] = row ? 'false' : 'true'
+      } else {
+        values[field.key] = raw === true || raw === 'true' ? 'true' : 'false'
+      }
     } else if (field.type === 'enum') {
       values[field.key] = raw == null || raw === '' ? '' : String(raw)
     } else if (field.type === 'phone') {

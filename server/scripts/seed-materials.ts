@@ -8,7 +8,6 @@ import { toSeedInput } from './seed-utils';
 function toMaterialInput(rows: ReturnType<typeof loadMaterialsSeed>): MaterialInput[] {
   return toSeedInput<Record<string, unknown>>(rows).map((row) => ({
     name: row.name as string,
-    billingUnit: row.billingUnit as MaterialInput['billingUnit'],
     currentQuantity: row.currentQuantity as number,
     currentBuyingCost: row.currentBuyingCost as number,
     currentSalePercent: row.currentSalePercent as number,

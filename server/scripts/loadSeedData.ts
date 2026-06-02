@@ -10,6 +10,7 @@ import { operationsSeedData } from '../../client/src/data/operationsSeed';
 import { tractorsSeedData } from '../../client/src/data/tractorsSeed';
 import { suppliersSeedData } from '../../client/src/data/suppliersSeed';
 import { materialPurchaseTrackingsSeedData } from '../../client/src/data/materialPurchaseTrackingsSeed';
+import { materialUsageTrackingsSeedData } from '../../client/src/data/materialUsageTrackingsSeed';
 import type { ApiDocument } from '../src/types/apiDocument';
 
 export function loadContractorsSeed(): ApiDocument[] {
@@ -58,4 +59,8 @@ export function loadPlotsSeedRows() {
 
 export function loadMaterialPurchaseTrackingsSeed(): ApiDocument[] {
   return materialPurchaseTrackingsSeedData;
+}
+
+export function loadMaterialUsageTrackingsSeed(): ApiDocument[] {
+  return materialUsageTrackingsSeedData;
 }

@@ -3,7 +3,6 @@ import type { CollectionDocument } from '../schema/types'
 
 const SEED_EFFECTIVE_FROM = '2025-01-01T00:00:00.000Z'
 const DEFAULT_SALE_PERCENT = 15
-const BILLING_UNIT = 'קג/ליטר'
 
 type MaterialSeedRow = {
   name: string
@@ -67,7 +66,6 @@ function calcCustomerCost(cost: number, percent: number): number {
 export const materialsSeedData: CollectionDocument[] = materials.map((row, index) => ({
   _id: mockObjectId(`material-${index + 1}`),
   name: row.name,
-  billingUnit: BILLING_UNIT,
   currentQuantity: 0,
   currentBuyingCost: row.currentBuyingCost,
   currentSalePercent: DEFAULT_SALE_PERCENT,

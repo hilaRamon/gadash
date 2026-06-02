@@ -11,6 +11,7 @@ import { plotRouter } from './plotRouter';
 import { tractorRouter } from './tractorRouter';
 import { supplierRouter } from './supplierRouter';
 import { materialPurchaseTrackingRouter } from './materialPurchaseTrackingRouter';
+import { materialUsageTrackingRouter } from './materialUsageTrackingRouter';
 
 export const apiRouter = Router();
 
@@ -27,4 +28,5 @@ apiRouter.use('/agriculturalSeasons', agriculturalSeasonRouter);
 apiRouter.use('/fuelTanks', fuelTankRouter);
 apiRouter.use('/materialPurchaseTrackings', materialPurchaseTrackingRouter);
 apiRouter.use('/material-purchase-trackings', materialPurchaseTrackingRouter);
-apiRouter.use('/materialUsageTrackings', materialPurchaseTrackingRouter);
+apiRouter.use('/materialUsageTrackings', materialUsageTrackingRouter);
+apiRouter.use('/material-usage-trackings', materialUsageTrackingRouter);

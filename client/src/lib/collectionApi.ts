@@ -11,6 +11,7 @@ import { operationsSeedData } from '../data/operationsSeed'
 import { tractorsSeedData } from '../data/tractorsSeed'
 import { suppliersSeedData } from '../data/suppliersSeed'
 import { materialPurchaseTrackingsSeedData } from '../data/materialPurchaseTrackingsSeed'
+import { materialUsageTrackingsSeedData } from '../data/materialUsageTrackingsSeed'
 import type { CollectionDocument } from '../schema/types'
 import type { TableQueryParams } from '../schema/tableQuery'
 
@@ -55,6 +56,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   if (collection === 'materialPurchaseTrackings') {
     return materialPurchaseTrackingsSeedData.map((row) => ({ ...row }))
   }
+  if (collection === 'materialUsageTrackings') {
+    return materialUsageTrackingsSeedData.map((row) => ({ ...row }))
+  }
 
   const labels: Record<string, string> = {
     employees: 'עובד',
@@ -69,6 +73,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     fuelTanks: 'מיכל',
     agriculturalSeasons: 'עונה',
     materialPurchaseTrackings: 'רכש חומר',
+    materialUsageTrackings: 'שימוש חומר',
   }
   const prefix = labels[collection] ?? 'פריט'
 
@@ -86,9 +91,27 @@ function getMockStore(collection: string): CollectionDocument[] {
   return mockStores.get(collection)!
 }
 
+function calcMaterialUsageFinalPrice(row: Record<string, unknown>): number {
+  const materialId = String(row.material ?? '')
+  const material = materialsSeedData.find((m) => String(m._id) === materialId)
+  const unitPrice = Number(material?.customerCost ?? 0)
+  const amount = Number(row.amount ?? 0)
+  if (!Number.isFinite(unitPrice) || !Number.isFinite(amount)) return 0
+  return Number((unitPrice * amount).toFixed(2))
+}
+
+function enrichMaterialUsageRow(row: CollectionDocument): CollectionDocument {
+  const finalPrice = calcMaterialUsageFinalPrice(row)
+  return { ...row, finalPrice }
+}
+
 async function listMock(collection: string): Promise<CollectionDocument[]> {
   await delay(200)
-  return [...getMockStore(collection)]
+  const rows = [...getMockStore(collection)]
+  if (collection === 'materialUsageTrackings') {
+    return rows.map(enrichMaterialUsageRow)
+  }
+  return rows
 }
 
 async function createMock(
@@ -101,7 +124,15 @@ async function createMock(
     _id: crypto.randomUUID().replace(/-/g, '').slice(0, 24),
     ...body,
   } as CollectionDocument
+  if (collection === 'materialUsageTrackings') {
+    const plot = plotsSeedData.find((p) => String(p._id) === String(doc.plot ?? ''))
+    doc.customer = plot?.customer ?? ''
+    doc.customerName = String(plot?.customerName ?? '')
+  }
   store.push(doc)
+  if (collection === 'materialUsageTrackings') {
+    return enrichMaterialUsageRow(doc)
+  }
   return doc
 }
 
@@ -115,6 +146,12 @@ async function updateMock(
   const index = store.findIndex((d) => d._id === id)
   if (index === -1) throw new Error('לא נמצא')
   store[index] = { ...store[index], ...body, _id: id }
+  if (collection === 'materialUsageTrackings') {
+    const plot = plotsSeedData.find((p) => String(p._id) === String(store[index].plot ?? ''))
+    store[index].customer = plot?.customer ?? ''
+    store[index].customerName = String(plot?.customerName ?? '')
+    return enrichMaterialUsageRow(store[index])
+  }
   return store[index]
 }
 
