@@ -9,11 +9,26 @@ function pickName(body: Record<string, unknown>): string {
   return String(body.name ?? '').trim();
 }
 
-function toInput(name: string): FuelTankInput {
+function pickCurrentAmount(body: Record<string, unknown>): unknown {
+  return body.currentAmount;
+}
+
+function parseCurrentAmount(value: unknown): number {
+  const num = Number(value ?? 0);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('כמות נוכחית לא תקינה');
+  }
+  return num;
+}
+
+function toInput(name: string, currentAmountValue: unknown): FuelTankInput {
   if (!name) {
     throw new Error('שם הוא שדה חובה');
   }
-  return { name };
+  return {
+    name,
+    currentAmount: parseCurrentAmount(currentAmountValue),
+  };
 }
 
 export const fuelTankService = {
@@ -23,13 +38,13 @@ export const fuelTankService = {
   },
 
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
-    const fields = toInput(pickName(body));
+    const fields = toInput(pickName(body), pickCurrentAmount(body));
     const created = await fuelTankRepository.create(fields);
     return toApiDocument(created.toObject() as Record<string, unknown>);
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const fields = toInput(pickName(body));
+    const fields = toInput(pickName(body), pickCurrentAmount(body));
     const updated = await fuelTankRepository.update(id, fields);
     if (!updated) {
       throw new Error('לא נמצא');

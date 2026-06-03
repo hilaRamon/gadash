@@ -52,6 +52,7 @@ export function FormFieldControl({
         collection={field.referenceCollection}
         value={value}
         required={field.required}
+        filterOption={field.referenceFilter}
         onChange={(nextValue) => setFieldValue(field.key, nextValue)}
       />
     )

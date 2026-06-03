@@ -10,6 +10,7 @@ const pricingFormOptions = [
 const operationTypeOptions = [
   { value: 'עיבוד', label: 'עיבוד' },
   { value: 'מנהלה', label: 'מנהלה' },
+  { value: 'דלק', label: 'דלק' },
 ]
 
 export const operationsSchema: CollectionSchema = {
@@ -30,6 +31,7 @@ export const operationsSchema: CollectionSchema = {
       label: 'צורת תמחור',
       type: 'enum',
       enumOptions: pricingFormOptions,
+      nullable: true,
       filterable: true,
     },
     {
@@ -50,7 +52,6 @@ export const operationsSchema: CollectionSchema = {
         key: 'pricingForm',
         label: 'צורת תמחור',
         type: 'enum',
-        required: true,
         enumOptions: pricingFormOptions,
       },
       {
@@ -60,7 +61,7 @@ export const operationsSchema: CollectionSchema = {
         required: true,
         enumOptions: operationTypeOptions,
       },
-      { key: 'currentCost', label: 'מחיר', type: 'number', required: true },
+      { key: 'currentCost', label: 'מחיר', type: 'number' },
     ],
   },
 }

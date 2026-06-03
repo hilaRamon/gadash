@@ -38,6 +38,7 @@ export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
   required?: boolean
   enumOptions?: { value: string; label: string }[]
   referenceCollection?: string
+  referenceFilter?: (row: CollectionDocument) => boolean
 }
 
 export type FormSchema<T extends DocumentBase = CollectionDocument> = {

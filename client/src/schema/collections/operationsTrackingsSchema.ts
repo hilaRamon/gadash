@@ -106,6 +106,7 @@ const baseForm: FormSchema = {
       type: "reference",
       required: true,
       referenceCollection: "operations",
+      referenceFilter: (row) => String(row.operationType ?? "") !== "דלק",
     },
     {
       key: "plot",
@@ -134,6 +135,7 @@ const baseForm: FormSchema = {
     { key: "notes", label: "הערות", type: "textarea" },
   ],
 };
+
 
 export const operationsTrackingsAllSchema: CollectionSchema = {
   id: "operations-trackings-all",
@@ -182,3 +184,4 @@ export const operationsTrackingsAdminSchema: CollectionSchema = {
     editTitle: "עריכת משימת מנהלה",
   },
 };
+

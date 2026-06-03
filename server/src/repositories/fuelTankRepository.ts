@@ -3,6 +3,7 @@ import { toObjectIds } from '../utils/mongoIds';
 
 export type FuelTankInput = {
   name: string;
+  currentAmount: number;
 };
 
 export const fuelTankRepository = {

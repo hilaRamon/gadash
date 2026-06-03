@@ -2,8 +2,9 @@ import { Schema, model, type InferSchemaType } from 'mongoose';
 
 export const PRICING_FORMS = ['דונם', 'שעתי', 'כמות יחידות'] as const;
 export type PricingForm = (typeof PRICING_FORMS)[number];
+export type NullablePricingForm = PricingForm | null;
 
-export const OPERATION_TYPES = ['עיבוד', 'מנהלה'] as const;
+export const OPERATION_TYPES = ['עיבוד', 'מנהלה', 'דלק'] as const;
 export type OperationType = (typeof OPERATION_TYPES)[number];
 
 const costHistoryEntrySchema = new Schema(
@@ -17,7 +18,7 @@ const costHistoryEntrySchema = new Schema(
 const operationSchema = new Schema(
   {
     name: { type: String, required: true },
-    pricingForm: { type: String, required: true, enum: PRICING_FORMS },
+    pricingForm: { type: String, default: null, enum: [...PRICING_FORMS, null] },
     operationType: { type: String, required: true, enum: OPERATION_TYPES },
     currentCost: { type: Number, required: true },
     costHistory: { type: [costHistoryEntrySchema], required: true, default: [] },

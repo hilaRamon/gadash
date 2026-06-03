@@ -5,6 +5,7 @@ type ReferenceFieldSelectProps = {
   collection: string
   value: string
   required?: boolean
+  filterOption?: (row: CollectionDocument) => boolean
   onChange: (value: string) => void
 }
 
@@ -17,9 +18,11 @@ export function ReferenceFieldSelect({
   collection,
   value,
   required,
+  filterOption,
   onChange,
 }: ReferenceFieldSelectProps) {
   const { data: options = [], isLoading } = useCollectionList(collection)
+  const visibleOptions = filterOption ? options.filter(filterOption) : options
 
   return (
     <select
@@ -29,7 +32,7 @@ export function ReferenceFieldSelect({
       required={required}
     >
       <option value="">{isLoading ? 'טוען...' : 'בחר...'}</option>
-      {options.map((row) => (
+      {visibleOptions.map((row) => (
         <option key={row._id} value={row._id}>
           {getOptionLabel(row)}
         </option>

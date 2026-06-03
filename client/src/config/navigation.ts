@@ -112,9 +112,19 @@ export const operationsTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const fuelTrackingCollections: TrackingCollection[] = [
+  {
+    id: "fuel-operations-trackings",
+    label: "פעולות דלק",
+    path: "/trackings/fuel-operations",
+    collection: "fuelOperationsTrackings",
+  },
+];
+
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
+  ...fuelTrackingCollections,
 ];
 
 export const sidebarSections = [

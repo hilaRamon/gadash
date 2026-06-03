@@ -6,4 +6,5 @@ const names = ['מכורה', 'מלאכי השלום', 'גבעה', 'יוליוס'
 export const fuelTanksSeedData: CollectionDocument[] = names.map((name, index) => ({
   _id: mockObjectId(`fuel-tank-${index + 1}`),
   name,
+  currentAmount: 0,
 }))

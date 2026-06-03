@@ -1,8 +1,8 @@
 import {
   OPERATION_TYPES,
   PRICING_FORMS,
+  type NullablePricingForm,
   type OperationType,
-  type PricingForm,
 } from '../models/Operation';
 import {
   operationRepository,
@@ -15,10 +15,13 @@ import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 const DEFAULT_EFFECTIVE_FROM = new Date('2025-01-01T00:00:00.000Z');
 
-function parsePricingForm(value: unknown): PricingForm {
+function parsePricingForm(value: unknown): NullablePricingForm {
+  if (value == null || String(value).trim() === '') {
+    return null;
+  }
   const str = String(value ?? '').trim();
   if ((PRICING_FORMS as readonly string[]).includes(str)) {
-    return str as PricingForm;
+    return str as NullablePricingForm;
   }
   throw new Error('צורת תמחור לא תקינה');
 }
@@ -79,7 +82,6 @@ function buildOperationPatch(
   if (requireAll) {
     const required: (keyof OperationMetadataPatch)[] = [
       'name',
-      'pricingForm',
       'operationType',
     ];
     for (const key of required) {

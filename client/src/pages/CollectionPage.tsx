@@ -41,6 +41,9 @@ function matchesOperationTrackingPageFilter(
   if (collectionId === 'operations-trackings-admin') {
     return operationType === 'מנהלה'
   }
+  if (collectionId === 'operations-trackings-all') {
+    return operationType !== 'דלק'
+  }
   return true
 }
 

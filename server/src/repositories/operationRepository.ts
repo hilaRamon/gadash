@@ -1,5 +1,5 @@
 import { OperationModel } from '../models/Operation';
-import type { OperationType, PricingForm } from '../models/Operation';
+import type { NullablePricingForm, OperationType } from '../models/Operation';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type CostHistoryEntryInput = {
@@ -9,7 +9,7 @@ export type CostHistoryEntryInput = {
 
 export type OperationInput = {
   name: string;
-  pricingForm: PricingForm;
+  pricingForm: NullablePricingForm;
   operationType: OperationType;
   currentCost: number;
   costHistory: CostHistoryEntryInput[];
