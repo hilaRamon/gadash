@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import type {
   CollectionDocument,
   CollectionSchema,
@@ -8,8 +8,6 @@ import { useCollectionList } from "../../../hooks/collections/useCollectionList"
 import { buildPayload, getInitialValues, getRequiredFieldErrors } from "./helpers";
 import { applyBaleOrderFieldChange } from "./baleOrderForm";
 import { FormFieldControl } from "./FormFieldControl";
-import { buttonBaseStyles, fieldControlStyles } from "./sharedStyles";
-
 type CollectionFormModalProps = {
   open: boolean;
   schema: CollectionSchema;
@@ -19,6 +17,31 @@ type CollectionFormModalProps = {
   onClose: () => void;
   onSubmit: (values: Record<string, unknown>) => void;
 };
+
+const buttonBase = css`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--hover-bg);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
 
 const Overlay = styled.div`
   position: fixed;
@@ -49,18 +72,6 @@ const ModalTitle = styled.h2`
   font-weight: 700;
 `;
 
-const Form = styled.form`
-  .form-input {
-    ${fieldControlStyles}
-  }
-
-  .form-error {
-    margin: 0 0 1rem;
-    color: #fc8181;
-    font-size: 0.875rem;
-  }
-`;
-
 const FormField = styled.div`
   margin-bottom: 1rem;
 `;
@@ -73,16 +84,12 @@ const Label = styled.label`
 `;
 
 const SecondaryButton = styled.button`
-  ${buttonBaseStyles}
+  ${buttonBase};
   background: transparent;
-
-  &:hover:not(:disabled) {
-    background: var(--hover-bg);
-  }
 `;
 
 const PrimaryButton = styled.button`
-  ${buttonBaseStyles}
+  ${buttonBase};
   background: var(--accent);
   border-color: transparent;
   color: #0d1114;
@@ -208,7 +215,7 @@ export function CollectionFormModal({
         onClick={(e) => e.stopPropagation()}
       >
         <ModalTitle id="modal-title">{title}</ModalTitle>
-        <Form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate>
           {schema.form.fields.map((field) => (
             <FormField key={field.key}>
               <Label htmlFor={`field-${field.key}`}>
@@ -245,7 +252,7 @@ export function CollectionFormModal({
               {isPending ? "שומר..." : "שמור"}
             </PrimaryButton>
           </Actions>
-        </Form>
+        </form>
       </Modal>
     </Overlay>
   );

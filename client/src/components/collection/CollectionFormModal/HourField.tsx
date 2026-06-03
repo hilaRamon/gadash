@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { fieldControlStyles } from './CollectionFormModal/sharedStyles'
+import { fieldControlStyles } from './sharedStyles'
 
 type HourFieldProps = {
   id: string

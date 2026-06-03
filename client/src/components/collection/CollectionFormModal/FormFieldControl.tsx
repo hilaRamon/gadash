@@ -1,6 +1,6 @@
 import { PhoneField } from '../PhoneField'
 import { ReferenceFieldSelect } from '../ReferenceFieldSelect'
-import { HourField } from '../HourField'
+import { HourField } from './HourField'
 import type { FormFieldDef } from '../../../schema/types'
 import styled from 'styled-components'
 import { fieldControlStyles } from './sharedStyles'

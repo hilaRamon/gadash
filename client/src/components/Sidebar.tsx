@@ -1,6 +1,23 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, type NavLinkProps, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
+
+/** Merges styled-components className with NavLink active state. */
+function NavLinkWithActiveClass({
+  activeClassName,
+  className,
+  ...props
+}: NavLinkProps & { activeClassName: string; className?: string }) {
+  return (
+    <NavLink
+      {...props}
+      end
+      className={({ isActive }) =>
+        [className, isActive && activeClassName].filter(Boolean).join(' ')
+      }
+    />
+  )
+}
 import {
   baleTrackingCollections,
   dataCollections,
@@ -45,12 +62,7 @@ export function Sidebar() {
           <SidebarList>
             {dataCollections.map((item) => (
               <li key={item.id}>
-                <SidebarLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
-                  }
-                >
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}
                 </SidebarLink>
               </li>
@@ -70,9 +82,7 @@ export function Sidebar() {
                 <li key={item.id}>
                   <SidebarNestedLink
                     to={item.path}
-                    className={({ isActive }) =>
-                      `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
-                    }
+                    activeClassName="sidebar-link--active"
                   >
                     {item.label}
                   </SidebarNestedLink>
@@ -91,9 +101,7 @@ export function Sidebar() {
                 <li key={item.id}>
                   <SidebarNestedLink
                     to={item.path}
-                    className={({ isActive }) =>
-                      `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
-                    }
+                    activeClassName="sidebar-link--active"
                   >
                     {item.label}
                   </SidebarNestedLink>
@@ -105,24 +113,14 @@ export function Sidebar() {
           <SidebarList>
             {fuelTrackingCollections.map((item) => (
               <li key={item.id}>
-                <SidebarLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
-                  }
-                >
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}
                 </SidebarLink>
               </li>
             ))}
             {baleTrackingCollections.map((item) => (
               <li key={item.id}>
-                <SidebarLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
-                  }
-                >
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}
                 </SidebarLink>
               </li>
@@ -133,9 +131,7 @@ export function Sidebar() {
         <SidebarSection>
           <SidebarSectionTitleLink
             to={sidebarSections[2].path}
-            className={({ isActive }) =>
-              `sidebar-section-title-link${isActive ? ' sidebar-section-title-link--active' : ''}`
-            }
+            activeClassName="sidebar-section-title-link--active"
           >
             {sidebarSections[2].title}
           </SidebarSectionTitleLink>
@@ -195,7 +191,7 @@ const SidebarList = styled.ul`
   padding: 0;
 `
 
-const SidebarLink = styled(NavLink)`
+const SidebarLink = styled(NavLinkWithActiveClass)`
   display: block;
   padding: 0.5rem 1.5rem;
   font-size: 0.9375rem;
@@ -253,7 +249,7 @@ const SidebarNestedLink = styled(SidebarLink)`
   padding-inline-start: 2.25rem;
 `
 
-const SidebarSectionTitleLink = styled(NavLink)`
+const SidebarSectionTitleLink = styled(NavLinkWithActiveClass)`
   display: block;
   margin: 0;
   padding: 0.75rem 1.5rem 0.35rem;
