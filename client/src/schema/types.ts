@@ -29,6 +29,8 @@ export type ColumnDef<T extends DocumentBase = CollectionDocument> = {
   enumOptions?: { value: string; label: string }[]
   /** When true, enum cells/filters may use null (shown as —). Defaults from matching optional form field. */
   nullable?: boolean
+  /** When false, boolean cells are read-only. Defaults to editable. */
+  inlineEditable?: (row: T) => boolean
 }
 
 export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
@@ -39,6 +41,10 @@ export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
   enumOptions?: { value: string; label: string }[]
   referenceCollection?: string
   referenceFilter?: (row: CollectionDocument) => boolean
+  /** When true, field is omitted from the form UI (still included in submit payload). */
+  hidden?: boolean
+  /** Applied for hidden fields (and forced on submit when hidden). */
+  defaultValue?: string | boolean | null
 }
 
 export type FormSchema<T extends DocumentBase = CollectionDocument> = {

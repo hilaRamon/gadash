@@ -2,7 +2,6 @@ import { Types } from 'mongoose';
 import { EmployeeModel } from '../models/Employee';
 import { OperationModel } from '../models/Operation';
 import { PlotModel } from '../models/Plot';
-import { TractorModel } from '../models/Tractor';
 import {
   operationTrackingRepository,
   type OperationTrackingInput,
@@ -64,8 +63,11 @@ async function resolveOperationObjectId(operationId: unknown): Promise<Types.Obj
   return operation._id as Types.ObjectId;
 }
 
-async function resolvePlotObjectId(plotId: unknown): Promise<Types.ObjectId> {
-  const id = String(plotId ?? '').trim();
+async function resolvePlotObjectId(plotId: unknown): Promise<Types.ObjectId | null> {
+  if (plotId == null || plotId === '') {
+    return null;
+  }
+  const id = String(plotId).trim();
   if (!Types.ObjectId.isValid(id)) {
     throw new Error('חלקה לא נמצאה');
   }
@@ -89,18 +91,6 @@ async function resolveEmployeeObjectId(employeeId: unknown): Promise<Types.Objec
     throw new Error('עובד לא נמצא');
   }
   return employee._id as Types.ObjectId;
-}
-
-async function resolveTractorObjectId(tractorId: unknown): Promise<Types.ObjectId> {
-  const id = String(tractorId ?? '').trim();
-  if (!Types.ObjectId.isValid(id)) {
-    throw new Error('טרקטור לא נמצא');
-  }
-  const tractor = await TractorModel.findById(id).select('_id').lean();
-  if (!tractor?._id) {
-    throw new Error('טרקטור לא נמצא');
-  }
-  return tractor._id as Types.ObjectId;
 }
 
 async function buildTrackingPatch(
@@ -129,9 +119,6 @@ async function buildTrackingPatch(
   if (mustHave('endTime')) {
     patch.endTime = parseTime(body.endTime, 'שעת סיום');
   }
-  if (mustHave('tractor')) {
-    patch.tractor = await resolveTractorObjectId(body.tractor);
-  }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
   }
@@ -159,11 +146,9 @@ export const operationTrackingService = {
     if (
       patch.date == null ||
       patch.operation == null ||
-      patch.plot == null ||
       patch.employee == null ||
       patch.startTime == null ||
-      patch.endTime == null ||
-      patch.tractor == null
+      patch.endTime == null
     ) {
       throw new Error('שדות חובה חסרים');
     }
@@ -173,11 +158,10 @@ export const operationTrackingService = {
     const input: OperationTrackingInput = {
       date: patch.date,
       operation: patch.operation,
-      plot: patch.plot,
+      plot: patch.plot ?? null,
       employee: patch.employee,
       startTime: patch.startTime,
       endTime: patch.endTime,
-      tractor: patch.tractor,
       notes: patch.notes ?? '',
       billable: patch.billable ?? true,
     };

@@ -4,11 +4,10 @@ const operationTrackingSchema = new Schema(
   {
     date: { type: Date, required: true, default: Date.now },
     operation: { type: Schema.Types.ObjectId, ref: 'Operation', required: true },
-    plot: { type: Schema.Types.ObjectId, ref: 'Plot', required: true },
+    plot: { type: Schema.Types.ObjectId, ref: 'Plot', default: null },
     employee: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
-    tractor: { type: Schema.Types.ObjectId, ref: 'Tractor', required: true },
     notes: { type: String, default: '' },
     billable: { type: Boolean, required: true, default: true },
   },

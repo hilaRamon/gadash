@@ -63,7 +63,6 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
       ? toRefParts(plotRaw.customer)
       : { id: '', name: '' };
   const employee = toRefParts(doc.employee);
-  const tractor = toRefParts(doc.tractor);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
 
   return {
@@ -74,14 +73,12 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
     operation: operation.id,
     operationName: operation.name,
     operationType,
-    customer: customer.id,
+    customer: customer.id || null,
     customerName: customer.name,
-    plot: plot.id,
-    plotName: plot.name,
+    plot: plot.id || null,
+    plotName: plot.name || null,
     employee: employee.id,
     employeeName: employee.name,
-    tractor: tractor.id,
-    tractorName: tractor.name,
     finalPrice: calcFinalPrice(doc),
   };
 }

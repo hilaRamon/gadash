@@ -9,6 +9,7 @@ type FormFieldControlProps = {
   field: FormFieldDef
   value: string
   setFieldValue: (key: string, value: string) => void
+  disabled?: boolean
   booleanLabels?: {
     trueLabel: string
     falseLabel: string
@@ -33,6 +34,7 @@ export function FormFieldControl({
   field,
   value,
   setFieldValue,
+  disabled = false,
   booleanLabels,
 }: FormFieldControlProps) {
   if (field.type === 'textarea') {
@@ -63,6 +65,7 @@ export function FormFieldControl({
       <Select
         id={`field-${field.key}`}
         value={value || 'true'}
+        disabled={disabled}
         onChange={(e) => setFieldValue(field.key, e.target.value)}
       >
         <option value="true">{booleanLabels?.trueLabel ?? 'כן'}</option>

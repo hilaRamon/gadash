@@ -136,6 +136,32 @@ export function CollectionFormModal({
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const { data: bales = [] } = useCollectionList("bales");
+  const hiddenOperationField = schema.form.fields.find(
+    (field) =>
+      field.hidden &&
+      field.key === "operation" &&
+      field.referenceCollection === "operations",
+  );
+  const { data: operations = [] } = useCollectionList("operations");
+
+  const isAdminTrackingPage = schema.id === "operations-trackings-admin";
+  const selectedOperation =
+    values.operation && operations.length > 0
+      ? operations.find((op) => String(op._id) === values.operation)
+      : undefined;
+  const isManahelaOperation =
+    String(editingRow?.operationType ?? "") === "מנהלה" ||
+    String(selectedOperation?.operationType ?? "") === "מנהלה";
+  const isAdminTrackingForm =
+    isAdminTrackingPage ||
+    (schema.collection === "operationsTrackings" && isManahelaOperation);
+
+  const adminFormKeysToHide = new Set(["operation", "plot", "billable"]);
+  const visibleFields = schema.form.fields.filter((field) => {
+    if (field.hidden) return false;
+    if (isAdminTrackingForm && adminFormKeysToHide.has(field.key)) return false;
+    return true;
+  });
 
   useEffect(() => {
     if (open) {
@@ -144,6 +170,31 @@ export function CollectionFormModal({
       setFieldErrors({});
     }
   }, [open, editingRow, schema.form.fields]);
+
+  useEffect(() => {
+    if (!open || !hiddenOperationField) return;
+
+    const matching = hiddenOperationField.referenceFilter
+      ? operations.filter(hiddenOperationField.referenceFilter)
+      : operations;
+    if (matching.length !== 1) return;
+
+    const soleOperationId = String(matching[0]._id);
+    setValues((prev) => {
+      if (prev.operation?.trim()) return prev;
+      if (prev.operation === soleOperationId) return prev;
+      return { ...prev, operation: soleOperationId };
+    });
+  }, [open, hiddenOperationField, operations, editingRow]);
+
+  useEffect(() => {
+    if (!open || !isAdminTrackingForm) return;
+    setValues((prev) => {
+      const next = { ...prev, billable: "false", plot: "" };
+      if (prev.billable === "false" && prev.plot === "") return prev;
+      return next;
+    });
+  }, [open, isAdminTrackingForm]);
 
   if (!open) return null;
 
@@ -186,7 +237,22 @@ export function CollectionFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const requiredFieldErrors = getRequiredFieldErrors(schema.form.fields, values);
+    const fieldsForSubmit = isAdminTrackingForm
+      ? schema.form.fields.map((field) => {
+          if (field.key === "plot") {
+            return { ...field, hidden: true, required: false, defaultValue: null };
+          }
+          if (field.key === "billable") {
+            return { ...field, hidden: true, defaultValue: false };
+          }
+          return field;
+        })
+      : schema.form.fields;
+
+    const requiredFieldErrors = getRequiredFieldErrors(
+      fieldsForSubmit.filter((field) => visibleFields.some((v) => v.key === field.key)),
+      values,
+    );
     if (Object.keys(requiredFieldErrors).length > 0) {
       setFieldErrors(requiredFieldErrors);
       setValidationError(null);
@@ -194,7 +260,7 @@ export function CollectionFormModal({
     }
 
     setFieldErrors({});
-    const payload = buildPayload(schema.form.fields, values);
+    const payload = buildPayload(fieldsForSubmit, values);
     if (!payload) return;
 
     if ("error" in payload && typeof payload.error === "string") {
@@ -203,6 +269,10 @@ export function CollectionFormModal({
     }
 
     setValidationError(null);
+    if (isAdminTrackingForm) {
+      onSubmit({ ...payload, billable: false, plot: null });
+      return;
+    }
     onSubmit(payload);
   };
 
@@ -216,7 +286,7 @@ export function CollectionFormModal({
       >
         <ModalTitle id="modal-title">{title}</ModalTitle>
         <form onSubmit={handleSubmit} noValidate>
-          {schema.form.fields.map((field) => (
+          {visibleFields.map((field) => (
             <FormField key={field.key}>
               <Label htmlFor={`field-${field.key}`}>
                 {field.label}
@@ -226,6 +296,7 @@ export function CollectionFormModal({
                 field={field}
                 value={values[field.key] ?? ""}
                 setFieldValue={setFieldValue}
+                disabled={isAdminTrackingForm && field.key === "billable"}
                 booleanLabels={
                   field.type === "boolean" ? getBooleanLabels(field.key) : undefined
                 }

@@ -224,7 +224,10 @@ export function DataTable({
                   {schema.columns.map((col) => {
                     const value = getCellValue(row, col);
                     const canEditBoolean =
-                      onCellChange && col.type === "boolean" && !col.render;
+                      onCellChange &&
+                      col.type === "boolean" &&
+                      !col.render &&
+                      (col.inlineEditable?.(row) ?? true);
                     const canEditEnum =
                       onCellChange &&
                       col.type === "enum" &&

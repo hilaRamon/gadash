@@ -140,24 +140,21 @@ function enrichOperationTrackingRow(
   const operation = operationsSeedData.find(
     (item) => String(item._id) === String(row.operation ?? ""),
   );
-  const plot = plotsSeedData.find(
-    (item) => String(item._id) === String(row.plot ?? ""),
-  );
+  const plot =
+    row.plot == null || row.plot === ""
+      ? null
+      : plotsSeedData.find((item) => String(item._id) === String(row.plot));
   const employee = employeesSeedData.find(
     (item) => String(item._id) === String(row.employee ?? ""),
-  );
-  const tractor = tractorsSeedData.find(
-    (item) => String(item._id) === String(row.tractor ?? ""),
   );
   return {
     ...row,
     operationName: String(operation?.name ?? ""),
     operationType: String(operation?.operationType ?? ""),
-    customer: plot?.customer ?? "",
+    customer: plot?.customer ?? null,
     customerName: String(plot?.customerName ?? ""),
-    plotName: String(plot?.name ?? ""),
+    plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
-    tractorName: String(tractor?.name ?? ""),
     finalPrice: calcOperationTrackingFinalPrice(row),
   };
 }
@@ -284,11 +281,18 @@ async function createMock(
     return enrichMaterialUsageRow(doc);
   }
   if (collection === "operationsTrackings") {
-    const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(doc.plot ?? ""),
-    );
-    doc.customer = plot?.customer ?? "";
-    doc.customerName = String(plot?.customerName ?? "");
+    const plotId = doc.plot;
+    if (plotId != null && plotId !== "") {
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(plotId),
+      );
+      doc.customer = plot?.customer ?? "";
+      doc.customerName = String(plot?.customerName ?? "");
+    } else {
+      doc.plot = null;
+      doc.customer = null;
+      doc.customerName = "";
+    }
     return enrichOperationTrackingRow(doc);
   }
   if (collection === "fuelOperationsTrackings") {
@@ -320,11 +324,18 @@ async function updateMock(
     return enrichMaterialUsageRow(store[index]);
   }
   if (collection === "operationsTrackings") {
-    const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(store[index].plot ?? ""),
-    );
-    store[index].customer = plot?.customer ?? "";
-    store[index].customerName = String(plot?.customerName ?? "");
+    const plotId = store[index].plot;
+    if (plotId != null && plotId !== "") {
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(plotId),
+      );
+      store[index].customer = plot?.customer ?? "";
+      store[index].customerName = String(plot?.customerName ?? "");
+    } else {
+      store[index].plot = null;
+      store[index].customer = null;
+      store[index].customerName = "";
+    }
     return enrichOperationTrackingRow(store[index]);
   }
   if (collection === "fuelOperationsTrackings") {

@@ -1,5 +1,76 @@
-import type { CollectionSchema, FormSchema } from "../types";
+import type {
+  CollectionDocument,
+  CollectionSchema,
+  FormFieldDef,
+  FormSchema,
+} from "../types";
 import { formatNumber } from "../../lib/formatNumber";
+
+const nonFuelOperationFilter = (row: CollectionDocument) =>
+  String(row.operationType ?? "") !== "דלק";
+
+const fieldWorkOperationFilter = (row: CollectionDocument) =>
+  String(row.operationType ?? "") === "עיבוד";
+
+const adminOperationFilter = (row: CollectionDocument) =>
+  String(row.operationType ?? "") === "מנהלה";
+
+function operationFormField(
+  referenceFilter: (row: CollectionDocument) => boolean,
+  options?: { hidden?: boolean },
+): FormFieldDef {
+  return {
+    key: "operation",
+    label: "פעולה",
+    type: "reference",
+    required: true,
+    referenceCollection: "operations",
+    referenceFilter,
+    hidden: options?.hidden,
+  };
+}
+
+function buildOperationsTrackingForm(
+  operationFilter: (row: CollectionDocument) => boolean,
+  titles: { createTitle: string; editTitle: string },
+  options?: { hideOperation?: boolean; hidePlotAndBillable?: boolean },
+): FormSchema {
+  const hidePlotAndBillable = options?.hidePlotAndBillable === true;
+
+  return {
+    ...titles,
+    fields: [
+      { key: "date", label: "תאריך", type: "date", required: true },
+      operationFormField(operationFilter, { hidden: options?.hideOperation }),
+      {
+        key: "plot",
+        label: "חלקה",
+        type: "reference",
+        required: !hidePlotAndBillable,
+        referenceCollection: "plots",
+        hidden: hidePlotAndBillable,
+        defaultValue: null,
+      },
+      {
+        key: "employee",
+        label: "עובד",
+        type: "reference",
+        required: true,
+        referenceCollection: "employees",
+      },
+      { key: "startTime", label: "שעת התחלה", type: "time", required: true },
+      { key: "endTime", label: "שעת סיום", type: "time", required: true },
+      {
+        key: "billable",
+        label: "לחיוב",
+        type: "boolean",
+        hidden: hidePlotAndBillable,
+        defaultValue: false,
+      },
+      { key: "notes", label: "הערות", type: "textarea" },
+    ],
+  };
+}
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -59,13 +130,6 @@ const baseColumns: CollectionSchema["columns"] = [
     width: "6.5rem",
   },
   {
-    key: "tractor",
-    label: "טרקטור",
-    type: "reference",
-    searchable: true,
-    getValue: (row) => row.tractorName ?? row.tractor,
-  },
-  {
     key: "finalPrice",
     label: "מחיר סופי",
     type: "number",
@@ -80,6 +144,7 @@ const baseColumns: CollectionSchema["columns"] = [
     sortable: true,
     format: (value) => (value === false ? "לא" : "כן"),
     width: "6rem",
+    inlineEditable: (row) => String(row.operationType ?? "") !== "מנהלה",
   },
   {
     key: "notes",
@@ -89,66 +154,21 @@ const baseColumns: CollectionSchema["columns"] = [
   },
 ];
 
-const baseForm: FormSchema = {
-  fields: [
-    { key: "date", label: "תאריך", type: "date", required: true },
-    {
-      key: "operation",
-      label: "פעולה",
-      type: "reference",
-      required: true,
-      referenceCollection: "operations",
-      referenceFilter: (row) => String(row.operationType ?? "") !== "דלק",
-    },
-    {
-      key: "plot",
-      label: "חלקה",
-      type: "reference",
-      required: true,
-      referenceCollection: "plots",
-    },
-    {
-      key: "employee",
-      label: "עובד",
-      type: "reference",
-      required: true,
-      referenceCollection: "employees",
-    },
-    { key: "startTime", label: "שעת התחלה", type: "time", required: true },
-    { key: "endTime", label: "שעת סיום", type: "time", required: true },
-    {
-      key: "tractor",
-      label: "טרקטור",
-      type: "reference",
-      required: true,
-      referenceCollection: "tractors",
-    },
-    { key: "billable", label: "לחיוב", type: "boolean" },
-    { key: "notes", label: "הערות", type: "textarea" },
-  ],
-};
-
+const adminColumns = baseColumns.filter(
+  (column) =>
+    !["customer", "plot", "billable", "finalPrice"].includes(column.key),
+);
 
 export const operationsTrackingsAllSchema: CollectionSchema = {
   id: "operations-trackings-all",
   collection: "operationsTrackings",
   label: "משימות - הכל",
-  columns: [
-    ...baseColumns,
-    {
-      key: "operationType",
-      label: "סוג פעולה",
-      type: "text",
-      searchable: true,
-      width: "7rem",
-    },
-  ],
+  columns: baseColumns,
   defaultSort: { field: "date", direction: "desc" },
-  form: {
-    ...baseForm,
+  form: buildOperationsTrackingForm(nonFuelOperationFilter, {
     createTitle: "הוספת משימה",
     editTitle: "עריכת משימה",
-  },
+  }),
 };
 
 export const operationsTrackingsFieldWorkSchema: CollectionSchema = {
@@ -157,23 +177,25 @@ export const operationsTrackingsFieldWorkSchema: CollectionSchema = {
   label: "משימות - עיבודים",
   columns: baseColumns,
   defaultSort: { field: "date", direction: "desc" },
-  form: {
-    ...baseForm,
+  form: buildOperationsTrackingForm(fieldWorkOperationFilter, {
     createTitle: "הוספת משימת עיבוד",
     editTitle: "עריכת משימת עיבוד",
-  },
+  }),
 };
 
 export const operationsTrackingsAdminSchema: CollectionSchema = {
   id: "operations-trackings-admin",
   collection: "operationsTrackings",
   label: "משימות - מנהלות",
-  columns: baseColumns,
+  columns: adminColumns,
   defaultSort: { field: "date", direction: "desc" },
-  form: {
-    ...baseForm,
-    createTitle: "הוספת משימת מנהלה",
-    editTitle: "עריכת משימת מנהלה",
-  },
+  form: buildOperationsTrackingForm(
+    adminOperationFilter,
+    {
+      createTitle: "הוספת משימת מנהלה",
+      editTitle: "עריכת משימת מנהלה",
+    },
+    { hideOperation: true, hidePlotAndBillable: true },
+  ),
 };
 
