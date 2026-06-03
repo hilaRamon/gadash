@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
 import type { CollectionDocument, ColumnDef } from '../../../schema/types'
 import { CellSavingIndicator } from './CellSavingIndicator'
 
@@ -13,7 +13,7 @@ const BooleanWrap = styled.span`
 const uncheckedIcon = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 3l6 6M9 3L3 9' stroke='white' stroke-width='1.75' stroke-linecap='round'/%3E%3C/svg%3E")`
 const checkedIcon = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 6l2.5 2.5 4.5-5' stroke='white' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
 
-const BooleanCheckbox = styled.input<{ $saving?: boolean }>`
+const BooleanCheckbox = styled.input`
   appearance: none;
   width: 1.1rem;
   height: 1.1rem;
@@ -65,13 +65,6 @@ const BooleanCheckbox = styled.input<{ $saving?: boolean }>`
     cursor: default;
     opacity: 0.85;
   }
-
-  ${({ $saving }) =>
-    $saving &&
-    css`
-      opacity: 0.5;
-      cursor: wait;
-    `}
 `
 
 function getBooleanLabel(
@@ -102,22 +95,24 @@ export function BooleanCheckboxCell({
   const label = getBooleanLabel(column, checked, row)
 
   return (
-    <BooleanWrap aria-busy={isSaving}>
-      <BooleanCheckbox
-        type="checkbox"
-        $saving={isSaving}
-        checked={checked}
-        disabled={isSaving || !onChange}
-        onChange={
-          onChange
-            ? (e) => {
-                void onChange(e.target.checked)
-              }
-            : undefined
-        }
-        aria-label={`${column.label}: ${label}`}
-      />
-      {isSaving && <CellSavingIndicator />}
+    <BooleanWrap aria-busy={isSaving} aria-label={isSaving ? `${column.label}: שומר...` : undefined}>
+      {isSaving ? (
+        <CellSavingIndicator />
+      ) : (
+        <BooleanCheckbox
+          type="checkbox"
+          checked={checked}
+          disabled={!onChange}
+          onChange={
+            onChange
+              ? (e) => {
+                  void onChange(e.target.checked)
+                }
+              : undefined
+          }
+          aria-label={`${column.label}: ${label}`}
+        />
+      )}
     </BooleanWrap>
   )
 }

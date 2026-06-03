@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { contractorRouter } from "./contractorRouter";
+import { moverRouter } from "./moverRouter";
 import { customerRouter } from "./customerRouter";
 import { employeeRouter } from "./employeeRouter";
 import { agriculturalSeasonRouter } from "./agriculturalSeasonRouter";
@@ -15,10 +16,14 @@ import { materialUsageTrackingRouter } from "./materialUsageTrackingRouter";
 import { operationTrackingRouter } from "./operationTrackingRouter";
 import { fuelOperationTrackingRouter } from "./fuelOperationTrackingRouter";
 import { baleOrderTrackingRouter } from "./baleOrderTrackingRouter";
+import { contractorTrackingRouter } from "./contractorTrackingRouter";
+import { transportTrackingRouter } from "./transportTrackingRouter";
+import { transportChargeStateRouter } from "./transportChargeStateRouter";
 
 export const apiRouter = Router();
 
 apiRouter.use("/contractors", contractorRouter);
+apiRouter.use("/movers", moverRouter);
 apiRouter.use("/suppliers", supplierRouter);
 apiRouter.use("/customers", customerRouter);
 apiRouter.use("/employees", employeeRouter);
@@ -39,3 +44,9 @@ apiRouter.use("/fuelOperationsTrackings", fuelOperationTrackingRouter);
 apiRouter.use("/fuel-operations-trackings", fuelOperationTrackingRouter);
 apiRouter.use("/baleOrderTrackings", baleOrderTrackingRouter);
 apiRouter.use("/bale-order-trackings", baleOrderTrackingRouter);
+apiRouter.use("/contractorTrackings", contractorTrackingRouter);
+apiRouter.use("/contractor-trackings", contractorTrackingRouter);
+apiRouter.use("/transportTrackings", transportTrackingRouter);
+apiRouter.use("/transport-trackings", transportTrackingRouter);
+apiRouter.use("/transportChargeState", transportChargeStateRouter);
+apiRouter.use("/transport-charge-state", transportChargeStateRouter);

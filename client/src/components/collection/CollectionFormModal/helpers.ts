@@ -32,6 +32,16 @@ export function getInitialValues(
   for (const field of fields) {
     const raw = row?.[field.key];
 
+    if (field.hidden && field.key === "billable") {
+      values[field.key] = "false";
+      continue;
+    }
+
+    if (field.hidden && field.defaultValue === null) {
+      values[field.key] = "";
+      continue;
+    }
+
     if (field.type === "boolean") {
       if (raw == null || raw === "") {
         values[field.key] = row ? "false" : "true";
@@ -67,6 +77,12 @@ export function getInitialValues(
       continue;
     }
 
+    if (field.type === "number" && field.defaultValue === null) {
+      values[field.key] =
+        raw == null || raw === "" ? "" : String(raw);
+      continue;
+    }
+
     values[field.key] = raw == null ? "" : String(raw);
   }
 
@@ -82,12 +98,27 @@ export function buildPayload(
   for (const field of fields) {
     const val = values[field.key] ?? "";
 
+    if (field.hidden && field.key === "billable") {
+      payload[field.key] = false;
+      continue;
+    }
+
+    if (field.hidden && field.defaultValue === null) {
+      payload[field.key] = null;
+      continue;
+    }
+
     if (field.required && !String(val).trim()) {
       return null;
     }
 
     if (field.type === "boolean") {
       payload[field.key] = val === "true";
+      continue;
+    }
+
+    if (field.type === "reference" && !field.required && !String(val).trim()) {
+      payload[field.key] = null;
       continue;
     }
 

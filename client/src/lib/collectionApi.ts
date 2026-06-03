@@ -1,5 +1,6 @@
 import api from "./api";
 import { contractorsSeedData } from "../data/contractorsSeed";
+import { moversSeedData } from "../data/moversSeed";
 import { customersSeedData } from "../data/customersSeed";
 import { employeesSeedData } from "../data/employeesSeed";
 import { plotsSeedData } from "../data/plotsSeed";
@@ -19,6 +20,14 @@ import {
   resolveBaleOrderPrices,
 } from "./baleOrderPricing";
 import type { TableQueryParams } from "../schema/tableQuery";
+import {
+  calcFinalPrice,
+  resolveUnitAmount,
+} from "./contractorTrackingPricing";
+import {
+  calcFinalPrice as calcTransportFinalPrice,
+  calcHoursBetween as calcTransportHours,
+} from "./transportTrackingPricing";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -33,6 +42,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   }
   if (collection === "contractors") {
     return contractorsSeedData.map((row) => ({ ...row }));
+  }
+  if (collection === "movers") {
+    return moversSeedData.map((row) => ({ ...row }));
   }
   if (collection === "suppliers") {
     return suppliersSeedData.map((row) => ({ ...row }));
@@ -69,6 +81,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     employees: "עובד",
     customers: "לקוח",
     contractors: "קבלן",
+    movers: "מוביל",
     suppliers: "ספק",
     operations: "פעולה",
     materials: "חומר",
@@ -81,6 +94,8 @@ function seedMockData(collection: string): CollectionDocument[] {
     materialUsageTrackings: "שימוש חומר",
     fuelOperationsTrackings: "פעולת דלק",
     baleOrderTrackings: "הזמנת חבילות",
+    contractorTrackings: "מעקב קבלן",
+    transportTrackings: "מעקב הובלה",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -140,24 +155,21 @@ function enrichOperationTrackingRow(
   const operation = operationsSeedData.find(
     (item) => String(item._id) === String(row.operation ?? ""),
   );
-  const plot = plotsSeedData.find(
-    (item) => String(item._id) === String(row.plot ?? ""),
-  );
+  const plot =
+    row.plot == null || row.plot === ""
+      ? null
+      : plotsSeedData.find((item) => String(item._id) === String(row.plot));
   const employee = employeesSeedData.find(
     (item) => String(item._id) === String(row.employee ?? ""),
-  );
-  const tractor = tractorsSeedData.find(
-    (item) => String(item._id) === String(row.tractor ?? ""),
   );
   return {
     ...row,
     operationName: String(operation?.name ?? ""),
     operationType: String(operation?.operationType ?? ""),
-    customer: plot?.customer ?? "",
+    customer: plot?.customer ?? null,
     customerName: String(plot?.customerName ?? ""),
-    plotName: String(plot?.name ?? ""),
+    plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
-    tractorName: String(tractor?.name ?? ""),
     finalPrice: calcOperationTrackingFinalPrice(row),
   };
 }
@@ -195,6 +207,64 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerUnit,
     finalPrice,
     totalWithTransport,
+  };
+}
+
+function enrichTransportTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const mover = moversSeedData.find(
+    (item) => String(item._id) === String(row.mover ?? ""),
+  );
+  const hours =
+    calcTransportHours(
+      String(row.startTime ?? ""),
+      String(row.endTime ?? ""),
+    ) ?? Number(row.hours ?? 0);
+  const hourlyRate = Number(row.hourlyRate ?? 0);
+  const finalPrice = calcTransportFinalPrice(hourlyRate, hours);
+
+  return {
+    ...row,
+    moverName: String(mover?.name ?? ""),
+    hours,
+    finalPrice,
+  };
+}
+
+function enrichContractorTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const contractor = contractorsSeedData.find(
+    (item) => String(item._id) === String(row.contractor ?? ""),
+  );
+  const plot = plotsSeedData.find(
+    (item) => String(item._id) === String(row.plot ?? ""),
+  );
+  const operation = operationsSeedData.find(
+    (item) => String(item._id) === String(row.operation ?? ""),
+  );
+  const pricingForm = String(row.pricingForm ?? "");
+  const unitAmount =
+    resolveUnitAmount(pricingForm, {
+      startTime: String(row.startTime ?? ""),
+      endTime: String(row.endTime ?? ""),
+      unitAmount: String(row.unitAmount ?? ""),
+    }) ?? Number(row.unitAmount ?? 0);
+  const unitPrice = Number(row.unitPrice ?? 0);
+  const finalPrice = calcFinalPrice(unitPrice, unitAmount);
+
+  return {
+    ...row,
+    contractorName: String(contractor?.name ?? ""),
+    plotName: String(plot?.name ?? ""),
+    operationName: String(operation?.name ?? ""),
+    unitAmount,
+    finalPrice,
+    customerPrice:
+      row.customerPrice == null || row.customerPrice === ""
+        ? null
+        : Number(row.customerPrice),
   };
 }
 
@@ -259,6 +329,12 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "baleOrderTrackings") {
     return rows.map(enrichBaleOrderTrackingRow);
   }
+  if (collection === "contractorTrackings") {
+    return rows.map(enrichContractorTrackingRow);
+  }
+  if (collection === "transportTrackings") {
+    return rows.map(enrichTransportTrackingRow);
+  }
   return rows;
 }
 
@@ -284,11 +360,18 @@ async function createMock(
     return enrichMaterialUsageRow(doc);
   }
   if (collection === "operationsTrackings") {
-    const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(doc.plot ?? ""),
-    );
-    doc.customer = plot?.customer ?? "";
-    doc.customerName = String(plot?.customerName ?? "");
+    const plotId = doc.plot;
+    if (plotId != null && plotId !== "") {
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(plotId),
+      );
+      doc.customer = plot?.customer ?? "";
+      doc.customerName = String(plot?.customerName ?? "");
+    } else {
+      doc.plot = null;
+      doc.customer = null;
+      doc.customerName = "";
+    }
     return enrichOperationTrackingRow(doc);
   }
   if (collection === "fuelOperationsTrackings") {
@@ -297,6 +380,12 @@ async function createMock(
   }
   if (collection === "baleOrderTrackings") {
     return enrichBaleOrderTrackingRow(doc);
+  }
+  if (collection === "contractorTrackings") {
+    return enrichContractorTrackingRow(doc);
+  }
+  if (collection === "transportTrackings") {
+    return enrichTransportTrackingRow(doc);
   }
   return doc;
 }
@@ -320,11 +409,18 @@ async function updateMock(
     return enrichMaterialUsageRow(store[index]);
   }
   if (collection === "operationsTrackings") {
-    const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(store[index].plot ?? ""),
-    );
-    store[index].customer = plot?.customer ?? "";
-    store[index].customerName = String(plot?.customerName ?? "");
+    const plotId = store[index].plot;
+    if (plotId != null && plotId !== "") {
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(plotId),
+      );
+      store[index].customer = plot?.customer ?? "";
+      store[index].customerName = String(plot?.customerName ?? "");
+    } else {
+      store[index].plot = null;
+      store[index].customer = null;
+      store[index].customerName = "";
+    }
     return enrichOperationTrackingRow(store[index]);
   }
   if (collection === "fuelOperationsTrackings") {
@@ -332,6 +428,12 @@ async function updateMock(
   }
   if (collection === "baleOrderTrackings") {
     return enrichBaleOrderTrackingRow(store[index]);
+  }
+  if (collection === "contractorTrackings") {
+    return enrichContractorTrackingRow(store[index]);
+  }
+  if (collection === "transportTrackings") {
+    return enrichTransportTrackingRow(store[index]);
   }
   return store[index];
 }

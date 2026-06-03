@@ -5,11 +5,10 @@ import { toObjectIds } from '../utils/mongoIds';
 export type OperationTrackingInput = {
   date: Date;
   operation: Types.ObjectId;
-  plot: Types.ObjectId;
+  plot: Types.ObjectId | null;
   employee: Types.ObjectId;
   startTime: string;
   endTime: string;
-  tractor: Types.ObjectId;
   notes?: string;
   billable: boolean;
 };
@@ -24,7 +23,6 @@ const plotPopulate = {
   populate: { path: 'customer', select: '_id name' },
 };
 const employeePopulate = { path: 'employee', select: '_id name' };
-const tractorPopulate = { path: 'tractor', select: '_id name' };
 
 export const operationTrackingRepository = {
   findAll() {
@@ -32,7 +30,6 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .populate(tractorPopulate)
       .sort({ date: -1 })
       .lean();
   },
@@ -42,7 +39,6 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .populate(tractorPopulate)
       .lean();
   },
 
@@ -58,7 +54,6 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .populate(tractorPopulate)
       .lean();
   },
 

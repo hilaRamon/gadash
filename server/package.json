@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "seed": "tsx scripts/seed-all.ts",
     "seed:contractors": "tsx scripts/seed-contractors.ts",
+    "seed:movers": "tsx scripts/seed-movers.ts",
     "seed:customers": "tsx scripts/seed-customers.ts",
     "seed:employees": "tsx scripts/seed-employees.ts",
     "seed:tractors": "tsx scripts/seed-tractors.ts",
@@ -22,7 +23,8 @@
     "seed:material-usage-trackings": "tsx scripts/seed-material-usage-trackings.ts",
     "migrate:unset-number-fields": "tsx scripts/unset-legacy-number-fields.ts",
     "migrate:unset-material-billing-unit": "tsx scripts/unset-material-billing-unit.ts",
-    "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts"
+    "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts",
+    "migrate:admin-operations-to-field-work": "tsx scripts/migrate-admin-operations-to-field-work.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

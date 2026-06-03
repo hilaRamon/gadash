@@ -32,6 +32,12 @@ export const dataCollections: DataCollection[] = [
     collection: "contractors",
   },
   {
+    id: "movers",
+    label: "מובילים",
+    path: "/data/movers",
+    collection: "movers",
+  },
+  {
     id: "suppliers",
     label: "ספקים",
     path: "/data/suppliers",
@@ -121,6 +127,24 @@ export const fuelTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const contractorTrackingCollections: TrackingCollection[] = [
+  {
+    id: "contractor-trackings",
+    label: "קבלנים",
+    path: "/trackings/contractors",
+    collection: "contractorTrackings",
+  },
+];
+
+export const transportTrackingCollections: TrackingCollection[] = [
+  {
+    id: "transport-trackings",
+    label: "הובלות",
+    path: "/trackings/transport",
+    collection: "transportTrackings",
+  },
+];
+
 export const baleTrackingCollections: TrackingCollection[] = [
   {
     id: "bale-order-trackings",
@@ -133,6 +157,8 @@ export const baleTrackingCollections: TrackingCollection[] = [
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
+  ...contractorTrackingCollections,
+  ...transportTrackingCollections,
   ...fuelTrackingCollections,
   ...baleTrackingCollections,
 ];
