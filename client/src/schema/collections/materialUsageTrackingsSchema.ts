@@ -1,18 +1,10 @@
 import type { CollectionSchema } from '../types'
+import { formatNumber } from '../../lib/formatNumber'
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleDateString('he-IL')
-}
-
-function formatCurrency(value: unknown): string {
-  const amount = Number(value ?? 0)
-  if (!Number.isFinite(amount)) return ''
-  return amount.toLocaleString('he-IL', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
 }
 
 export const materialUsageTrackingsSchema: CollectionSchema = {
@@ -68,7 +60,7 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
       label: 'מחיר סופי',
       type: 'number',
       sortable: true,
-      format: (value) => formatCurrency(value),
+      format: (value) => formatNumber(value),
       width: '8rem',
     },
     {

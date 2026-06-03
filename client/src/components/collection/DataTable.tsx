@@ -218,8 +218,8 @@ export function DataTable({
     <div className="data-table-wrap">
       <table className="data-table" dir="rtl">
         <thead>
-          <tr>
-            <th className="col-checkbox" scope="col">
+          <tr className="header-labels-row">
+            <th className="col-checkbox" scope="col" rowSpan={2}>
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -231,21 +231,37 @@ export function DataTable({
               />
             </th>
             {schema.columns.map((col) => (
-              <th key={col.key} scope="col" style={{ width: col.width }}>
-                <div>{col.label}</div>
-                {col.searchable !== false && (
+              <th
+                key={col.key}
+                scope="col"
+                className="header-label-cell"
+                style={{ width: col.width }}
+              >
+                {col.label}
+              </th>
+            ))}
+            <th className="col-actions" scope="col" rowSpan={2}>
+              {/* פעולות */}
+            </th>
+          </tr>
+          <tr className="header-filters-row">
+            {schema.columns.map((col) => (
+              <th
+                key={`${col.key}-filter`}
+                scope="col"
+                className="header-filter-cell"
+                style={{ width: col.width }}
+              >
+                {col.searchable !== false ? (
                   <ColumnFilterControl
                     column={col}
                     form={schema.form}
                     value={queryState.columnSearch[col.key] ?? ""}
                     onChange={(value) => onColumnSearchChange(col.key, value)}
                   />
-                )}
+                ) : null}
               </th>
             ))}
-            <th className="col-actions" scope="col">
-              {/* פעולות */}
-            </th>
           </tr>
         </thead>
         <tbody>

@@ -5,6 +5,7 @@ import type {
   FormSchema,
 } from '../schema/types'
 import type { TableQueryState } from '../schema/tableQuery'
+import { formatNumber } from './formatNumber'
 
 export const ENUM_NULL_FILTER = '__null__'
 export const ENUM_NULL_LABEL = '—'
@@ -17,8 +18,9 @@ function getCellValue(row: CollectionDocument, column: ColumnDef): unknown {
 function formatCell(row: CollectionDocument, column: ColumnDef): string {
   const value = getCellValue(row, column)
   if (column.format) return column.format(value, row)
-  if (value == null) return ''
+  if (value == null || value === '') return ''
   if (typeof value === 'boolean') return value ? 'כן' : 'לא'
+  if (column.type === 'number') return formatNumber(value)
   return String(value)
 }
 

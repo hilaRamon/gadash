@@ -244,6 +244,22 @@
   color: var(--text-secondary);
 }
 
+.data-table thead .header-label-cell {
+  vertical-align: bottom;
+  line-height: 1.25;
+  border: none;
+}
+
+.data-table thead .header-filter-cell {
+  vertical-align: top;
+  font-weight: 400;
+  padding-top: 0;
+}
+
+.data-table thead .header-filters-row th {
+  border-top: none;
+}
+
 .data-table tbody tr:hover {
   background: var(--hover-bg);
 }
@@ -271,7 +287,7 @@
 .search-input {
   width: 100%;
   min-width: 4rem;
-  margin-top: 0.35rem;
+  margin-top: 0;
   padding: 0.35rem 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--border-color);
@@ -355,7 +371,9 @@
 }
 
 .cell-select-inline:focus:not(.cell-boolean-true):not(.cell-boolean-false),
-.cell-select-inline:focus-visible:not(.cell-boolean-true):not(.cell-boolean-false) {
+.cell-select-inline:focus-visible:not(.cell-boolean-true):not(
+    .cell-boolean-false
+  ) {
   background-color: transparent;
 }
 

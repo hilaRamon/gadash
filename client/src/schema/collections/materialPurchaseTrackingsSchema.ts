@@ -1,18 +1,10 @@
 import type { CollectionSchema } from '../types'
+import { formatNumber } from '../../lib/formatNumber'
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleDateString('he-IL')
-}
-
-function formatCurrency(value: unknown): string {
-  const amount = Number(value ?? 0)
-  if (!Number.isFinite(amount)) return ''
-  return amount.toLocaleString('he-IL', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
 }
 
 export const materialPurchaseTrackingsSchema: CollectionSchema = {
@@ -47,7 +39,7 @@ export const materialPurchaseTrackingsSchema: CollectionSchema = {
       label: 'מחיר לקג/ליטר',
       type: 'number',
       sortable: true,
-      format: (value) => formatCurrency(value),
+      format: (value) => formatNumber(value),
       width: '8rem',
     },
     {
@@ -66,7 +58,7 @@ export const materialPurchaseTrackingsSchema: CollectionSchema = {
       format: (value, row) => {
         const fallback = Number(row.unitPrice ?? 0) * Number(row.amount ?? 0)
         const resolved = Number(value ?? fallback)
-        return formatCurrency(resolved)
+        return formatNumber(resolved)
       },
       width: '8rem',
     },

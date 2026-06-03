@@ -14,6 +14,7 @@ import { materialPurchaseTrackingRouter } from "./materialPurchaseTrackingRouter
 import { materialUsageTrackingRouter } from "./materialUsageTrackingRouter";
 import { operationTrackingRouter } from "./operationTrackingRouter";
 import { fuelOperationTrackingRouter } from "./fuelOperationTrackingRouter";
+import { baleOrderTrackingRouter } from "./baleOrderTrackingRouter";
 
 export const apiRouter = Router();
 
@@ -36,3 +37,5 @@ apiRouter.use("/operationsTrackings", operationTrackingRouter);
 apiRouter.use("/operations-trackings", operationTrackingRouter);
 apiRouter.use("/fuelOperationsTrackings", fuelOperationTrackingRouter);
 apiRouter.use("/fuel-operations-trackings", fuelOperationTrackingRouter);
+apiRouter.use("/baleOrderTrackings", baleOrderTrackingRouter);
+apiRouter.use("/bale-order-trackings", baleOrderTrackingRouter);

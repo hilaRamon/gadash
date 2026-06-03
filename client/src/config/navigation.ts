@@ -121,10 +121,20 @@ export const fuelTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const baleTrackingCollections: TrackingCollection[] = [
+  {
+    id: "bale-order-trackings",
+    label: "הזמנות חבילות",
+    path: "/trackings/bale-orders",
+    collection: "baleOrderTrackings",
+  },
+];
+
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
   ...fuelTrackingCollections,
+  ...baleTrackingCollections,
 ];
 
 export const sidebarSections = [

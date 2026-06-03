@@ -13,6 +13,11 @@ import { suppliersSeedData } from "../data/suppliersSeed";
 import { materialPurchaseTrackingsSeedData } from "../data/materialPurchaseTrackingsSeed";
 import { materialUsageTrackingsSeedData } from "../data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "../schema/types";
+import {
+  calcBaleOrderFinalPrice,
+  calcBaleOrderTotalWithTransport,
+  resolveBaleOrderPrices,
+} from "./baleOrderPricing";
 import type { TableQueryParams } from "../schema/tableQuery";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
@@ -75,6 +80,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     materialPurchaseTrackings: "רכש חומר",
     materialUsageTrackings: "שימוש חומר",
     fuelOperationsTrackings: "פעולת דלק",
+    baleOrderTrackings: "הזמנת חבילות",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -156,6 +162,42 @@ function enrichOperationTrackingRow(
   };
 }
 
+function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument {
+  const bale = balesSeedData.find(
+    (item) => String(item._id) === String(row.bale ?? ""),
+  );
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(row.customer ?? ""),
+  );
+  const { pricePerTon, pricePerUnit } = resolveBaleOrderPrices({
+    pricePerTon: row.pricePerTon,
+    pricePerUnit: row.pricePerUnit,
+    bale: bale
+      ? { pricePerTon: bale.pricePerTon, pricePerUnit: bale.pricePerUnit }
+      : null,
+  });
+  const finalPrice = calcBaleOrderFinalPrice({
+    quantity: row.quantity,
+    weight: row.weight,
+    pricePerTon,
+    pricePerUnit,
+  });
+  const totalWithTransport = calcBaleOrderTotalWithTransport(
+    finalPrice,
+    row.transportPrice,
+  );
+
+  return {
+    ...row,
+    baleName: String(bale?.name ?? ""),
+    customerName: String(customer?.name ?? ""),
+    pricePerTon,
+    pricePerUnit,
+    finalPrice,
+    totalWithTransport,
+  };
+}
+
 function enrichFuelOperationTrackingRow(
   row: CollectionDocument,
 ): CollectionDocument {
@@ -214,6 +256,9 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "fuelOperationsTrackings") {
     return rows.map(enrichFuelOperationTrackingRow);
   }
+  if (collection === "baleOrderTrackings") {
+    return rows.map(enrichBaleOrderTrackingRow);
+  }
   return rows;
 }
 
@@ -250,6 +295,9 @@ async function createMock(
     applyFuelTankDeltaForMockCreate(doc);
     return enrichFuelOperationTrackingRow(doc);
   }
+  if (collection === "baleOrderTrackings") {
+    return enrichBaleOrderTrackingRow(doc);
+  }
   return doc;
 }
 
@@ -281,6 +329,9 @@ async function updateMock(
   }
   if (collection === "fuelOperationsTrackings") {
     return enrichFuelOperationTrackingRow(store[index]);
+  }
+  if (collection === "baleOrderTrackings") {
+    return enrichBaleOrderTrackingRow(store[index]);
   }
   return store[index];
 }

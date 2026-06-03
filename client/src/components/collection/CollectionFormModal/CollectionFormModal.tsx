@@ -4,7 +4,9 @@ import type {
   CollectionDocument,
   CollectionSchema,
 } from "../../../schema/types";
+import { useCollectionList } from "../../../hooks/collections/useCollectionList";
 import { buildPayload, getInitialValues, getRequiredFieldErrors } from "./helpers";
+import { applyBaleOrderFieldChange } from "./baleOrderForm";
 import { FormFieldControl } from "./FormFieldControl";
 import { buttonBaseStyles, fieldControlStyles } from "./sharedStyles";
 
@@ -125,6 +127,9 @@ export function CollectionFormModal({
   // Title: helper errors shown under specific required fields.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const isBaleOrderForm = schema.collection === "baleOrderTrackings";
+  const { data: bales = [] } = useCollectionList("bales");
+
   useEffect(() => {
     if (open) {
       setValues(getInitialValues(schema.form.fields, editingRow));
@@ -141,7 +146,11 @@ export function CollectionFormModal({
     : (schema.form.createTitle ?? `הוספת ${schema.label}`);
 
   const setFieldValue = (key: string, value: string) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValues((prev) => {
+      const next = { ...prev, [key]: value };
+      if (!isBaleOrderForm) return next;
+      return applyBaleOrderFieldChange(key, value, prev, bales);
+    });
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 import {
+  baleTrackingCollections,
   dataCollections,
   fuelTrackingCollections,
   materialTrackingCollections,
@@ -103,6 +104,18 @@ export function Sidebar() {
 
           <SidebarList>
             {fuelTrackingCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `sidebar-link${isActive ? ' sidebar-link--active' : ''}`
+                  }
+                >
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+            {baleTrackingCollections.map((item) => (
               <li key={item.id}>
                 <SidebarLink
                   to={item.path}

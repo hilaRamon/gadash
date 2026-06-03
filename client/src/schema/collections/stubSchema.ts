@@ -45,6 +45,7 @@ const dedicatedSchemaIds = new Set([
   "operations-trackings-field-work",
   "operations-trackings-admin",
   "fuel-operations-trackings",
+  "bale-order-trackings",
 ]);
 
 export const stubSchemas: CollectionSchema[] = [

@@ -18,6 +18,7 @@ import {
   operationsTrackingsAllSchema,
   operationsTrackingsFieldWorkSchema,
 } from "./collections/operationsTrackingsSchema";
+import { baleOrderTrackingsSchema } from "./collections/baleOrderTrackingsSchema";
 import { stubSchemas } from "./collections/stubSchema";
 
 const allSchemas: CollectionSchema[] = [
@@ -38,6 +39,7 @@ const allSchemas: CollectionSchema[] = [
   operationsTrackingsAllSchema,
   operationsTrackingsFieldWorkSchema,
   operationsTrackingsAdminSchema,
+  baleOrderTrackingsSchema,
   ...stubSchemas,
 ];
 
