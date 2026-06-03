@@ -46,7 +46,7 @@ export const fuelOperationTrackingRepository = {
 
   update(id: string, data: Partial<FuelOperationTrackingInput>) {
     return FuelOperationTrackingModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(operationPopulate)

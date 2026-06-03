@@ -23,7 +23,7 @@ export const employeeRepository = {
 
   update(id: string, data: Partial<EmployeeInput>) {
     return EmployeeModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

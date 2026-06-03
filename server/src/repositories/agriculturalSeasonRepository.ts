@@ -20,7 +20,7 @@ export const agriculturalSeasonRepository = {
 
   update(id: string, data: Partial<AgriculturalSeasonInput>) {
     return AgriculturalSeasonModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

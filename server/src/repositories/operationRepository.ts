@@ -35,7 +35,7 @@ export const operationRepository = {
 
   updateMetadata(id: string, data: Partial<OperationMetadataPatch>) {
     return OperationModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },
@@ -51,7 +51,7 @@ export const operationRepository = {
         $push: { costHistory: entry },
         $set: { currentCost },
       },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     ).lean();
   },
 

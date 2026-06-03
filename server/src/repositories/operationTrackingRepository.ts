@@ -52,7 +52,7 @@ export const operationTrackingRepository = {
 
   update(id: string, data: Partial<OperationTrackingInput>) {
     return OperationTrackingModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(operationPopulate)

@@ -47,7 +47,7 @@ export const materialUsageTrackingRepository = {
 
   update(id: string, data: Partial<MaterialUsageTrackingInput>) {
     return MaterialUsageTrackingModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(materialPopulate)

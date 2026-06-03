@@ -27,7 +27,7 @@ export const customerRepository = {
 
   update(id: string, data: Partial<CustomerInput>) {
     return CustomerModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

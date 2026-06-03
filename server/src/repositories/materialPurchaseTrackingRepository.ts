@@ -37,7 +37,7 @@ export const materialPurchaseTrackingRepository = {
 
   update(id: string, data: Partial<MaterialPurchaseTrackingInput>) {
     return MaterialPurchaseTrackingModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(materialPopulate)

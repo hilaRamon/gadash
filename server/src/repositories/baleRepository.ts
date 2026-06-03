@@ -22,7 +22,7 @@ export const baleRepository = {
 
   update(id: string, data: Partial<BaleInput>) {
     return BaleModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

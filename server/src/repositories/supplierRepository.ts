@@ -22,7 +22,7 @@ export const supplierRepository = {
 
   update(id: string, data: Partial<SupplierInput>) {
     return SupplierModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

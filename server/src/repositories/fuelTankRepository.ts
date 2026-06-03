@@ -21,7 +21,7 @@ export const fuelTankRepository = {
 
   update(id: string, data: Partial<FuelTankInput>) {
     return FuelTankModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

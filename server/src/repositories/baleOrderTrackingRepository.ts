@@ -41,7 +41,7 @@ export const baleOrderTrackingRepository = {
 
   update(id: string, data: Partial<BaleOrderTrackingInput>) {
     return BaleOrderTrackingModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(balePopulate)

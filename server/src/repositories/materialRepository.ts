@@ -35,7 +35,7 @@ export const materialRepository = {
 
   updateMetadata(id: string, data: Partial<MaterialMetadataPatch>) {
     return MaterialModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },
@@ -52,7 +52,7 @@ export const materialRepository = {
         $push: { pricingHistory: entry },
         $set: { currentBuyingCost, currentSalePercent },
       },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     ).lean();
   },
 

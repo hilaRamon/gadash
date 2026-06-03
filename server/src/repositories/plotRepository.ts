@@ -28,7 +28,7 @@ export const plotRepository = {
 
   update(id: string, data: Partial<PlotInput>) {
     return PlotModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate(customerPopulate)
