@@ -3,6 +3,7 @@ import { toObjectIds } from '../utils/mongoIds';
 
 export type FuelTankInput = {
   name: string;
+  currentAmount: number;
 };
 
 export const fuelTankRepository = {
@@ -20,7 +21,7 @@ export const fuelTankRepository = {
 
   update(id: string, data: Partial<FuelTankInput>) {
     return FuelTankModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

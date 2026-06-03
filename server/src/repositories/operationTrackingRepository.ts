@@ -1,0 +1,72 @@
+import { Types } from 'mongoose';
+import { OperationTrackingModel } from '../models/OperationTracking';
+import { toObjectIds } from '../utils/mongoIds';
+
+export type OperationTrackingInput = {
+  date: Date;
+  operation: Types.ObjectId;
+  plot: Types.ObjectId;
+  employee: Types.ObjectId;
+  startTime: string;
+  endTime: string;
+  tractor: Types.ObjectId;
+  notes?: string;
+  billable: boolean;
+};
+
+const operationPopulate = {
+  path: 'operation',
+  select: '_id name operationType currentCost',
+};
+const plotPopulate = {
+  path: 'plot',
+  select: '_id name customer dunam',
+  populate: { path: 'customer', select: '_id name' },
+};
+const employeePopulate = { path: 'employee', select: '_id name' };
+const tractorPopulate = { path: 'tractor', select: '_id name' };
+
+export const operationTrackingRepository = {
+  findAll() {
+    return OperationTrackingModel.find()
+      .populate(operationPopulate)
+      .populate(plotPopulate)
+      .populate(employeePopulate)
+      .populate(tractorPopulate)
+      .sort({ date: -1 })
+      .lean();
+  },
+
+  findById(id: string) {
+    return OperationTrackingModel.findById(id)
+      .populate(operationPopulate)
+      .populate(plotPopulate)
+      .populate(employeePopulate)
+      .populate(tractorPopulate)
+      .lean();
+  },
+
+  create(data: OperationTrackingInput) {
+    return OperationTrackingModel.create(data);
+  },
+
+  update(id: string, data: Partial<OperationTrackingInput>) {
+    return OperationTrackingModel.findByIdAndUpdate(id, data, {
+      returnDocument: 'after',
+      runValidators: true,
+    })
+      .populate(operationPopulate)
+      .populate(plotPopulate)
+      .populate(employeePopulate)
+      .populate(tractorPopulate)
+      .lean();
+  },
+
+  delete(id: string) {
+    return OperationTrackingModel.findByIdAndDelete(id).lean();
+  },
+
+  deleteMany(ids: string[]) {
+    return OperationTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
+  },
+};

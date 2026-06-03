@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
-import { dataCollections } from './config/navigation'
+import { dataCollections, trackingCollections } from './config/navigation'
 import { CollectionPage } from './pages/CollectionPage'
 import { HomePage } from './pages/HomePage'
 import { SectionPage } from './pages/SectionPage'
@@ -13,6 +13,13 @@ function App() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           {dataCollections.map((item) => (
+            <Route
+              key={item.id}
+              path={item.path.replace(/^\//, '')}
+              element={<CollectionPage collectionId={item.id} />}
+            />
+          ))}
+          {trackingCollections.map((item) => (
             <Route
               key={item.id}
               path={item.path.replace(/^\//, '')}

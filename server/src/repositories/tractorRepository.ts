@@ -21,7 +21,7 @@ export const tractorRepository = {
 
   update(id: string, data: Partial<TractorInput>) {
     return TractorModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

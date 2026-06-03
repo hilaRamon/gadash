@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import styled from 'styled-components'
 import {
   formatMobileDisplay,
   MOBILE_INVALID_ERROR,
@@ -11,6 +12,29 @@ type PhoneFieldProps = {
   required?: boolean
   onChange: (displayValue: string) => void
 }
+
+const Input = styled.input`
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+`
+
+const Error = styled.p`
+  margin: 0 0 1rem;
+  color: #fc8181;
+  font-size: 0.875rem;
+`
 
 export function PhoneField({ id, value, required, onChange }: PhoneFieldProps) {
   const [error, setError] = useState<string | null>(null)
@@ -37,12 +61,11 @@ export function PhoneField({ id, value, required, onChange }: PhoneFieldProps) {
 
   return (
     <>
-      <input
+      <Input
         id={id}
         type="tel"
         inputMode="tel"
         autoComplete="tel"
-        className="form-input"
         value={value}
         onChange={(e) => {
           onChange(e.target.value)
@@ -51,7 +74,7 @@ export function PhoneField({ id, value, required, onChange }: PhoneFieldProps) {
         onBlur={handleBlur}
         required={required}
       />
-      {error && <p className="form-error">{error}</p>}
+      {error && <Error>{error}</Error>}
     </>
   )
 }

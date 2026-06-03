@@ -23,7 +23,7 @@ export const contractorRepository = {
 
   update(id: string, data: Partial<ContractorInput>) {
     return ContractorModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },

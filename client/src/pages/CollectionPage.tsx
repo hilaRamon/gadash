@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import styled from 'styled-components'
 import { getCollectionSchema } from '../schema/registry'
 import type { CollectionSchema } from '../schema/types'
 import { applyTableQuery } from '../lib/tableQuery'
@@ -18,7 +19,6 @@ import { CollectionFormModal } from '../components/collection/CollectionFormModa
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
 import type { CollectionDocument } from '../schema/types'
 import './Page.css'
-import '../components/collection/Collection.css'
 
 type CollectionPageProps = {
   collectionId: string
@@ -28,6 +28,24 @@ type DeleteTarget =
   | { type: 'single'; row: CollectionDocument }
   | { type: 'bulk'; ids: string[] }
   | null
+
+function matchesOperationTrackingPageFilter(
+  collectionId: string,
+  row: CollectionDocument,
+): boolean {
+  if (!collectionId.startsWith('operations-trackings-')) return true
+  const operationType = String(row.operationType ?? '')
+  if (collectionId === 'operations-trackings-field-work') {
+    return operationType === 'עיבוד'
+  }
+  if (collectionId === 'operations-trackings-admin') {
+    return operationType === 'מנהלה'
+  }
+  if (collectionId === 'operations-trackings-all') {
+    return operationType !== 'דלק'
+  }
+  return true
+}
 
 export function CollectionPage({ collectionId }: CollectionPageProps) {
   const schema = getCollectionSchema(collectionId)
@@ -40,10 +58,22 @@ export function CollectionPage({ collectionId }: CollectionPageProps) {
     )
   }
 
-  return <CollectionPageContent key={schema.collection} schema={schema} />
+  return (
+    <CollectionPageContent
+      key={schema.id}
+      schema={schema}
+      collectionId={collectionId}
+    />
+  )
 }
 
-function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
+function CollectionPageContent({
+  schema,
+  collectionId,
+}: {
+  schema: CollectionSchema
+  collectionId: string
+}) {
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -61,8 +91,13 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
   const bulkDeleteMutation = useBulkDeleteDocuments(schema.collection)
 
   const visibleRows = useMemo(
-    () => applyTableQuery(rows, schema, tableQuery.state),
-    [rows, schema, tableQuery.state],
+    () =>
+      applyTableQuery(
+        rows.filter((row) => matchesOperationTrackingPageFilter(collectionId, row)),
+        schema,
+        tableQuery.state,
+      ),
+    [rows, schema, tableQuery.state, collectionId],
   )
 
   const openCreate = useCallback(() => {
@@ -158,11 +193,11 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
       message: (
         <>
           האם למחוק {deleteTarget.ids.length} פריטים מתוך {schema.label}?
-          <ul className="dialog-list">
+          <DeleteDialogList>
             {targetRows.map((row) => (
               <li key={row._id}>{getDocumentLabel(schema, row)}</li>
             ))}
-          </ul>
+          </DeleteDialogList>
           לא ניתן לשחזר.
         </>
       ),
@@ -171,8 +206,8 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
 
   return (
     <div className="page page-collection">
-      <header className="collection-page-header">
-        <h1 className="page-title">{schema.label}</h1>
+      <PageHeader>
+        <PageTitle>{schema.label}</PageTitle>
         <CollectionToolbar
           schema={schema}
           queryState={tableQuery.state}
@@ -193,7 +228,7 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
           exportDisabled={isLoading || isError}
           onExportExcel={handleExportExcel}
         />
-      </header>
+      </PageHeader>
 
       <section className="page-body page-body-flush">
         <DataTable
@@ -234,3 +269,31 @@ function CollectionPageContent({ schema }: { schema: CollectionSchema }) {
     </div>
   )
 }
+
+const PageHeader = styled.header`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`
+
+const PageTitle = styled.h1`
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+`
+
+const DeleteDialogList = styled.ul`
+  margin: 0.5rem 0;
+  padding-inline-start: 1.25rem;
+  max-height: 12rem;
+  overflow-y: auto;
+
+  li {
+    margin: 0.125rem 0;
+  }
+`

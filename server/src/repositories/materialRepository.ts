@@ -1,4 +1,3 @@
-import type { BillingUnit } from '../models/Material';
 import { MaterialModel } from '../models/Material';
 import { toObjectIds } from '../utils/mongoIds';
 
@@ -10,7 +9,6 @@ export type MaterialPricingEntryInput = {
 
 export type MaterialInput = {
   name: string;
-  billingUnit: BillingUnit;
   currentQuantity: number;
   currentBuyingCost: number;
   currentSalePercent: number;
@@ -19,7 +17,7 @@ export type MaterialInput = {
 
 export type MaterialMetadataPatch = Pick<
   MaterialInput,
-  'name' | 'billingUnit' | 'currentQuantity'
+  'name' | 'currentQuantity'
 >;
 
 export const materialRepository = {
@@ -37,7 +35,7 @@ export const materialRepository = {
 
   updateMetadata(id: string, data: Partial<MaterialMetadataPatch>) {
     return MaterialModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
   },
@@ -54,7 +52,7 @@ export const materialRepository = {
         $push: { pricingHistory: entry },
         $set: { currentBuyingCost, currentSalePercent },
       },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     ).lean();
   },
 

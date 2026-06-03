@@ -11,13 +11,17 @@
     "seed:customers": "tsx scripts/seed-customers.ts",
     "seed:employees": "tsx scripts/seed-employees.ts",
     "seed:tractors": "tsx scripts/seed-tractors.ts",
+    "seed:suppliers": "tsx scripts/seed-suppliers.ts",
     "seed:operations": "tsx scripts/seed-operations.ts",
     "seed:materials": "tsx scripts/seed-materials.ts",
     "seed:bales": "tsx scripts/seed-bales.ts",
     "seed:plots": "tsx scripts/seed-plots.ts",
     "seed:agricultural-seasons": "tsx scripts/seed-agricultural-seasons.ts",
     "seed:fuel-tanks": "tsx scripts/seed-fuel-tanks.ts",
+    "seed:material-purchase-trackings": "tsx scripts/seed-material-purchase-trackings.ts",
+    "seed:material-usage-trackings": "tsx scripts/seed-material-usage-trackings.ts",
     "migrate:unset-number-fields": "tsx scripts/unset-legacy-number-fields.ts",
+    "migrate:unset-material-billing-unit": "tsx scripts/unset-material-billing-unit.ts",
     "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts"
   },
   "dependencies": {
