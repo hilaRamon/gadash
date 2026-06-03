@@ -77,6 +77,12 @@ export function getInitialValues(
       continue;
     }
 
+    if (field.type === "number" && field.defaultValue === null) {
+      values[field.key] =
+        raw == null || raw === "" ? "" : String(raw);
+      continue;
+    }
+
     values[field.key] = raw == null ? "" : String(raw);
   }
 

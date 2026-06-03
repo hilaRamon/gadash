@@ -19,6 +19,7 @@ import {
   operationsTrackingsFieldWorkSchema,
 } from "./collections/operationsTrackingsSchema";
 import { baleOrderTrackingsSchema } from "./collections/baleOrderTrackingsSchema";
+import { contractorTrackingsSchema } from "./collections/contractorTrackingsSchema";
 import { stubSchemas } from "./collections/stubSchema";
 
 const allSchemas: CollectionSchema[] = [
@@ -40,6 +41,7 @@ const allSchemas: CollectionSchema[] = [
   operationsTrackingsFieldWorkSchema,
   operationsTrackingsAdminSchema,
   baleOrderTrackingsSchema,
+  contractorTrackingsSchema,
   ...stubSchemas,
 ];
 

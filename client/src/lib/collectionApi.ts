@@ -19,6 +19,10 @@ import {
   resolveBaleOrderPrices,
 } from "./baleOrderPricing";
 import type { TableQueryParams } from "../schema/tableQuery";
+import {
+  calcFinalPrice,
+  resolveUnitAmount,
+} from "./contractorTrackingPricing";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -81,6 +85,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     materialUsageTrackings: "שימוש חומר",
     fuelOperationsTrackings: "פעולת דלק",
     baleOrderTrackings: "הזמנת חבילות",
+    contractorTrackings: "מעקב קבלן",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -195,6 +200,42 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
   };
 }
 
+function enrichContractorTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const contractor = contractorsSeedData.find(
+    (item) => String(item._id) === String(row.contractor ?? ""),
+  );
+  const plot = plotsSeedData.find(
+    (item) => String(item._id) === String(row.plot ?? ""),
+  );
+  const operation = operationsSeedData.find(
+    (item) => String(item._id) === String(row.operation ?? ""),
+  );
+  const pricingForm = String(row.pricingForm ?? "");
+  const unitAmount =
+    resolveUnitAmount(pricingForm, {
+      startTime: String(row.startTime ?? ""),
+      endTime: String(row.endTime ?? ""),
+      unitAmount: String(row.unitAmount ?? ""),
+    }) ?? Number(row.unitAmount ?? 0);
+  const unitPrice = Number(row.unitPrice ?? 0);
+  const finalPrice = calcFinalPrice(unitPrice, unitAmount);
+
+  return {
+    ...row,
+    contractorName: String(contractor?.name ?? ""),
+    plotName: String(plot?.name ?? ""),
+    operationName: String(operation?.name ?? ""),
+    unitAmount,
+    finalPrice,
+    customerPrice:
+      row.customerPrice == null || row.customerPrice === ""
+        ? null
+        : Number(row.customerPrice),
+  };
+}
+
 function enrichFuelOperationTrackingRow(
   row: CollectionDocument,
 ): CollectionDocument {
@@ -256,6 +297,9 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "baleOrderTrackings") {
     return rows.map(enrichBaleOrderTrackingRow);
   }
+  if (collection === "contractorTrackings") {
+    return rows.map(enrichContractorTrackingRow);
+  }
   return rows;
 }
 
@@ -302,6 +346,9 @@ async function createMock(
   if (collection === "baleOrderTrackings") {
     return enrichBaleOrderTrackingRow(doc);
   }
+  if (collection === "contractorTrackings") {
+    return enrichContractorTrackingRow(doc);
+  }
   return doc;
 }
 
@@ -343,6 +390,9 @@ async function updateMock(
   }
   if (collection === "baleOrderTrackings") {
     return enrichBaleOrderTrackingRow(store[index]);
+  }
+  if (collection === "contractorTrackings") {
+    return enrichContractorTrackingRow(store[index]);
   }
   return store[index];
 }

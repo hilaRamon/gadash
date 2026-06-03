@@ -121,6 +121,15 @@ export const fuelTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const contractorTrackingCollections: TrackingCollection[] = [
+  {
+    id: "contractor-trackings",
+    label: "מעקב קבלנים",
+    path: "/trackings/contractors",
+    collection: "contractorTrackings",
+  },
+];
+
 export const baleTrackingCollections: TrackingCollection[] = [
   {
     id: "bale-order-trackings",
@@ -133,6 +142,7 @@ export const baleTrackingCollections: TrackingCollection[] = [
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
+  ...contractorTrackingCollections,
   ...fuelTrackingCollections,
   ...baleTrackingCollections,
 ];

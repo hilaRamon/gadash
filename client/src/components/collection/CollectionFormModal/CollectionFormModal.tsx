@@ -7,6 +7,12 @@ import type {
 import { useCollectionList } from "../../../hooks/collections/useCollectionList";
 import { buildPayload, getInitialValues, getRequiredFieldErrors } from "./helpers";
 import { applyBaleOrderFieldChange } from "./baleOrderForm";
+import {
+  applyContractorTrackingFieldChange,
+  enrichContractorTrackingPayload,
+  getContractorTrackingRequiredErrors,
+  getContractorTrackingVisibleFields,
+} from "./contractorTrackingForm";
 import { FormFieldControl } from "./FormFieldControl";
 type CollectionFormModalProps = {
   open: boolean;
@@ -135,6 +141,7 @@ export function CollectionFormModal({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
+  const isContractorTrackingForm = schema.collection === "contractorTrackings";
   const { data: bales = [] } = useCollectionList("bales");
   const hiddenOperationField = schema.form.fields.find(
     (field) =>
@@ -157,11 +164,17 @@ export function CollectionFormModal({
     (schema.collection === "operationsTrackings" && isManahelaOperation);
 
   const adminFormKeysToHide = new Set(["operation", "plot", "billable"]);
-  const visibleFields = schema.form.fields.filter((field) => {
-    if (field.hidden) return false;
-    if (isAdminTrackingForm && adminFormKeysToHide.has(field.key)) return false;
-    return true;
-  });
+  const visibleFields = (() => {
+    const base = schema.form.fields.filter((field) => {
+      if (field.hidden) return false;
+      if (isAdminTrackingForm && adminFormKeysToHide.has(field.key)) return false;
+      return true;
+    });
+    if (isContractorTrackingForm) {
+      return getContractorTrackingVisibleFields(base, values);
+    }
+    return base;
+  })();
 
   useEffect(() => {
     if (open) {
@@ -196,6 +209,11 @@ export function CollectionFormModal({
     });
   }, [open, isAdminTrackingForm]);
 
+  useEffect(() => {
+    if (!open || !isContractorTrackingForm) return;
+    setValues((prev) => applyContractorTrackingFieldChange("pricingForm", prev.pricingForm ?? "", prev));
+  }, [open, isContractorTrackingForm]);
+
   if (!open) return null;
 
   // Title: computed modal heading for create vs edit mode.
@@ -205,9 +223,14 @@ export function CollectionFormModal({
 
   const setFieldValue = (key: string, value: string) => {
     setValues((prev) => {
-      const next = { ...prev, [key]: value };
-      if (!isBaleOrderForm) return next;
-      return applyBaleOrderFieldChange(key, value, prev, bales);
+      let next = { ...prev, [key]: value };
+      if (isBaleOrderForm) {
+        next = applyBaleOrderFieldChange(key, value, prev, bales);
+      }
+      if (isContractorTrackingForm) {
+        next = applyContractorTrackingFieldChange(key, value, next);
+      }
+      return next;
     });
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
@@ -249,10 +272,12 @@ export function CollectionFormModal({
         })
       : schema.form.fields;
 
-    const requiredFieldErrors = getRequiredFieldErrors(
-      fieldsForSubmit.filter((field) => visibleFields.some((v) => v.key === field.key)),
-      values,
+    const fieldsForValidation = fieldsForSubmit.filter((field) =>
+      visibleFields.some((v) => v.key === field.key),
     );
+    const requiredFieldErrors = isContractorTrackingForm
+      ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
+      : getRequiredFieldErrors(fieldsForValidation, values);
     if (Object.keys(requiredFieldErrors).length > 0) {
       setFieldErrors(requiredFieldErrors);
       setValidationError(null);
@@ -271,6 +296,10 @@ export function CollectionFormModal({
     setValidationError(null);
     if (isAdminTrackingForm) {
       onSubmit({ ...payload, billable: false, plot: null });
+      return;
+    }
+    if (isContractorTrackingForm) {
+      onSubmit(enrichContractorTrackingPayload(payload, values));
       return;
     }
     onSubmit(payload);
