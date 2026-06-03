@@ -1,4 +1,5 @@
 import { contractorsSeedData } from '../../client/src/data/contractorsSeed';
+import { moversSeedData } from '../../client/src/data/moversSeed';
 import { customersSeedData } from '../../client/src/data/customersSeed';
 import { employeesSeedData } from '../../client/src/data/employeesSeed';
 import { plotsSeedRows } from '../../client/src/data/plotsSeed';
@@ -15,6 +16,10 @@ import type { ApiDocument } from '../src/types/apiDocument';
 
 export function loadContractorsSeed(): ApiDocument[] {
   return contractorsSeedData;
+}
+
+export function loadMoversSeed(): ApiDocument[] {
+  return moversSeedData;
 }
 
 export function loadCustomersSeed(): ApiDocument[] {

@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "seed": "tsx scripts/seed-all.ts",
     "seed:contractors": "tsx scripts/seed-contractors.ts",
+    "seed:movers": "tsx scripts/seed-movers.ts",
     "seed:customers": "tsx scripts/seed-customers.ts",
     "seed:employees": "tsx scripts/seed-employees.ts",
     "seed:tractors": "tsx scripts/seed-tractors.ts",

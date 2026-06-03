@@ -21,6 +21,7 @@ function NavLinkWithActiveClass({
 import {
   baleTrackingCollections,
   contractorTrackingCollections,
+  transportTrackingCollections,
   dataCollections,
   fuelTrackingCollections,
   materialTrackingCollections,
@@ -113,6 +114,13 @@ export function Sidebar() {
 
           <SidebarList>
             {contractorTrackingCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+            {transportTrackingCollections.map((item) => (
               <li key={item.id}>
                 <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}

@@ -17,6 +17,7 @@ import { CollectionToolbar } from '../components/collection/CollectionToolbar'
 import { DataTable } from '../components/collection/DataTable'
 import { CollectionFormModal } from '../components/collection/CollectionFormModal'
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
+import { TransportTrackingPageExtras } from '../components/transport/TransportTrackingPageExtras'
 import type { CollectionDocument } from '../schema/types'
 import './Page.css'
 
@@ -164,6 +165,7 @@ function CollectionPageContent({
     }
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery])
 
+  const isTransportTrackingPage = collectionId === 'transport-trackings'
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending
 
@@ -206,9 +208,10 @@ function CollectionPageContent({
 
   return (
     <div className="page page-collection">
-      <PageHeader>
-        <PageTitle>{schema.label}</PageTitle>
-        <CollectionToolbar
+      <PageHeader $stacked={isTransportTrackingPage}>
+        <PageHeaderTop>
+          <PageTitle>{schema.label}</PageTitle>
+          <CollectionToolbar
           schema={schema}
           queryState={tableQuery.state}
           selectedCount={tableQuery.state.selectedIds.length}
@@ -227,7 +230,11 @@ function CollectionPageContent({
           }
           exportDisabled={isLoading || isError}
           onExportExcel={handleExportExcel}
-        />
+          />
+        </PageHeaderTop>
+        {isTransportTrackingPage && (
+          <TransportTrackingPageExtras rows={rows} />
+        )}
       </PageHeader>
 
       <section className="page-body page-body-flush">
@@ -270,13 +277,23 @@ function CollectionPageContent({
   )
 }
 
-const PageHeader = styled.header`
+const PageHeader = styled.header<{ $stacked?: boolean }>`
+  display: flex;
+  flex-direction: ${({ $stacked }) => ($stacked ? 'column' : 'row')};
+  flex-wrap: wrap;
+  align-items: ${({ $stacked }) => ($stacked ? 'stretch' : 'center')};
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`
+
+const PageHeaderTop = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  width: 100%;
 `
 
 const PageTitle = styled.h1`

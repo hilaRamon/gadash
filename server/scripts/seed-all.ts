@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { ContractorModel } from '../src/models/Contractor';
+import { MoverModel } from '../src/models/Mover';
 import { CustomerModel } from '../src/models/Customer';
 import { EmployeeModel } from '../src/models/Employee';
 import { PlotModel } from '../src/models/Plot';
@@ -19,6 +20,8 @@ import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSe
 import type { AgriculturalSeasonInput } from '../src/repositories/agriculturalSeasonRepository';
 import { contractorRepository } from '../src/repositories/contractorRepository';
 import type { ContractorInput } from '../src/repositories/contractorRepository';
+import { moverRepository } from '../src/repositories/moverRepository';
+import type { MoverInput } from '../src/repositories/moverRepository';
 import { customerRepository } from '../src/repositories/customerRepository';
 import type { CustomerInput } from '../src/repositories/customerRepository';
 import { employeeRepository } from '../src/repositories/employeeRepository';
@@ -39,6 +42,7 @@ import { materialUsageTrackingRepository } from '../src/repositories/materialUsa
 import type { MaterialUsageTrackingInput } from '../src/repositories/materialUsageTrackingRepository';
 import {
   loadContractorsSeed,
+  loadMoversSeed,
   loadCustomersSeed,
   loadEmployeesSeed,
   loadAgriculturalSeasonsSeed,
@@ -64,6 +68,7 @@ async function seedAll() {
 
   await Promise.all([
     ContractorModel.syncIndexes(),
+    MoverModel.syncIndexes(),
     CustomerModel.syncIndexes(),
     EmployeeModel.syncIndexes(),
     MaterialModel.syncIndexes(),
@@ -82,6 +87,11 @@ async function seedAll() {
   await contractorRepository.deleteAll();
   await contractorRepository.insertMany(contractors);
   console.log(`Seeded ${contractors.length} contractors`);
+
+  const movers = toSeedInput<MoverInput>(loadMoversSeed());
+  await moverRepository.deleteAll();
+  await moverRepository.insertMany(movers);
+  console.log(`Seeded ${movers.length} movers`);
 
   const customers = toSeedInput<CustomerInput>(loadCustomersSeed());
   await customerRepository.deleteAll();

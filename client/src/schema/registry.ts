@@ -1,5 +1,6 @@
 import type { CollectionSchema } from "./types";
 import { contractorsSchema } from "./collections/contractorsSchema";
+import { moversSchema } from "./collections/moversSchema";
 import { customersSchema } from "./collections/customersSchema";
 import { employeesSchema } from "./collections/employeesSchema";
 import { plotsSchema } from "./collections/plotsSchema";
@@ -20,12 +21,14 @@ import {
 } from "./collections/operationsTrackingsSchema";
 import { baleOrderTrackingsSchema } from "./collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "./collections/contractorTrackingsSchema";
+import { transportTrackingsSchema } from "./collections/transportTrackingsSchema";
 import { stubSchemas } from "./collections/stubSchema";
 
 const allSchemas: CollectionSchema[] = [
   employeesSchema,
   customersSchema,
   contractorsSchema,
+  moversSchema,
   suppliersSchema,
   operationsSchema,
   materialsSchema,
@@ -42,6 +45,7 @@ const allSchemas: CollectionSchema[] = [
   operationsTrackingsAdminSchema,
   baleOrderTrackingsSchema,
   contractorTrackingsSchema,
+  transportTrackingsSchema,
   ...stubSchemas,
 ];
 

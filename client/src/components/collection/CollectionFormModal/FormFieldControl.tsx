@@ -119,6 +119,7 @@ export function FormFieldControl({
       id={`field-${field.key}`}
       type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
       value={value}
+      disabled={disabled}
       onChange={(e) => setFieldValue(field.key, e.target.value)}
       required={field.required}
     />

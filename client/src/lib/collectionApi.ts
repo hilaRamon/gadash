@@ -1,5 +1,6 @@
 import api from "./api";
 import { contractorsSeedData } from "../data/contractorsSeed";
+import { moversSeedData } from "../data/moversSeed";
 import { customersSeedData } from "../data/customersSeed";
 import { employeesSeedData } from "../data/employeesSeed";
 import { plotsSeedData } from "../data/plotsSeed";
@@ -23,6 +24,10 @@ import {
   calcFinalPrice,
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
+import {
+  calcFinalPrice as calcTransportFinalPrice,
+  calcHoursBetween as calcTransportHours,
+} from "./transportTrackingPricing";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -37,6 +42,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   }
   if (collection === "contractors") {
     return contractorsSeedData.map((row) => ({ ...row }));
+  }
+  if (collection === "movers") {
+    return moversSeedData.map((row) => ({ ...row }));
   }
   if (collection === "suppliers") {
     return suppliersSeedData.map((row) => ({ ...row }));
@@ -73,6 +81,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     employees: "עובד",
     customers: "לקוח",
     contractors: "קבלן",
+    movers: "מוביל",
     suppliers: "ספק",
     operations: "פעולה",
     materials: "חומר",
@@ -86,6 +95,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     fuelOperationsTrackings: "פעולת דלק",
     baleOrderTrackings: "הזמנת חבילות",
     contractorTrackings: "מעקב קבלן",
+    transportTrackings: "מעקב הובלה",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -200,6 +210,28 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
   };
 }
 
+function enrichTransportTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const mover = moversSeedData.find(
+    (item) => String(item._id) === String(row.mover ?? ""),
+  );
+  const hours =
+    calcTransportHours(
+      String(row.startTime ?? ""),
+      String(row.endTime ?? ""),
+    ) ?? Number(row.hours ?? 0);
+  const hourlyRate = Number(row.hourlyRate ?? 0);
+  const finalPrice = calcTransportFinalPrice(hourlyRate, hours);
+
+  return {
+    ...row,
+    moverName: String(mover?.name ?? ""),
+    hours,
+    finalPrice,
+  };
+}
+
 function enrichContractorTrackingRow(
   row: CollectionDocument,
 ): CollectionDocument {
@@ -300,6 +332,9 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "contractorTrackings") {
     return rows.map(enrichContractorTrackingRow);
   }
+  if (collection === "transportTrackings") {
+    return rows.map(enrichTransportTrackingRow);
+  }
   return rows;
 }
 
@@ -349,6 +384,9 @@ async function createMock(
   if (collection === "contractorTrackings") {
     return enrichContractorTrackingRow(doc);
   }
+  if (collection === "transportTrackings") {
+    return enrichTransportTrackingRow(doc);
+  }
   return doc;
 }
 
@@ -393,6 +431,9 @@ async function updateMock(
   }
   if (collection === "contractorTrackings") {
     return enrichContractorTrackingRow(store[index]);
+  }
+  if (collection === "transportTrackings") {
+    return enrichTransportTrackingRow(store[index]);
   }
   return store[index];
 }

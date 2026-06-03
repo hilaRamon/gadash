@@ -8,3 +8,8 @@ export const collectionKeys = {
   detail: (collection: string, id: string) =>
     [...collectionKeys.all, 'detail', collection, id] as const,
 }
+
+export const transportChargeStateKeys = {
+  all: ['transportChargeState'] as const,
+  detail: () => [...transportChargeStateKeys.all, 'detail'] as const,
+}

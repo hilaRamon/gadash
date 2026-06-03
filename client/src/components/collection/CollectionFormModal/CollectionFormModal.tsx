@@ -13,6 +13,15 @@ import {
   getContractorTrackingRequiredErrors,
   getContractorTrackingVisibleFields,
 } from "./contractorTrackingForm";
+import {
+  applyTransportTrackingFieldChange,
+  enrichTransportTrackingPayload,
+  getTransportTrackingRequiredErrors,
+} from "./transportTrackingForm";
+import {
+  calcFinalPrice,
+  calcHoursBetween,
+} from "../../../lib/transportTrackingPricing";
 import { FormFieldControl } from "./FormFieldControl";
 type CollectionFormModalProps = {
   open: boolean;
@@ -142,7 +151,9 @@ export function CollectionFormModal({
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const isContractorTrackingForm = schema.collection === "contractorTrackings";
+  const isTransportTrackingForm = schema.collection === "transportTrackings";
   const { data: bales = [] } = useCollectionList("bales");
+  const { data: movers = [] } = useCollectionList("movers");
   const hiddenOperationField = schema.form.fields.find(
     (field) =>
       field.hidden &&
@@ -214,6 +225,22 @@ export function CollectionFormModal({
     setValues((prev) => applyContractorTrackingFieldChange("pricingForm", prev.pricingForm ?? "", prev));
   }, [open, isContractorTrackingForm]);
 
+  useEffect(() => {
+    if (!open || !isTransportTrackingForm) return;
+    setValues((prev) => {
+      const hours = calcHoursBetween(prev.startTime ?? "", prev.endTime ?? "");
+      if (hours == null) return prev;
+      const rate = Number(prev.hourlyRate);
+      return {
+        ...prev,
+        hours: String(hours),
+        finalPrice: Number.isFinite(rate)
+          ? String(calcFinalPrice(rate, hours))
+          : prev.finalPrice ?? "",
+      };
+    });
+  }, [open, isTransportTrackingForm]);
+
   if (!open) return null;
 
   // Title: computed modal heading for create vs edit mode.
@@ -229,6 +256,9 @@ export function CollectionFormModal({
       }
       if (isContractorTrackingForm) {
         next = applyContractorTrackingFieldChange(key, value, next);
+      }
+      if (isTransportTrackingForm) {
+        next = applyTransportTrackingFieldChange(key, value, next, movers);
       }
       return next;
     });
@@ -277,7 +307,9 @@ export function CollectionFormModal({
     );
     const requiredFieldErrors = isContractorTrackingForm
       ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
-      : getRequiredFieldErrors(fieldsForValidation, values);
+      : isTransportTrackingForm
+        ? getTransportTrackingRequiredErrors(fieldsForValidation, values)
+        : getRequiredFieldErrors(fieldsForValidation, values);
     if (Object.keys(requiredFieldErrors).length > 0) {
       setFieldErrors(requiredFieldErrors);
       setValidationError(null);
@@ -300,6 +332,10 @@ export function CollectionFormModal({
     }
     if (isContractorTrackingForm) {
       onSubmit(enrichContractorTrackingPayload(payload, values));
+      return;
+    }
+    if (isTransportTrackingForm) {
+      onSubmit(enrichTransportTrackingPayload(payload, values));
       return;
     }
     onSubmit(payload);
@@ -325,7 +361,11 @@ export function CollectionFormModal({
                 field={field}
                 value={values[field.key] ?? ""}
                 setFieldValue={setFieldValue}
-                disabled={isAdminTrackingForm && field.key === "billable"}
+                disabled={
+                  (isAdminTrackingForm && field.key === "billable") ||
+                  (isTransportTrackingForm &&
+                    (field.key === "hours" || field.key === "finalPrice"))
+                }
                 booleanLabels={
                   field.type === "boolean" ? getBooleanLabels(field.key) : undefined
                 }
