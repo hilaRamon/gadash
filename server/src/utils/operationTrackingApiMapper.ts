@@ -64,6 +64,12 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
       : { id: '', name: '' };
   const employee = toRefParts(doc.employee);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
+  const unitCost =
+    operationRaw && typeof operationRaw === 'object'
+      ? Number(operationRaw.currentCost ?? 0)
+      : 0;
+  const dunam =
+    plotRaw && typeof plotRaw === 'object' ? Number(plotRaw.dunam ?? 0) : 0;
 
   return {
     ...base,
@@ -79,6 +85,8 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
     plotName: plot.name || null,
     employee: employee.id,
     employeeName: employee.name,
+    unitCost,
+    dunam,
     finalPrice: calcFinalPrice(doc),
   };
 }

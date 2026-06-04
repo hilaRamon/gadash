@@ -12,6 +12,10 @@ export type CustomerBillingTrackingInput = {
   status: CustomerBillingStatus;
   paid?: boolean;
   finalPrice: number;
+  operationsTrackingIds?: Types.ObjectId[];
+  materialUsageTrackingIds?: Types.ObjectId[];
+  contractorTrackingIds?: Types.ObjectId[];
+  baleOrderTrackingIds?: Types.ObjectId[];
 };
 
 const customerPopulate = { path: 'customer', select: '_id name' };

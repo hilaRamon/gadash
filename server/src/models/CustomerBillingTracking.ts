@@ -23,6 +23,22 @@ const customerBillingTrackingSchema = new Schema(
     },
     paid: { type: Boolean, default: false },
     finalPrice: { type: Number, required: true, min: 0 },
+    operationsTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'OperationTracking' }],
+      default: [],
+    },
+    materialUsageTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'MaterialUsageTracking' }],
+      default: [],
+    },
+    contractorTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'ContractorTracking' }],
+      default: [],
+    },
+    baleOrderTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'BaleOrderTracking' }],
+      default: [],
+    },
   },
   { timestamps: true, versionKey: false },
 );

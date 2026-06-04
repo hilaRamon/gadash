@@ -6,6 +6,18 @@ type PopulatedRef = {
   name?: string;
 };
 
+function toIdArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (item != null && typeof item === 'object' && '_id' in item) {
+        return String((item as { _id: unknown })._id);
+      }
+      return String(item ?? '');
+    })
+    .filter(Boolean);
+}
+
 function toRefParts(value: unknown): { id: string; name: string } {
   const ref = value as PopulatedRef | undefined;
   if (ref && typeof ref === 'object' && ref._id != null) {
@@ -38,6 +50,10 @@ export function customerBillingTrackingToApiDocument(
     paid: doc.paid === true,
     finalPrice: Number(doc.finalPrice ?? 0),
     notes: String(doc.notes ?? ''),
+    operationsTrackingIds: toIdArray(doc.operationsTrackingIds),
+    materialUsageTrackingIds: toIdArray(doc.materialUsageTrackingIds),
+    contractorTrackingIds: toIdArray(doc.contractorTrackingIds),
+    baleOrderTrackingIds: toIdArray(doc.baleOrderTrackingIds),
   };
 }
 

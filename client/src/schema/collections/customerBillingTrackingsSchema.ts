@@ -13,7 +13,6 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
   collection: "customerBillingTrackings",
   label: "מעקב חיובי לקוחות",
   rowAction: "view",
-  disableAdd: true,
   columns: [
     {
       key: "date",

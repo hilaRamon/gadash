@@ -163,6 +163,9 @@ function enrichOperationTrackingRow(
   const employee = employeesSeedData.find(
     (item) => String(item._id) === String(row.employee ?? ""),
   );
+  const unitCost = Number(operation?.currentCost ?? 0);
+  const dunam = plot ? Number(plot.dunam ?? 0) : 0;
+
   return {
     ...row,
     operationName: String(operation?.name ?? ""),
@@ -171,6 +174,8 @@ function enrichOperationTrackingRow(
     customerName: String(plot?.customerName ?? ""),
     plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
+    unitCost,
+    dunam,
     finalPrice: calcOperationTrackingFinalPrice(row),
   };
 }
@@ -221,6 +226,10 @@ function seedCustomerBillingTrackings(): CollectionDocument[] {
       paid: i % 2 === 0,
       finalPrice: (i + 1) * 1500,
       notes: i % 2 === 0 ? "הערה לדוגמה" : "",
+      operationsTrackingIds: [],
+      materialUsageTrackingIds: [],
+      contractorTrackingIds: [],
+      baleOrderTrackingIds: [],
     };
   });
 }
@@ -237,6 +246,18 @@ function enrichCustomerBillingTrackingRow(
     paid: row.paid === true,
     status: String(row.status ?? "לא אושר כלל"),
     finalPrice: Number(row.finalPrice ?? 0),
+    operationsTrackingIds: Array.isArray(row.operationsTrackingIds)
+      ? row.operationsTrackingIds.map(String)
+      : [],
+    materialUsageTrackingIds: Array.isArray(row.materialUsageTrackingIds)
+      ? row.materialUsageTrackingIds.map(String)
+      : [],
+    contractorTrackingIds: Array.isArray(row.contractorTrackingIds)
+      ? row.contractorTrackingIds.map(String)
+      : [],
+    baleOrderTrackingIds: Array.isArray(row.baleOrderTrackingIds)
+      ? row.baleOrderTrackingIds.map(String)
+      : [],
   };
 }
 
@@ -284,11 +305,17 @@ function enrichContractorTrackingRow(
   const unitPrice = Number(row.unitPrice ?? 0);
   const finalPrice = calcFinalPrice(unitPrice, unitAmount);
 
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(plot?.customer ?? ""),
+  );
+
   return {
     ...row,
     contractorName: String(contractor?.name ?? ""),
     plotName: String(plot?.name ?? ""),
     operationName: String(operation?.name ?? ""),
+    customer: plot?.customer ?? null,
+    customerName: String(customer?.name ?? plot?.customerName ?? ""),
     unitAmount,
     finalPrice,
     customerPrice:

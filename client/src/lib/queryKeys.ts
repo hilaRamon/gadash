@@ -13,3 +13,11 @@ export const transportChargeStateKeys = {
   all: ['transportChargeState'] as const,
   detail: () => [...transportChargeStateKeys.all, 'detail'] as const,
 }
+
+export const customerBillingKeys = {
+  all: ['customerBilling'] as const,
+  customersWithUnbilled: () =>
+    [...customerBillingKeys.all, 'customersWithUnbilled'] as const,
+  unbilledPreview: (customerId: string) =>
+    [...customerBillingKeys.all, 'unbilledPreview', customerId] as const,
+}

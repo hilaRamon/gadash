@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { getCollectionSchema } from '../schema/registry'
 import type { CollectionSchema } from '../schema/types'
@@ -75,6 +76,7 @@ function CollectionPageContent({
   schema: CollectionSchema
   collectionId: string
 }) {
+  const navigate = useNavigate()
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -166,8 +168,11 @@ function CollectionPageContent({
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery])
 
   const isTransportTrackingPage = collectionId === 'transport-trackings'
+  const isCustomerBillingPage = collectionId === 'customer-billing-trackings'
   const rowAction = schema.rowAction ?? 'edit'
-  const handleAdd = schema.disableAdd ? () => {} : openCreate
+  const handleAdd = isCustomerBillingPage
+    ? () => navigate('/trackings/customer-billing/new')
+    : openCreate
   const handleRowAction = schema.rowAction === 'view' ? () => {} : openEdit
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending

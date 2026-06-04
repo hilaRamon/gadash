@@ -20,7 +20,11 @@ export type ContractorTrackingInput = {
 };
 
 const contractorPopulate = { path: 'contractor', select: '_id name' };
-const plotPopulate = { path: 'plot', select: '_id name customer dunam' };
+const plotPopulate = {
+  path: 'plot',
+  select: '_id name customer dunam',
+  populate: { path: 'customer', select: '_id name' },
+};
 const operationPopulate = { path: 'operation', select: '_id name' };
 
 export const contractorTrackingRepository = {

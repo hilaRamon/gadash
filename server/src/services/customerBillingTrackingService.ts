@@ -43,6 +43,20 @@ function parsePositiveNumber(value: unknown, label: string): number {
   return num;
 }
 
+function parseObjectIdArray(value: unknown, label: string): Types.ObjectId[] {
+  if (value == null || value === '') return [];
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} לא תקין`);
+  }
+  const ids = value.map((item) => String(item ?? '').trim()).filter(Boolean);
+  for (const id of ids) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error(`${label} לא תקין`);
+    }
+  }
+  return ids.map((id) => new Types.ObjectId(id));
+}
+
 function parsePaid(value: unknown): boolean {
   if (value == null || value === '') return false;
   if (typeof value === 'boolean') return value;
@@ -94,6 +108,30 @@ async function buildTrackingPatch(
   if (mustHave('finalPrice')) {
     patch.finalPrice = parsePositiveNumber(body.finalPrice, 'סכום סופי');
   }
+  if (mustHave('operationsTrackingIds')) {
+    patch.operationsTrackingIds = parseObjectIdArray(
+      body.operationsTrackingIds,
+      'מעקבי פעולות',
+    );
+  }
+  if (mustHave('materialUsageTrackingIds')) {
+    patch.materialUsageTrackingIds = parseObjectIdArray(
+      body.materialUsageTrackingIds,
+      'מעקבי שימוש בחומרים',
+    );
+  }
+  if (mustHave('contractorTrackingIds')) {
+    patch.contractorTrackingIds = parseObjectIdArray(
+      body.contractorTrackingIds,
+      'מעקבי קבלנים',
+    );
+  }
+  if (mustHave('baleOrderTrackingIds')) {
+    patch.baleOrderTrackingIds = parseObjectIdArray(
+      body.baleOrderTrackingIds,
+      'מעקבי הזמנות חבילות',
+    );
+  }
 
   return patch;
 }
@@ -122,6 +160,10 @@ export const customerBillingTrackingService = {
       status: patch.status,
       paid: patch.paid ?? false,
       finalPrice: patch.finalPrice,
+      operationsTrackingIds: patch.operationsTrackingIds ?? [],
+      materialUsageTrackingIds: patch.materialUsageTrackingIds ?? [],
+      contractorTrackingIds: patch.contractorTrackingIds ?? [],
+      baleOrderTrackingIds: patch.baleOrderTrackingIds ?? [],
     };
 
     const created = await customerBillingTrackingRepository.create(input);

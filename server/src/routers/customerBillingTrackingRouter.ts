@@ -3,6 +3,14 @@ import { customerBillingTrackingController } from '../controllers/customerBillin
 
 export const customerBillingTrackingRouter = Router();
 
+customerBillingTrackingRouter.get(
+  '/customers-with-unbilled',
+  customerBillingTrackingController.listCustomersWithUnbilled,
+);
+customerBillingTrackingRouter.get(
+  '/unbilled-preview',
+  customerBillingTrackingController.unbilledPreview,
+);
 customerBillingTrackingRouter.get('/', customerBillingTrackingController.list);
 customerBillingTrackingRouter.post('/', customerBillingTrackingController.create);
 customerBillingTrackingRouter.post(
