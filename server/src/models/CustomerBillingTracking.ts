@@ -1,0 +1,37 @@
+import { Schema, model, type InferSchemaType } from 'mongoose';
+
+export const CUSTOMER_BILLING_STATUSES = [
+  'לא אושר כלל',
+  'אושר פנימי',
+  'אושר ע״י לקוח',
+  'הופקה חשבונית',
+  'התקבלה חשבונית',
+] as const;
+
+export type CustomerBillingStatus = (typeof CUSTOMER_BILLING_STATUSES)[number];
+
+const customerBillingTrackingSchema = new Schema(
+  {
+    date: { type: Date, required: true, default: Date.now },
+    customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+    notes: { type: String, default: '' },
+    status: {
+      type: String,
+      required: true,
+      enum: CUSTOMER_BILLING_STATUSES,
+      default: 'לא אושר כלל',
+    },
+    paid: { type: Boolean, default: false },
+    finalPrice: { type: Number, required: true, min: 0 },
+  },
+  { timestamps: true, versionKey: false },
+);
+
+export type CustomerBillingTrackingDoc = InferSchemaType<
+  typeof customerBillingTrackingSchema
+>;
+
+export const CustomerBillingTrackingModel = model(
+  'CustomerBillingTracking',
+  customerBillingTrackingSchema,
+);

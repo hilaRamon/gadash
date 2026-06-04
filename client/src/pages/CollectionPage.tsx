@@ -166,6 +166,9 @@ function CollectionPageContent({
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery])
 
   const isTransportTrackingPage = collectionId === 'transport-trackings'
+  const rowAction = schema.rowAction ?? 'edit'
+  const handleAdd = schema.disableAdd ? () => {} : openCreate
+  const handleRowAction = schema.rowAction === 'view' ? () => {} : openEdit
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending
 
@@ -216,7 +219,7 @@ function CollectionPageContent({
           queryState={tableQuery.state}
           selectedCount={tableQuery.state.selectedIds.length}
           isDeleting={bulkDeleteMutation.isPending}
-          onAdd={openCreate}
+          onAdd={handleAdd}
           onGlobalSearchChange={tableQuery.setGlobalSearch}
           onSortChange={(field, direction) => {
             if (!field) tableQuery.setSort('', direction)
@@ -249,7 +252,8 @@ function CollectionPageContent({
           onCellChange={handleCellChange}
           onToggleSelect={tableQuery.toggleSelected}
           onToggleSelectAll={tableQuery.toggleSelectAll}
-          onEdit={openEdit}
+          onEdit={handleRowAction}
+          rowAction={rowAction}
           onDelete={(row) => setDeleteTarget({ type: 'single', row })}
         />
       </section>

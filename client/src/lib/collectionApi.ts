@@ -20,6 +20,7 @@ import {
   calcFinalPrice,
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
+import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
 import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
@@ -72,6 +73,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   if (collection === "materialUsageTrackings") {
     return materialUsageTrackingsSeedData.map((row) => ({ ...row }));
   }
+  if (collection === "customerBillingTrackings") {
+    return seedCustomerBillingTrackings();
+  }
 
   const labels: Record<string, string> = {
     employees: "עובד",
@@ -92,6 +96,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     baleOrderTrackings: "הזמנת חבילות",
     contractorTrackings: "מעקב קבלן",
     transportTrackings: "מעקב הובלה",
+    customerBillingTrackings: "מעקב חיוב לקוח",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -200,6 +205,38 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerUnit,
     finalPrice,
     weighed: row.weighed === true,
+  };
+}
+
+function seedCustomerBillingTrackings(): CollectionDocument[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return Array.from({ length: 5 }, (_, i) => {
+    const customer = customersSeedData[i % customersSeedData.length];
+    return {
+      _id: `customerBill${String(i + 1).padStart(16, "0")}`,
+      date: today,
+      customer: customer?._id ?? "",
+      customerName: String(customer?.name ?? ""),
+      status: CUSTOMER_BILLING_STATUSES[i % CUSTOMER_BILLING_STATUSES.length],
+      paid: i % 2 === 0,
+      finalPrice: (i + 1) * 1500,
+      notes: i % 2 === 0 ? "הערה לדוגמה" : "",
+    };
+  });
+}
+
+function enrichCustomerBillingTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(row.customer ?? ""),
+  );
+  return {
+    ...row,
+    customerName: String(customer?.name ?? ""),
+    paid: row.paid === true,
+    status: String(row.status ?? "לא אושר כלל"),
+    finalPrice: Number(row.finalPrice ?? 0),
   };
 }
 
@@ -328,6 +365,9 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "transportTrackings") {
     return rows.map(enrichTransportTrackingRow);
   }
+  if (collection === "customerBillingTrackings") {
+    return rows.map(enrichCustomerBillingTrackingRow);
+  }
   return rows;
 }
 
@@ -380,6 +420,9 @@ async function createMock(
   if (collection === "transportTrackings") {
     return enrichTransportTrackingRow(doc);
   }
+  if (collection === "customerBillingTrackings") {
+    return enrichCustomerBillingTrackingRow(doc);
+  }
   return doc;
 }
 
@@ -427,6 +470,9 @@ async function updateMock(
   }
   if (collection === "transportTrackings") {
     return enrichTransportTrackingRow(store[index]);
+  }
+  if (collection === "customerBillingTrackings") {
+    return enrichCustomerBillingTrackingRow(store[index]);
   }
   return store[index];
 }

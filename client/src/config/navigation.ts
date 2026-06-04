@@ -154,6 +154,15 @@ export const baleTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const customerBillingTrackingCollections: TrackingCollection[] = [
+  {
+    id: "customer-billing-trackings",
+    label: "מעקב חיובי לקוחות",
+    path: "/trackings/customer-billing",
+    collection: "customerBillingTrackings",
+  },
+];
+
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
@@ -161,6 +170,7 @@ export const trackingCollections: TrackingCollection[] = [
   ...transportTrackingCollections,
   ...fuelTrackingCollections,
   ...baleTrackingCollections,
+  ...customerBillingTrackingCollections,
 ];
 
 export const sidebarSections = [

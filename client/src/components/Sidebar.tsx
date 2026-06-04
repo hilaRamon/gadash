@@ -20,6 +20,7 @@ function NavLinkWithActiveClass({
 }
 import {
   baleTrackingCollections,
+  customerBillingTrackingCollections,
   contractorTrackingCollections,
   transportTrackingCollections,
   dataCollections,
@@ -135,6 +136,13 @@ export function Sidebar() {
               </li>
             ))}
             {baleTrackingCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+            {customerBillingTrackingCollections.map((item) => (
               <li key={item.id}>
                 <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}

@@ -5,7 +5,7 @@ import type {
 } from "../../../schema/types";
 import type { TableQueryState } from "../../../schema/tableQuery";
 import { formatCell, getCellValue } from "../../../lib/tableQuery";
-import { EditIcon, DeleteIcon } from "../Icons";
+import { EditIcon, ViewIcon, DeleteIcon } from "../Icons";
 import { buttonIconStyles } from "./sharedStyles";
 import { ColumnFilterControl } from "./ColumnFilterControl";
 import { EditableBooleanCell } from "./EditableBooleanCell";
@@ -119,6 +119,7 @@ type DataTableProps = {
   onToggleSelectAll: (visibleIds: string[]) => void;
   onEdit: (row: CollectionDocument) => void;
   onDelete: (row: CollectionDocument) => void;
+  rowAction?: "edit" | "view";
 };
 
 export function DataTable({
@@ -134,6 +135,7 @@ export function DataTable({
   onToggleSelectAll,
   onEdit,
   onDelete,
+  rowAction = "edit",
 }: DataTableProps) {
   const visibleIds = rows.map((r) => r._id);
   const allSelected =
@@ -279,9 +281,9 @@ export function DataTable({
                       <IconButton
                         type="button"
                         onClick={() => onEdit(row)}
-                        aria-label="עריכה"
+                        aria-label={rowAction === "view" ? "צפייה" : "עריכה"}
                       >
-                        <EditIcon />
+                        {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
                       </IconButton>
                       <IconButton
                         type="button"
