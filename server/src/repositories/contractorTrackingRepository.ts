@@ -16,6 +16,7 @@ export type ContractorTrackingInput = {
   finalPrice: number;
   customerPrice: number | null;
   notes?: string;
+  wasCharged?: boolean;
 };
 
 const contractorPopulate = { path: 'contractor', select: '_id name' };

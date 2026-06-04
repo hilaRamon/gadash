@@ -12,6 +12,7 @@ export type BaleOrderTrackingInput = {
   weight?: number | null;
   transportPrice?: number | null;
   weighed?: boolean;
+  wasCharged?: boolean;
   notes?: string;
 };
 

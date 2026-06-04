@@ -53,6 +53,14 @@ function parseWeighed(value: unknown): boolean {
   throw new Error('נשקל לא תקין');
 }
 
+function parseWasCharged(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('חויב לא תקין');
+}
+
 async function resolveBaleObjectId(baleId: unknown): Promise<Types.ObjectId> {
   const id = String(baleId ?? '').trim();
   if (!Types.ObjectId.isValid(id)) {
@@ -151,6 +159,9 @@ async function buildTrackingPatch(
   if (mustHave('weighed')) {
     patch.weighed = parseWeighed(body.weighed);
   }
+  if (mustHave('wasCharged')) {
+    patch.wasCharged = parseWasCharged(body.wasCharged);
+  }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
   }
@@ -187,6 +198,7 @@ export const baleOrderTrackingService = {
       weight: patch.weight ?? null,
       transportPrice: patch.transportPrice ?? null,
       weighed: patch.weighed ?? false,
+      wasCharged: patch.wasCharged ?? false,
       notes: patch.notes ?? '',
     };
 

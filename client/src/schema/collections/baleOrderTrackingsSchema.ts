@@ -121,6 +121,13 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       { key: 'weight', label: 'משקל', type: 'number' },
       { key: 'weighed', label: 'נשקל', type: 'boolean', defaultValue: false },
       { key: 'transportPrice', label: 'מחיר הובלה', type: 'number' },
+      {
+        key: 'wasCharged',
+        label: 'חויב',
+        type: 'boolean',
+        hidden: true,
+        defaultValue: false,
+      },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
   },

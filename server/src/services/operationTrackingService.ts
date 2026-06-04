@@ -51,6 +51,14 @@ function parseBillable(value: unknown): boolean {
   throw new Error('לחיוב לא תקין');
 }
 
+function parseWasCharged(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('חויב לא תקין');
+}
+
 async function resolveOperationObjectId(operationId: unknown): Promise<Types.ObjectId> {
   const id = String(operationId ?? '').trim();
   if (!Types.ObjectId.isValid(id)) {
@@ -125,6 +133,9 @@ async function buildTrackingPatch(
   if (mustHave('billable')) {
     patch.billable = parseBillable(body.billable);
   }
+  if (mustHave('wasCharged')) {
+    patch.wasCharged = parseWasCharged(body.wasCharged);
+  }
 
   const startTime = patch.startTime;
   const endTime = patch.endTime;
@@ -164,6 +175,7 @@ export const operationTrackingService = {
       endTime: patch.endTime,
       notes: patch.notes ?? '',
       billable: patch.billable ?? true,
+      wasCharged: patch.wasCharged ?? false,
     };
 
     const created = await operationTrackingRepository.create(input);

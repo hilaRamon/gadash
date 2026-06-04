@@ -60,6 +60,7 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     pricePerUnit,
     finalPrice,
     weighed: doc.weighed === true,
+    wasCharged: doc.wasCharged === true,
   };
 }
 

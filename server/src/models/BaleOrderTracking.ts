@@ -11,6 +11,7 @@ const baleOrderTrackingSchema = new Schema(
     weight: { type: Number, default: null },
     transportPrice: { type: Number, default: null },
     weighed: { type: Boolean, default: false },
+    wasCharged: { type: Boolean, default: false },
     notes: { type: String, default: '' },
   },
   { timestamps: true, versionKey: false },

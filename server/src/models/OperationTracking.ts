@@ -10,6 +10,7 @@ const operationTrackingSchema = new Schema(
     endTime: { type: String, required: true },
     notes: { type: String, default: '' },
     billable: { type: Boolean, required: true, default: true },
+    wasCharged: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

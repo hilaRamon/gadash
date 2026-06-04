@@ -9,6 +9,7 @@ const materialUsageTrackingSchema = new Schema(
     amount: { type: Number, required: true, min: 0 },
     notes: { type: String, default: '' },
     billable: { type: Boolean, required: true, default: true },
+    wasCharged: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

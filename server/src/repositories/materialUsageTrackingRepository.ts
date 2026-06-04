@@ -10,6 +10,7 @@ export type MaterialUsageTrackingInput = {
   amount: number;
   notes?: string;
   billable: boolean;
+  wasCharged?: boolean;
 };
 
 const materialPopulate = {

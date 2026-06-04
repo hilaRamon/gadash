@@ -107,6 +107,13 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
       },
       { key: 'amount', label: 'כמות', type: 'number', required: true },
       { key: 'billable', label: 'לחיוב', type: 'boolean' },
+      {
+        key: 'wasCharged',
+        label: 'חויב',
+        type: 'boolean',
+        hidden: true,
+        defaultValue: false,
+      },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
   },

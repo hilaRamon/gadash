@@ -21,6 +21,7 @@ const contractorTrackingSchema = new Schema(
     finalPrice: { type: Number, required: true, min: 0 },
     customerPrice: { type: Number, default: null, min: 0 },
     notes: { type: String, default: '' },
+    wasCharged: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

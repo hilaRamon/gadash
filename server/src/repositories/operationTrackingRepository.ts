@@ -11,6 +11,7 @@ export type OperationTrackingInput = {
   endTime: string;
   notes?: string;
   billable: boolean;
+  wasCharged?: boolean;
 };
 
 const operationPopulate = {

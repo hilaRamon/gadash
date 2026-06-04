@@ -67,6 +67,13 @@ function buildOperationsTrackingForm(
         hidden: hidePlotAndBillable,
         defaultValue: false,
       },
+      {
+        key: "wasCharged",
+        label: "חויב",
+        type: "boolean",
+        hidden: true,
+        defaultValue: false,
+      },
       { key: "notes", label: "הערות", type: "textarea" },
     ],
   };
