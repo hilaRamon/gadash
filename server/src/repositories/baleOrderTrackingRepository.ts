@@ -6,13 +6,12 @@ export type BaleOrderTrackingInput = {
   date: Date;
   bale: Types.ObjectId;
   customer: Types.ObjectId;
-  location?: string;
   quantity: number;
   pricePerTon: number;
   pricePerUnit: number;
   weight?: number | null;
-  transport?: string;
   transportPrice?: number | null;
+  weighed?: boolean;
   notes?: string;
 };
 

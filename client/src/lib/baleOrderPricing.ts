@@ -34,28 +34,25 @@ export function calcBaleOrderFinalPrice(params: {
   pricePerTon?: unknown;
   pricePerUnit?: unknown;
   bale?: BalePrices | null;
+  transportPrice?: unknown;
 }): number {
   const quantity = Number(params.quantity ?? 0);
   if (!Number.isFinite(quantity) || quantity < 0) return 0;
 
   const { pricePerTon, pricePerUnit } = resolveBaleOrderPrices(params);
 
+  let base = 0;
   if (hasWeightValue(params.weight)) {
     const weight = Number(params.weight);
-    if (!Number.isFinite(pricePerTon)) return 0;
-    return Number((weight * pricePerTon * quantity).toFixed(2));
+    if (Number.isFinite(pricePerTon)) {
+      base = Number((weight * pricePerTon * quantity).toFixed(2));
+    }
+  } else if (Number.isFinite(pricePerUnit)) {
+    base = Number((pricePerUnit * quantity).toFixed(2));
   }
 
-  if (!Number.isFinite(pricePerUnit)) return 0;
-  return Number((pricePerUnit * quantity).toFixed(2));
-}
-
-export function calcBaleOrderTotalWithTransport(
-  finalPrice: number,
-  transportPrice: unknown,
-): number | null {
-  if (transportPrice == null || transportPrice === '') return null;
-  const price = Number(transportPrice);
-  if (!Number.isFinite(price)) return null;
-  return Number((finalPrice + price).toFixed(2));
+  if (params.transportPrice == null || params.transportPrice === '') return base;
+  const transport = Number(params.transportPrice);
+  if (!Number.isFinite(transport)) return base;
+  return Number((base + transport).toFixed(2));
 }

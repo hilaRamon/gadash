@@ -14,11 +14,7 @@ import { suppliersSeedData } from "../data/suppliersSeed";
 import { materialPurchaseTrackingsSeedData } from "../data/materialPurchaseTrackingsSeed";
 import { materialUsageTrackingsSeedData } from "../data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "../schema/types";
-import {
-  calcBaleOrderFinalPrice,
-  calcBaleOrderTotalWithTransport,
-  resolveBaleOrderPrices,
-} from "./baleOrderPricing";
+import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "./baleOrderPricing";
 import type { TableQueryParams } from "../schema/tableQuery";
 import {
   calcFinalPrice,
@@ -193,11 +189,8 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     weight: row.weight,
     pricePerTon,
     pricePerUnit,
+    transportPrice: row.transportPrice,
   });
-  const totalWithTransport = calcBaleOrderTotalWithTransport(
-    finalPrice,
-    row.transportPrice,
-  );
 
   return {
     ...row,
@@ -206,7 +199,7 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerTon,
     pricePerUnit,
     finalPrice,
-    totalWithTransport,
+    weighed: row.weighed === true,
   };
 }
 

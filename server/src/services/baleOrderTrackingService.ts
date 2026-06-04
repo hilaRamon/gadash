@@ -45,6 +45,14 @@ function parseNotes(value: unknown): string {
   return parseOptionalString(value);
 }
 
+function parseWeighed(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('נשקל לא תקין');
+}
+
 async function resolveBaleObjectId(baleId: unknown): Promise<Types.ObjectId> {
   const id = String(baleId ?? '').trim();
   if (!Types.ObjectId.isValid(id)) {
@@ -125,9 +133,6 @@ async function buildTrackingPatch(
   if (mustHave('customer')) {
     patch.customer = await resolveCustomerObjectId(body.customer);
   }
-  if (mustHave('location')) {
-    patch.location = parseOptionalString(body.location);
-  }
   if (mustHave('quantity')) {
     patch.quantity = parsePositiveNumber(body.quantity, 'כמות');
   }
@@ -140,11 +145,11 @@ async function buildTrackingPatch(
   if (mustHave('weight')) {
     patch.weight = parseOptionalPositiveNumber(body.weight, 'משקל');
   }
-  if (mustHave('transport')) {
-    patch.transport = parseOptionalString(body.transport);
-  }
   if (mustHave('transportPrice')) {
     patch.transportPrice = parseOptionalPositiveNumber(body.transportPrice, 'מחיר הובלה');
+  }
+  if (mustHave('weighed')) {
+    patch.weighed = parseWeighed(body.weighed);
   }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
@@ -176,13 +181,12 @@ export const baleOrderTrackingService = {
       date: patch.date,
       bale: patch.bale,
       customer: patch.customer,
-      location: patch.location ?? '',
       quantity: patch.quantity,
       pricePerTon: prices.pricePerTon,
       pricePerUnit: prices.pricePerUnit,
       weight: patch.weight ?? null,
-      transport: patch.transport ?? '',
       transportPrice: patch.transportPrice ?? null,
+      weighed: patch.weighed ?? false,
       notes: patch.notes ?? '',
     };
 

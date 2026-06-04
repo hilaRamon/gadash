@@ -7,11 +7,6 @@ function formatDate(value: unknown): string {
   return date.toLocaleDateString('he-IL')
 }
 
-function formatTotalWithTransport(value: unknown): string {
-  if (value == null || value === '') return ''
-  return formatNumber(value)
-}
-
 export const baleOrderTrackingsSchema: CollectionSchema = {
   id: 'bale-order-trackings',
   collection: 'baleOrderTrackings',
@@ -38,12 +33,6 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       type: 'reference',
       searchable: true,
       getValue: (row) => row.customerName ?? row.customer,
-    },
-    {
-      key: 'location',
-      label: 'מקום',
-      type: 'text',
-      searchable: true,
     },
     {
       key: 'quantity',
@@ -76,10 +65,12 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       width: '6rem',
     },
     {
-      key: 'transport',
-      label: 'הובלה',
-      type: 'text',
-      searchable: true,
+      key: 'weighed',
+      label: 'נשקל',
+      type: 'boolean',
+      sortable: true,
+      format: (value) => (value === true ? 'כן' : 'לא'),
+      width: '6rem',
     },
     {
       key: 'transportPrice',
@@ -96,14 +87,6 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       sortable: true,
       format: (value) => formatNumber(value),
       width: '8rem',
-    },
-    {
-      key: 'totalWithTransport',
-      label: 'מחיר כולל הובלה',
-      type: 'number',
-      sortable: true,
-      format: (value) => formatTotalWithTransport(value),
-      width: '9rem',
     },
     {
       key: 'notes',
@@ -134,10 +117,9 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
         required: true,
         referenceCollection: 'customers',
       },
-      { key: 'location', label: 'מקום', type: 'text' },
       { key: 'quantity', label: 'כמות', type: 'number', required: true },
       { key: 'weight', label: 'משקל', type: 'number' },
-      { key: 'transport', label: 'הובלה', type: 'text' },
+      { key: 'weighed', label: 'נשקל', type: 'boolean', defaultValue: false },
       { key: 'transportPrice', label: 'מחיר הובלה', type: 'number' },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
