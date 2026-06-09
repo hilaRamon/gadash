@@ -36,6 +36,7 @@ const Table = styled.table<{ $previewMode?: boolean }>`
     ${({ $previewMode }) =>
       $previewMode &&
       css`
+        text-align: right;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -326,9 +327,10 @@ export function DataTable({
                         key={col.key}
                         $editableNumber={canEditNumber}
                         style={{
-                          textAlign:
-                            col.align ??
-                            (col.type === "boolean" ? "center" : "start"),
+                          textAlign: previewMode
+                            ? "right"
+                            : col.align ??
+                              (col.type === "boolean" ? "center" : "start"),
                         }}
                       >
                         {col.render ? (

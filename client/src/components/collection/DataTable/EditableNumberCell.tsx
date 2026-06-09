@@ -36,7 +36,7 @@ const CellInput = styled.input<{ $saving?: boolean }>`
   font: inherit;
   font-size: inherit;
   line-height: 1.25rem;
-  text-align: inherit;
+  text-align: right;
   appearance: none;
   -webkit-appearance: none;
 

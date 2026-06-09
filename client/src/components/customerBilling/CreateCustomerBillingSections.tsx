@@ -13,6 +13,7 @@ import { contractorTrackingsSchema } from "../../schema/collections/contractorTr
 import type { UnbilledPreview } from "../../lib/customerBillingApi";
 import { formatNumber } from "../../lib/formatNumber";
 import type { ColumnDef } from "../../schema/types";
+import { CustomerBillPaper } from "./CustomerBillPaper";
 
 function pickPreviewColumns(
   schema: CollectionSchema,
@@ -175,6 +176,7 @@ function PreviewSection({
 
 type CreateCustomerBillingSectionsProps = {
   customerId: string;
+  customerName: string;
   preview: UnbilledPreview | undefined;
   isLoading?: boolean;
   isError?: boolean;
@@ -183,6 +185,7 @@ type CreateCustomerBillingSectionsProps = {
 
 export function CreateCustomerBillingSections({
   customerId,
+  customerName,
   preview,
   isLoading,
   isError,
@@ -300,6 +303,14 @@ export function CreateCustomerBillingSections({
           onToggleIncludeAll={onToggleIncludeAll}
         />
       ))}
+      {preview && (
+        <CustomerBillPaper
+          customerId={customerId}
+          customerName={customerName}
+          preview={preview}
+          includedIds={includedIds}
+        />
+      )}
     </SectionsStack>
   );
 }

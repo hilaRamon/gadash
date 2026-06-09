@@ -20,4 +20,6 @@ export const customerBillingKeys = {
     [...customerBillingKeys.all, 'customersWithUnbilled'] as const,
   unbilledPreview: (customerId: string) =>
     [...customerBillingKeys.all, 'unbilledPreview', customerId] as const,
+  billPreview: (customerId: string, request: unknown) =>
+    [...customerBillingKeys.all, 'billPreview', customerId, request] as const,
 }

@@ -11,6 +11,14 @@ customerBillingTrackingRouter.get(
   '/unbilled-preview',
   customerBillingTrackingController.unbilledPreview,
 );
+customerBillingTrackingRouter.post(
+  '/bill-preview',
+  customerBillingTrackingController.billPreview,
+);
+customerBillingTrackingRouter.post(
+  '/bill-pdf',
+  customerBillingTrackingController.billPdf,
+);
 customerBillingTrackingRouter.get('/', customerBillingTrackingController.list);
 customerBillingTrackingRouter.post('/', customerBillingTrackingController.create);
 customerBillingTrackingRouter.post(

@@ -26,12 +26,17 @@ export function CreateCustomerBillingPage() {
   } = useUnbilledPreview(selectedCustomerId);
 
   const showPreview = Boolean(selectedCustomerId);
+  const selectedCustomerName =
+    customers.find((customer) => customer._id === selectedCustomerId)?.name ?? "";
 
   return (
     <div className="page page-collection">
       <PageHeader>
         <div>
-          <BackLink to="/trackings/customer-billing">← חזרה למעקב חיובי לקוחות</BackLink>
+          <BackLink to="/trackings/customer-billing">
+            {" "}
+            → חזרה למעקב חיובי לקוחות
+          </BackLink>
           <PageTitle>יצירת חיוב חדש</PageTitle>
         </div>
       </PageHeader>
@@ -66,6 +71,7 @@ export function CreateCustomerBillingPage() {
         {showPreview && (
           <CreateCustomerBillingSections
             customerId={selectedCustomerId}
+            customerName={selectedCustomerName}
             preview={preview}
             isLoading={previewLoading}
             isError={previewError}
