@@ -58,6 +58,7 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
       label: "הערות",
       type: "text",
       searchable: true,
+      inlineEditable: () => true,
     },
   ],
   defaultSort: { field: "date", direction: "desc" },

@@ -124,6 +124,7 @@ function buildSection(
 
 export function buildCustomerBillDocument(input: {
   customerName: string;
+  billDate?: string;
   operations: ApiDocument[];
   contractors: ApiDocument[];
   materialUsage: ApiDocument[];
@@ -152,7 +153,7 @@ export function buildCustomerBillDocument(input: {
 
   return {
     customerName: input.customerName,
-    billDate: todayBillDate(),
+    billDate: input.billDate ?? todayBillDate(),
     sections,
     total: Number(total.toFixed(2)),
     totalFormatted: formatNumber(total),

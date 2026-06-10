@@ -12,6 +12,7 @@ import { EditableBooleanCell } from "./EditableBooleanCell";
 import { EditableDiscreteCell } from "./EditableDiscreteCell";
 import { ReadOnlyBooleanCell } from "./ReadOnlyBooleanCell";
 import { EditableNumberCell } from "./EditableNumberCell";
+import { EditableTextCell } from "./EditableTextCell";
 
 const TableWrap = styled.div<{ $previewMode?: boolean }>`
   max-width: 100%;
@@ -59,9 +60,12 @@ const Table = styled.table<{ $previewMode?: boolean }>`
   }
 `;
 
-const TableBodyCell = styled.td<{ $editableNumber?: boolean }>`
-  ${({ $editableNumber }) =>
-    $editableNumber &&
+const TableBodyCell = styled.td<{
+  $editableNumber?: boolean;
+  $editableText?: boolean;
+}>`
+  ${({ $editableNumber, $editableText }) =>
+    ($editableNumber || $editableText) &&
     css`
       vertical-align: middle;
       padding-top: 0.45rem;
@@ -321,11 +325,17 @@ export function DataTable({
                       col.type === "number" &&
                       !col.render &&
                       col.inlineEditable?.(row) === true;
+                    const canEditText =
+                      onCellChange &&
+                      col.type === "text" &&
+                      !col.render &&
+                      col.inlineEditable?.(row) === true;
 
                     return (
                       <TableBodyCell
                         key={col.key}
                         $editableNumber={canEditNumber}
+                        $editableText={canEditText}
                         style={{
                           textAlign: previewMode
                             ? "right"
@@ -357,6 +367,14 @@ export function DataTable({
                             column={col}
                             row={row}
                             previewMode={previewMode}
+                            onChange={(next) =>
+                              onCellChange(row, col.key, next)
+                            }
+                          />
+                        ) : canEditText ? (
+                          <EditableTextCell
+                            column={col}
+                            row={row}
                             onChange={(next) =>
                               onCellChange(row, col.key, next)
                             }

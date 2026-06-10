@@ -1,6 +1,6 @@
+import type { Types } from 'mongoose';
 import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
 import { toObjectIds } from '../utils/mongoIds';
-import type { Types } from 'mongoose';
 
 export type BaleOrderTrackingInput = {
   date: Date;
@@ -63,5 +63,13 @@ export const baleOrderTrackingRepository = {
 
   deleteAll() {
     return BaleOrderTrackingModel.deleteMany({});
+  },
+
+  markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return BaleOrderTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: true },
+    );
   },
 };

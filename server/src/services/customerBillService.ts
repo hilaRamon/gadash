@@ -4,6 +4,7 @@ import { ContractorTrackingModel } from '../models/ContractorTracking';
 import { CustomerModel } from '../models/Customer';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { OperationTrackingModel } from '../models/OperationTracking';
+import { customerBillingTrackingRepository } from '../repositories/customerBillingTrackingRepository';
 import type { CustomerBillDocument, CustomerBillRequest } from '../types/customerBill';
 import { baleOrderTrackingToApiDocuments } from '../utils/baleOrderTrackingApiMapper';
 import { contractorTrackingToApiDocuments } from '../utils/contractorTrackingApiMapper';
@@ -14,6 +15,7 @@ import {
   isValidMaterialForBill,
   isValidOperationForBill,
 } from '../utils/customerBillDataBuilder';
+import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import { materialUsageTrackingToApiDocuments } from '../utils/materialUsageTrackingApiMapper';
 import { operationTrackingToApiDocuments } from '../utils/operationTrackingApiMapper';
 import {
@@ -70,7 +72,134 @@ async function resolveCustomer(customerId: string): Promise<{ _id: Types.ObjectI
   };
 }
 
-async function buildBillDocument(body: CustomerBillRequest): Promise<CustomerBillDocument> {
+export type ValidatedBillSelection = {
+  customer: { _id: Types.ObjectId; name: string };
+  bill: CustomerBillDocument;
+  operationsTrackingIds: Types.ObjectId[];
+  contractorTrackingIds: Types.ObjectId[];
+  materialUsageTrackingIds: Types.ObjectId[];
+  baleOrderTrackingIds: Types.ObjectId[];
+};
+
+function assertValidatedCount(
+  requested: Types.ObjectId[],
+  validatedCount: number,
+  label: string,
+): void {
+  if (requested.length !== validatedCount) {
+    throw new Error(`${label} לא תקינים לחיוב`);
+  }
+}
+
+function formatStoredBillDate(value: unknown): string {
+  const date = new Date(String(value ?? ''));
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toLocaleDateString('he-IL');
+  }
+  return date.toLocaleDateString('he-IL');
+}
+
+async function fetchTrackingRowsByIds(ids: {
+  operationIds: Types.ObjectId[];
+  contractorIds: Types.ObjectId[];
+  materialIds: Types.ObjectId[];
+  baleIds: Types.ObjectId[];
+}) {
+  const [operationRows, contractorRows, materialRows, baleRows] = await Promise.all([
+    ids.operationIds.length > 0
+      ? OperationTrackingModel.find({ _id: { $in: ids.operationIds } })
+          .populate(operationPopulate)
+          .populate(plotPopulate)
+          .populate(employeePopulate)
+          .lean()
+      : [],
+    ids.contractorIds.length > 0
+      ? ContractorTrackingModel.find({ _id: { $in: ids.contractorIds } })
+          .populate(contractorPopulate)
+          .populate(plotPopulate)
+          .populate(contractorOperationPopulate)
+          .lean()
+      : [],
+    ids.materialIds.length > 0
+      ? MaterialUsageTrackingModel.find({ _id: { $in: ids.materialIds } })
+          .populate(materialPopulate)
+          .populate(plotPopulate)
+          .populate(employeePopulate)
+          .lean()
+      : [],
+    ids.baleIds.length > 0
+      ? BaleOrderTrackingModel.find({ _id: { $in: ids.baleIds } })
+          .populate(balePopulate)
+          .populate(baleCustomerPopulate)
+          .lean()
+      : [],
+  ]);
+
+  return {
+    operations: operationTrackingToApiDocuments(
+      operationRows as Record<string, unknown>[],
+    ),
+    contractors: contractorTrackingToApiDocuments(
+      contractorRows as Record<string, unknown>[],
+    ),
+    materialUsage: materialUsageTrackingToApiDocuments(
+      materialRows as Record<string, unknown>[],
+    ),
+    baleOrders: baleOrderTrackingToApiDocuments(
+      baleRows as Record<string, unknown>[],
+    ),
+  };
+}
+
+async function loadBillFromBillingTracking(
+  billingId: string,
+): Promise<{ bill: CustomerBillDocument; customerName: string }> {
+  const billingRow = await customerBillingTrackingRepository.findById(billingId);
+  if (!billingRow) {
+    throw new Error('לא נמצא');
+  }
+
+  const billing = customerBillingTrackingToApiDocument(
+    billingRow as Record<string, unknown>,
+  );
+  const customerName = String(billing.customerName ?? '').trim() || 'לקוח';
+
+  const operationIds = parseObjectIdArray(
+    billing.operationsTrackingIds,
+    'מעקבי פעולות',
+  );
+  const contractorIds = parseObjectIdArray(
+    billing.contractorTrackingIds,
+    'מעקבי קבלנים',
+  );
+  const materialIds = parseObjectIdArray(
+    billing.materialUsageTrackingIds,
+    'מעקבי שימוש בחומרים',
+  );
+  const baleIds = parseObjectIdArray(
+    billing.baleOrderTrackingIds,
+    'מעקבי הזמנות חבילות',
+  );
+
+  const rows = await fetchTrackingRowsByIds({
+    operationIds,
+    contractorIds,
+    materialIds,
+    baleIds,
+  });
+
+  const bill = buildCustomerBillDocument({
+    customerName,
+    billDate: formatStoredBillDate(billing.date),
+    ...rows,
+  });
+
+  return { bill, customerName };
+}
+
+export async function loadValidatedSelection(
+  body: CustomerBillRequest,
+): Promise<ValidatedBillSelection> {
   const customer = await resolveCustomer(body.customerId);
   const customerId = String(customer._id);
 
@@ -88,69 +217,74 @@ async function buildBillDocument(body: CustomerBillRequest): Promise<CustomerBil
   );
   const baleIds = parseObjectIdArray(body.baleOrderTrackingIds, 'מעקבי הזמנות חבילות');
 
-  const [operationRows, contractorRows, materialRows, baleRows] = await Promise.all([
-    operationIds.length > 0
-      ? OperationTrackingModel.find({ _id: { $in: operationIds } })
-          .populate(operationPopulate)
-          .populate(plotPopulate)
-          .populate(employeePopulate)
-          .lean()
-      : [],
-    contractorIds.length > 0
-      ? ContractorTrackingModel.find({ _id: { $in: contractorIds } })
-          .populate(contractorPopulate)
-          .populate(plotPopulate)
-          .populate(contractorOperationPopulate)
-          .lean()
-      : [],
-    materialIds.length > 0
-      ? MaterialUsageTrackingModel.find({ _id: { $in: materialIds } })
-          .populate(materialPopulate)
-          .populate(plotPopulate)
-          .populate(employeePopulate)
-          .lean()
-      : [],
-    baleIds.length > 0
-      ? BaleOrderTrackingModel.find({ _id: { $in: baleIds } })
-          .populate(balePopulate)
-          .populate(baleCustomerPopulate)
-          .lean()
-      : [],
-  ]);
+  const totalItems =
+    operationIds.length +
+    contractorIds.length +
+    materialIds.length +
+    baleIds.length;
+  if (totalItems === 0) {
+    throw new Error('יש לבחור לפחות פריט אחד לחיוב');
+  }
 
-  const operations = operationTrackingToApiDocuments(
-    operationRows as Record<string, unknown>[],
-  ).filter((row) => isValidOperationForBill(row, customerId));
+  const fetched = await fetchTrackingRowsByIds({
+    operationIds,
+    contractorIds,
+    materialIds,
+    baleIds,
+  });
 
-  const contractors = contractorTrackingToApiDocuments(
-    contractorRows as Record<string, unknown>[],
-  ).filter((row) => isValidContractorForBill(row, customerId));
+  const operations = fetched.operations.filter((row) =>
+    isValidOperationForBill(row, customerId),
+  );
 
-  const materialUsage = materialUsageTrackingToApiDocuments(
-    materialRows as Record<string, unknown>[],
-  ).filter((row) => isValidMaterialForBill(row, customerId));
+  const contractors = fetched.contractors.filter((row) =>
+    isValidContractorForBill(row, customerId),
+  );
 
-  const baleOrders = baleOrderTrackingToApiDocuments(
-    baleRows as Record<string, unknown>[],
-  ).filter((row) => isValidBaleOrderForBill(row, customerId));
+  const materialUsage = fetched.materialUsage.filter((row) =>
+    isValidMaterialForBill(row, customerId),
+  );
 
-  return buildCustomerBillDocument({
+  const baleOrders = fetched.baleOrders.filter((row) =>
+    isValidBaleOrderForBill(row, customerId),
+  );
+
+  assertValidatedCount(operationIds, operations.length, 'מעקבי פעולות');
+  assertValidatedCount(contractorIds, contractors.length, 'מעקבי קבלנים');
+  assertValidatedCount(materialIds, materialUsage.length, 'מעקבי שימוש בחומרים');
+  assertValidatedCount(baleIds, baleOrders.length, 'מעקבי הזמנות חבילות');
+
+  const bill = buildCustomerBillDocument({
     customerName: customer.name,
     operations,
     contractors,
     materialUsage,
     baleOrders,
   });
+
+  return {
+    customer,
+    bill,
+    operationsTrackingIds: operationIds,
+    contractorTrackingIds: contractorIds,
+    materialUsageTrackingIds: materialIds,
+    baleOrderTrackingIds: baleIds,
+  };
 }
 
 export const customerBillService = {
   async getBillPreview(body: CustomerBillRequest): Promise<{ html: string }> {
-    const bill = await buildBillDocument(body);
+    const { bill } = await loadValidatedSelection(body);
+    return { html: renderCustomerBillPreviewHtml(bill) };
+  },
+
+  async getBillPreviewForTracking(billingId: string): Promise<{ html: string }> {
+    const { bill } = await loadBillFromBillingTracking(billingId);
     return { html: renderCustomerBillPreviewHtml(bill) };
   },
 
   async getBillPdf(body: CustomerBillRequest): Promise<Buffer> {
-    const bill = await buildBillDocument(body);
+    const { bill } = await loadValidatedSelection(body);
     const html = renderCustomerBillHtml(bill);
     return renderCustomerBillPdf(html);
   },

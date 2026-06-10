@@ -72,4 +72,12 @@ export const materialUsageTrackingRepository = {
   deleteAll() {
     return MaterialUsageTrackingModel.deleteMany({});
   },
+
+  markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return MaterialUsageTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: true },
+    );
+  },
 };

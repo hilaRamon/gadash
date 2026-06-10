@@ -127,6 +127,44 @@ function buildSection(
   };
 }
 
+export function buildCustomerBillDocumentFromRows(input: {
+  customerName: string;
+  billDate?: string;
+  operations: CollectionDocument[];
+  contractors: CollectionDocument[];
+  materialUsage: CollectionDocument[];
+  baleOrders: CollectionDocument[];
+}): CustomerBillDocument {
+  const operationsSection = buildSection(
+    "פעולות",
+    "operations",
+    [...input.operations.map(operationLine), ...input.contractors.map(contractorLine)],
+  );
+  const materialsSection = buildSection(
+    "חומרים",
+    "quantityWithUnitPrice",
+    input.materialUsage.map(materialLine),
+  );
+  const balesSection = buildSection(
+    "הזמנת חבילות",
+    "quantityWithUnitPrice",
+    input.baleOrders.map(baleLine),
+  );
+
+  const sections = [operationsSection, materialsSection, balesSection].filter(
+    (section): section is CustomerBillSection => section != null,
+  );
+  const total = sections.reduce((sum, section) => sum + section.subtotal, 0);
+
+  return {
+    customerName: input.customerName,
+    billDate: input.billDate ?? todayBillDate(),
+    sections,
+    total: Number(total.toFixed(2)),
+    totalFormatted: formatNumber(total),
+  };
+}
+
 export function buildCustomerBillDocumentFromPreview(input: {
   customerName: string;
   customerId: string;
@@ -149,32 +187,11 @@ export function buildCustomerBillDocumentFromPreview(input: {
     isUnbilledBaleOrderForCustomer(row, customerId),
   );
 
-  const operationsSection = buildSection(
-    "פעולות",
-    "operations",
-    [...operations.map(operationLine), ...contractors.map(contractorLine)],
-  );
-  const materialsSection = buildSection(
-    "חומרים",
-    "quantityWithUnitPrice",
-    materialUsage.map(materialLine),
-  );
-  const balesSection = buildSection(
-    "הזמנת חבילות",
-    "quantityWithUnitPrice",
-    baleOrders.map(baleLine),
-  );
-
-  const sections = [operationsSection, materialsSection, balesSection].filter(
-    (section): section is CustomerBillSection => section != null,
-  );
-  const total = sections.reduce((sum, section) => sum + section.subtotal, 0);
-
-  return {
+  return buildCustomerBillDocumentFromRows({
     customerName: input.customerName,
-    billDate: todayBillDate(),
-    sections,
-    total: Number(total.toFixed(2)),
-    totalFormatted: formatNumber(total),
-  };
+    operations,
+    contractors,
+    materialUsage,
+    baleOrders,
+  });
 }

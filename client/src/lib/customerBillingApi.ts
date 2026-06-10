@@ -1,6 +1,9 @@
 import api from "./api";
-import { listCollection } from "./collectionApi";
-import { buildCustomerBillDocumentFromPreview } from "./customerBill/buildCustomerBillData";
+import { createDocument, listCollection, updateDocument } from "./collectionApi";
+import {
+  buildCustomerBillDocumentFromPreview,
+  buildCustomerBillDocumentFromRows,
+} from "./customerBill/buildCustomerBillData";
 import { buildCustomerBillDownloadFilename } from "./customerBill/downloadFilename";
 import { renderCustomerBillPreviewHtml } from "./customerBill/renderCustomerBillHtml";
 import type { CustomerBillRequest } from "./customerBill/types";
@@ -189,6 +192,66 @@ async function fetchCustomerBillPreviewMock(
   return { html: renderCustomerBillPreviewHtml(bill) };
 }
 
+function toIdArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "")).filter(Boolean);
+}
+
+function pickRowsByIds(
+  rows: CollectionDocument[],
+  ids: string[],
+): CollectionDocument[] {
+  if (ids.length === 0) return [];
+  const idSet = new Set(ids);
+  return rows.filter((row) => idSet.has(row._id));
+}
+
+function formatStoredBillDate(value: unknown): string {
+  const date = new Date(String(value ?? ""));
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toLocaleDateString("he-IL");
+  }
+  return date.toLocaleDateString("he-IL");
+}
+
+async function fetchSavedBillingBillPreviewMock(
+  billing: CollectionDocument,
+): Promise<{ html: string }> {
+  const customerName = String(billing.customerName ?? "").trim() || "לקוח";
+  const [operations, materialUsage, baleOrders, contractors] = await Promise.all([
+    listCollection("operationsTrackings"),
+    listCollection("materialUsageTrackings"),
+    listCollection("baleOrderTrackings"),
+    listCollection("contractorTrackings"),
+  ]);
+
+  const bill = buildCustomerBillDocumentFromRows({
+    customerName,
+    billDate: formatStoredBillDate(billing.date),
+    operations: pickRowsByIds(operations, toIdArray(billing.operationsTrackingIds)),
+    contractors: pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
+    materialUsage: pickRowsByIds(
+      materialUsage,
+      toIdArray(billing.materialUsageTrackingIds),
+    ),
+    baleOrders: pickRowsByIds(baleOrders, toIdArray(billing.baleOrderTrackingIds)),
+  });
+
+  return { html: renderCustomerBillPreviewHtml(bill) };
+}
+
+export async function fetchSavedBillingBillPreview(
+  billing: CollectionDocument,
+): Promise<{ html: string }> {
+  if (useMock) {
+    return fetchSavedBillingBillPreviewMock(billing);
+  }
+  const { data } = await api.get<{ html: string }>(
+    `/api/customerBillingTrackings/${billing._id}/bill-preview`,
+  );
+  return data;
+}
+
 export async function fetchCustomerBillPreview(
   request: CustomerBillRequest,
   options: { customerName: string; preview: UnbilledPreview },
@@ -218,6 +281,80 @@ async function readBlobErrorMessage(data: Blob): Promise<string> {
   } catch {
     return "שגיאה בהורדת הקובץ";
   }
+}
+
+async function createCustomerBillingMock(
+  request: CustomerBillRequest,
+  customerName: string,
+  preview: UnbilledPreview,
+) {
+  const bill = buildCustomerBillDocumentFromPreview({
+    customerName,
+    customerId: request.customerId,
+    operations: preview.operations.filter((row) =>
+      request.operationsTrackingIds.includes(row._id),
+    ),
+    contractors: preview.contractors.filter((row) =>
+      request.contractorTrackingIds.includes(row._id),
+    ),
+    materialUsage: preview.materialUsage.filter((row) =>
+      request.materialUsageTrackingIds.includes(row._id),
+    ),
+    baleOrders: preview.baleOrders.filter((row) =>
+      request.baleOrderTrackingIds.includes(row._id),
+    ),
+  });
+
+  const created = await createDocument("customerBillingTrackings", {
+    date: new Date().toISOString().slice(0, 10),
+    customer: request.customerId,
+    finalPrice: bill.total,
+    status: "לא אושר כלל",
+    paid: false,
+    notes: "",
+    operationsTrackingIds: request.operationsTrackingIds,
+    materialUsageTrackingIds: request.materialUsageTrackingIds,
+    contractorTrackingIds: request.contractorTrackingIds,
+    baleOrderTrackingIds: request.baleOrderTrackingIds,
+  });
+
+  await Promise.all([
+    ...request.operationsTrackingIds.map((id) =>
+      updateDocument("operationsTrackings", id, { wasCharged: true }),
+    ),
+    ...request.contractorTrackingIds.map((id) =>
+      updateDocument("contractorTrackings", id, { wasCharged: true }),
+    ),
+    ...request.materialUsageTrackingIds.map((id) =>
+      updateDocument("materialUsageTrackings", id, { wasCharged: true }),
+    ),
+    ...request.baleOrderTrackingIds.map((id) =>
+      updateDocument("baleOrderTrackings", id, { wasCharged: true }),
+    ),
+  ]);
+
+  return created;
+}
+
+export async function createCustomerBilling(
+  request: CustomerBillRequest,
+  options: { customerName: string; preview: UnbilledPreview },
+) {
+  if (!hasIncludedBillItems(request)) {
+    throw new Error("יש לבחור לפחות פריט אחד לחיוב");
+  }
+  if (useMock) {
+    return createCustomerBillingMock(
+      request,
+      options.customerName,
+      options.preview,
+    );
+  }
+  const { data } = await api.post(
+    "/api/customerBillingTrackings/create-from-selection",
+    request,
+  );
+  return data;
 }
 
 export async function downloadCustomerBillPdf(

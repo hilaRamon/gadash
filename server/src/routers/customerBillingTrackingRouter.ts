@@ -12,12 +12,20 @@ customerBillingTrackingRouter.get(
   customerBillingTrackingController.unbilledPreview,
 );
 customerBillingTrackingRouter.post(
+  '/create-from-selection',
+  customerBillingTrackingController.createFromSelection,
+);
+customerBillingTrackingRouter.post(
   '/bill-preview',
   customerBillingTrackingController.billPreview,
 );
 customerBillingTrackingRouter.post(
   '/bill-pdf',
   customerBillingTrackingController.billPdf,
+);
+customerBillingTrackingRouter.get(
+  '/:id/bill-preview',
+  customerBillingTrackingController.billPreviewById,
 );
 customerBillingTrackingRouter.get('/', customerBillingTrackingController.list);
 customerBillingTrackingRouter.post('/', customerBillingTrackingController.create);

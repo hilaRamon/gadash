@@ -19,6 +19,7 @@ import { DataTable } from '../components/collection/DataTable'
 import { CollectionFormModal } from '../components/collection/CollectionFormModal'
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
 import { TransportTrackingPageExtras } from '../components/transport/TransportTrackingPageExtras'
+import { CustomerBillingViewModal } from '../components/customerBilling/CustomerBillingViewModal'
 import type { CollectionDocument } from '../schema/types'
 import './Page.css'
 
@@ -81,6 +82,8 @@ function CollectionPageContent({
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<CollectionDocument | null>(null)
+  const [viewingBillingRow, setViewingBillingRow] =
+    useState<CollectionDocument | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -173,7 +176,20 @@ function CollectionPageContent({
   const handleAdd = isCustomerBillingPage
     ? () => navigate('/trackings/customer-billing/new')
     : openCreate
-  const handleRowAction = schema.rowAction === 'view' ? () => {} : openEdit
+  const openViewBilling = useCallback((row: CollectionDocument) => {
+    setViewingBillingRow(row)
+  }, [])
+
+  const closeViewBilling = useCallback(() => {
+    setViewingBillingRow(null)
+  }, [])
+
+  const handleRowAction =
+    isCustomerBillingPage && schema.rowAction === 'view'
+      ? openViewBilling
+      : schema.rowAction === 'view'
+        ? () => {}
+        : openEdit
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending
 
@@ -282,6 +298,14 @@ function CollectionPageContent({
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      {isCustomerBillingPage && (
+        <CustomerBillingViewModal
+          open={viewingBillingRow !== null}
+          billing={viewingBillingRow}
+          onClose={closeViewBilling}
+        />
+      )}
     </div>
   )
 }

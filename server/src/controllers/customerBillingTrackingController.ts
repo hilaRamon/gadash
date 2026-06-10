@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { customerBillService } from '../services/customerBillService';
+import { customerBillingCreateService } from '../services/customerBillingCreateService';
 import { customerBillingUnbilledService } from '../services/customerBillingUnbilledService';
 import { customerBillingTrackingService } from '../services/customerBillingTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -21,6 +22,16 @@ export const customerBillingTrackingController = {
   billPreview: asyncHandler(async (req: Request, res: Response) => {
     const data = await customerBillService.getBillPreview(req.body);
     res.json(data);
+  }),
+
+  billPreviewById: asyncHandler(async (req: Request, res: Response) => {
+    const data = await customerBillService.getBillPreviewForTracking(req.params.id);
+    res.json(data);
+  }),
+
+  createFromSelection: asyncHandler(async (req: Request, res: Response) => {
+    const data = await customerBillingCreateService.createFromSelection(req.body);
+    res.status(201).json(data);
   }),
 
   billPdf: asyncHandler(async (req: Request, res: Response) => {
