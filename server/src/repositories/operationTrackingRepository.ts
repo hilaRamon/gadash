@@ -73,4 +73,12 @@ export const operationTrackingRepository = {
       { wasCharged: true },
     );
   },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return OperationTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
+  },
 };

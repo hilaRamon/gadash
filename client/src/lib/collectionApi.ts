@@ -21,6 +21,7 @@ import {
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
 import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
+import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
 import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
@@ -504,7 +505,83 @@ async function updateMock(
   return store[index];
 }
 
+function toIdArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "")).filter(Boolean);
+}
+
+function unchargeCustomerBillingLineItemsMock(billing: CollectionDocument): void {
+  const trackingCollections: Array<{
+    collection: string;
+    ids: string[];
+  }> = [
+    {
+      collection: "operationsTrackings",
+      ids: toIdArray(billing.operationsTrackingIds),
+    },
+    {
+      collection: "contractorTrackings",
+      ids: toIdArray(billing.contractorTrackingIds),
+    },
+    {
+      collection: "materialUsageTrackings",
+      ids: toIdArray(billing.materialUsageTrackingIds),
+    },
+    {
+      collection: "baleOrderTrackings",
+      ids: toIdArray(billing.baleOrderTrackingIds),
+    },
+  ];
+
+  for (const { collection, ids } of trackingCollections) {
+    if (ids.length === 0) continue;
+    const store = getMockStore(collection);
+    for (const trackingId of ids) {
+      const row = store.find((doc) => doc._id === trackingId);
+      if (row) row.wasCharged = false;
+    }
+  }
+}
+
+async function removeCustomerBillingMock(id: string): Promise<void> {
+  await delay(150);
+  const store = getMockStore("customerBillingTrackings");
+  const index = store.findIndex((d) => d._id === id);
+  if (index === -1) return;
+  const billing = store[index];
+  if (billing.paid === true) {
+    throw new Error(PAID_BILLING_DELETE_ERROR);
+  }
+  unchargeCustomerBillingLineItemsMock(billing);
+  store.splice(index, 1);
+}
+
+async function removeManyCustomerBillingMock(ids: string[]): Promise<void> {
+  await delay(200);
+  const uniqueIds = [...new Set(ids.map((id) => String(id ?? "").trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) return;
+
+  const store = getMockStore("customerBillingTrackings");
+  const billings = uniqueIds.map((id) => store.find((d) => d._id === id));
+  if (billings.some((row) => row == null)) return;
+  if (billings.some((row) => row?.paid === true)) {
+    throw new Error(PAID_BILLING_DELETE_ERROR);
+  }
+
+  for (const billing of billings) {
+    if (billing) unchargeCustomerBillingLineItemsMock(billing);
+  }
+
+  for (const id of uniqueIds) {
+    const index = store.findIndex((d) => d._id === id);
+    if (index !== -1) store.splice(index, 1);
+  }
+}
+
 async function removeMock(collection: string, id: string): Promise<void> {
+  if (collection === "customerBillingTrackings") {
+    return removeCustomerBillingMock(id);
+  }
   await delay(150);
   const store = getMockStore(collection);
   const index = store.findIndex((d) => d._id === id);
@@ -515,6 +592,9 @@ async function removeManyMock(
   collection: string,
   ids: string[],
 ): Promise<void> {
+  if (collection === "customerBillingTrackings") {
+    return removeManyCustomerBillingMock(ids);
+  }
   await delay(200);
   const store = getMockStore(collection);
   for (const id of ids) {

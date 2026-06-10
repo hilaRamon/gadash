@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { PAID_BILLING_DELETE_TOOLTIP } from "../../../lib/customerBillingErrors";
 import type {
   CollectionSchema,
   CollectionDocument,
@@ -13,6 +14,7 @@ import { EditableDiscreteCell } from "./EditableDiscreteCell";
 import { ReadOnlyBooleanCell } from "./ReadOnlyBooleanCell";
 import { EditableNumberCell } from "./EditableNumberCell";
 import { EditableTextCell } from "./EditableTextCell";
+import { ActionTooltip } from "./ActionTooltip";
 
 const TableWrap = styled.div<{ $previewMode?: boolean }>`
   max-width: 100%;
@@ -147,6 +149,7 @@ export type DataTableProps = {
   onToggleSelectAll: (visibleIds: string[]) => void;
   onEdit: (row: CollectionDocument) => void;
   onDelete: (row: CollectionDocument) => void;
+  canDeleteRow?: (row: CollectionDocument) => boolean;
   rowAction?: "edit" | "view";
   /** Hides row actions and column filter row. */
   previewMode?: boolean;
@@ -171,6 +174,7 @@ export function DataTable({
   onToggleSelectAll,
   onEdit,
   onDelete,
+  canDeleteRow,
   rowAction = "edit",
   previewMode = false,
   previewIncludeSelection,
@@ -401,13 +405,27 @@ export function DataTable({
                         >
                           {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
                         </IconButton>
-                        <IconButton
-                          type="button"
-                          onClick={() => onDelete(row)}
-                          aria-label="מחיקה"
+                        <ActionTooltip
+                          text={
+                            canDeleteRow != null && !canDeleteRow(row)
+                              ? PAID_BILLING_DELETE_TOOLTIP
+                              : undefined
+                          }
                         >
-                          <DeleteIcon />
-                        </IconButton>
+                          <IconButton
+                            type="button"
+                            onClick={() => onDelete(row)}
+                            disabled={
+                              canDeleteRow != null && !canDeleteRow(row)
+                            }
+                            aria-label="מחיקה"
+                            aria-disabled={
+                              canDeleteRow != null && !canDeleteRow(row)
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </ActionTooltip>
                       </ActionsInner>
                     </ActionsCell>
                   )}

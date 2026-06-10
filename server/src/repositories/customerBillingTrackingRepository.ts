@@ -34,6 +34,13 @@ export const customerBillingTrackingRepository = {
       .lean();
   },
 
+  findByIds(ids: string[]) {
+    if (ids.length === 0) return Promise.resolve([]);
+    return CustomerBillingTrackingModel.find({ _id: { $in: toObjectIds(ids) } })
+      .populate(customerPopulate)
+      .lean();
+  },
+
   create(data: CustomerBillingTrackingInput) {
     return CustomerBillingTrackingModel.create(data);
   },

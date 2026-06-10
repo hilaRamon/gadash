@@ -75,4 +75,12 @@ export const contractorTrackingRepository = {
       { wasCharged: true },
     );
   },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return ContractorTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
+  },
 };

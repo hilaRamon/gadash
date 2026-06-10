@@ -32,6 +32,15 @@ type DeleteTarget =
   | { type: 'bulk'; ids: string[] }
   | null
 
+function getMutationErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const response = (err as { response?: { data?: { error?: string } } }).response
+    if (response?.data?.error) return response.data.error
+  }
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
+
 function matchesOperationTrackingPageFilter(
   collectionId: string,
   row: CollectionDocument,
@@ -85,6 +94,7 @@ function CollectionPageContent({
   const [viewingBillingRow, setViewingBillingRow] =
     useState<CollectionDocument | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const { data: rows = [], isLoading, isError, error } = useCollectionList(
@@ -157,6 +167,7 @@ function CollectionPageContent({
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return
+    setDeleteError(null)
     try {
       if (deleteTarget.type === 'single') {
         await deleteMutation.mutateAsync(deleteTarget.row._id)
@@ -165,13 +176,17 @@ function CollectionPageContent({
         tableQuery.resetSelection()
       }
       setDeleteTarget(null)
-    } catch {
-      // keep dialog open on error
+    } catch (err) {
+      setDeleteError(getMutationErrorMessage(err, 'שגיאה במחיקה'))
     }
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery])
 
   const isTransportTrackingPage = collectionId === 'transport-trackings'
   const isCustomerBillingPage = collectionId === 'customer-billing-trackings'
+  const canDeleteBillingRow = useCallback(
+    (row: CollectionDocument) => row.paid !== true,
+    [],
+  )
   const rowAction = schema.rowAction ?? 'edit'
   const handleAdd = isCustomerBillingPage
     ? () => navigate('/trackings/customer-billing/new')
@@ -196,6 +211,13 @@ function CollectionPageContent({
   const deleteDialog = useMemo(() => {
     if (!deleteTarget) return null
 
+    const billingNote = isCustomerBillingPage ? (
+      <>
+        <br />
+        פריטי המעקב יוחזרו לחיוב מחדש.
+      </>
+    ) : null
+
     if (deleteTarget.type === 'single') {
       const name = getDocumentLabel(schema, deleteTarget.row)
       return {
@@ -205,6 +227,7 @@ function CollectionPageContent({
             האם למחוק את <strong>{name}</strong> מתוך {schema.label}?
             <br />
             לא ניתן לשחזר.
+            {billingNote}
           </>
         ),
       }
@@ -225,10 +248,11 @@ function CollectionPageContent({
             ))}
           </DeleteDialogList>
           לא ניתן לשחזר.
+          {billingNote}
         </>
       ),
     }
-  }, [deleteTarget, rows, schema])
+  }, [deleteTarget, isCustomerBillingPage, rows, schema])
 
   return (
     <div className="page page-collection">
@@ -246,12 +270,13 @@ function CollectionPageContent({
             if (!field) tableQuery.setSort('', direction)
             else tableQuery.setSort(field, direction)
           }}
-          onBulkDelete={() =>
+          onBulkDelete={() => {
+            setDeleteError(null)
             setDeleteTarget({
               type: 'bulk',
               ids: tableQuery.state.selectedIds,
             })
-          }
+          }}
           exportDisabled={isLoading || isError}
           onExportExcel={handleExportExcel}
           />
@@ -275,7 +300,13 @@ function CollectionPageContent({
           onToggleSelectAll={tableQuery.toggleSelectAll}
           onEdit={handleRowAction}
           rowAction={rowAction}
-          onDelete={(row) => setDeleteTarget({ type: 'single', row })}
+          canDeleteRow={
+            isCustomerBillingPage ? canDeleteBillingRow : undefined
+          }
+          onDelete={(row) => {
+            setDeleteError(null)
+            setDeleteTarget({ type: 'single', row })
+          }}
         />
       </section>
 
@@ -295,8 +326,12 @@ function CollectionPageContent({
         message={deleteDialog?.message ?? ''}
         confirmLabel="מחק"
         isPending={isDeletePending}
+        error={deleteError}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null)
+          setDeleteError(null)
+        }}
       />
 
       {isCustomerBillingPage && (

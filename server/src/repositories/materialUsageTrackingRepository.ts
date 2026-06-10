@@ -80,4 +80,12 @@ export const materialUsageTrackingRepository = {
       { wasCharged: true },
     );
   },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return MaterialUsageTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
+  },
 };

@@ -2,10 +2,8 @@ import { Schema, model, type InferSchemaType } from 'mongoose';
 
 export const CUSTOMER_BILLING_STATUSES = [
   'לא אושר כלל',
-  'אושר פנימי',
   'אושר ע״י לקוח',
   'הופקה חשבונית',
-  'התקבלה חשבונית',
 ] as const;
 
 export type CustomerBillingStatus = (typeof CUSTOMER_BILLING_STATUSES)[number];

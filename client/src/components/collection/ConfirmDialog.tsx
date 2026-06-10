@@ -8,6 +8,7 @@ type ConfirmDialogProps = {
   confirmLabel?: string
   cancelLabel?: string
   isPending?: boolean
+  error?: string | null
   onConfirm: () => void
   onCancel: () => void
 }
@@ -69,6 +70,12 @@ const Message = styled.div`
   color: var(--text-secondary);
 `
 
+const ErrorText = styled.p`
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #fc8181;
+`
+
 const Actions = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -98,6 +105,7 @@ export function ConfirmDialog({
   confirmLabel = 'אישור',
   cancelLabel = 'ביטול',
   isPending = false,
+  error = null,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -113,6 +121,7 @@ export function ConfirmDialog({
       >
         <Title id="dialog-title">{title}</Title>
         <Message>{message}</Message>
+        {error && <ErrorText role="alert">{error}</ErrorText>}
         <Actions>
           <CancelButton type="button" onClick={onCancel} disabled={isPending}>
             {cancelLabel}

@@ -30,7 +30,7 @@ async function seedCustomerBillingExample() {
     date: today,
     customer: customer._id as mongoose.Types.ObjectId,
     notes: 'דוגמה לחיוב לקוח',
-    status: 'אושר פנימי',
+    status: 'לא אושר כלל',
     paid: false,
     finalPrice: 12500,
   });

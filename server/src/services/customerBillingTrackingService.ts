@@ -9,10 +9,12 @@ import {
   type CustomerBillingTrackingInput,
 } from '../repositories/customerBillingTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { PAID_BILLING_DELETE_ERROR } from '../lib/customerBillingErrors';
 import {
   customerBillingTrackingToApiDocument,
   customerBillingTrackingToApiDocuments,
 } from '../utils/customerBillingTrackingApiMapper';
+import { unchargeBillingLineItems } from './customerBillingLineItemsService';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -192,13 +194,35 @@ export const customerBillingTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
-    const result = await customerBillingTrackingRepository.delete(id);
-    if (!result) {
+    const existing = await customerBillingTrackingRepository.findById(id);
+    if (!existing) {
       throw new Error('לא נמצא');
     }
+    if (existing.paid === true) {
+      throw new Error(PAID_BILLING_DELETE_ERROR);
+    }
+
+    await unchargeBillingLineItems(existing as Record<string, unknown>);
+    await customerBillingTrackingRepository.delete(id);
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await customerBillingTrackingRepository.deleteMany(ids);
+    const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await customerBillingTrackingRepository.findByIds(uniqueIds);
+    if (rows.length !== uniqueIds.length) {
+      throw new Error('לא נמצא');
+    }
+    if (rows.some((row) => row.paid === true)) {
+      throw new Error(PAID_BILLING_DELETE_ERROR);
+    }
+
+    await Promise.all(
+      rows.map((row) =>
+        unchargeBillingLineItems(row as Record<string, unknown>),
+      ),
+    );
+    await customerBillingTrackingRepository.deleteMany(uniqueIds);
   },
 };
