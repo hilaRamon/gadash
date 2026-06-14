@@ -1,3 +1,8 @@
+/**
+ * Loads the printable bill HTML for checked items in the create-billing flow.
+ * Builds a CustomerBillRequest from preview + includedIds, then calls fetchCustomerBillPreview
+ * (server builds HTML/PDF data; mock builds HTML on the client).
+ */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {

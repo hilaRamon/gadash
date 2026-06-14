@@ -1,7 +1,17 @@
+export const BALE_ORDER_PRICING_FORMS = ['לפי משקל', 'לפי יחידות'] as const;
+export type BaleOrderPricingForm = (typeof BALE_ORDER_PRICING_FORMS)[number];
+
+export const BALE_ORDER_BY_WEIGHT = BALE_ORDER_PRICING_FORMS[0];
+export const BALE_ORDER_BY_UNIT = BALE_ORDER_PRICING_FORMS[1];
+
 type BalePrices = {
   pricePerTon?: unknown;
   pricePerUnit?: unknown;
 };
+
+export function isByWeightPricing(pricingForm: unknown): boolean {
+  return String(pricingForm ?? '') === BALE_ORDER_BY_WEIGHT;
+}
 
 export function hasWeightValue(weight: unknown): boolean {
   if (weight == null || weight === '') return false;
@@ -33,22 +43,24 @@ export function calcBaleOrderFinalPrice(params: {
   weight?: unknown;
   pricePerTon?: unknown;
   pricePerUnit?: unknown;
+  pricingForm?: unknown;
   bale?: BalePrices | null;
   transportPrice?: unknown;
 }): number {
-  const quantity = Number(params.quantity ?? 0);
-  if (!Number.isFinite(quantity) || quantity < 0) return 0;
-
   const { pricePerTon, pricePerUnit } = resolveBaleOrderPrices(params);
+  const pricingForm = String(params.pricingForm ?? '');
 
   let base = 0;
-  if (hasWeightValue(params.weight)) {
-    const weight = Number(params.weight);
-    if (Number.isFinite(pricePerTon)) {
-      base = Number((weight * pricePerTon * quantity).toFixed(2));
+  if (isByWeightPricing(pricingForm)) {
+    const weight = Number(params.weight ?? 0);
+    if (Number.isFinite(weight) && weight > 0 && Number.isFinite(pricePerTon)) {
+      base = Number((weight * pricePerTon).toFixed(2));
     }
-  } else if (Number.isFinite(pricePerUnit)) {
-    base = Number((pricePerUnit * quantity).toFixed(2));
+  } else if (pricingForm === BALE_ORDER_BY_UNIT) {
+    const quantity = Number(params.quantity ?? 0);
+    if (Number.isFinite(quantity) && quantity >= 0 && Number.isFinite(pricePerUnit)) {
+      base = Number((quantity * pricePerUnit).toFixed(2));
+    }
   }
 
   if (params.transportPrice == null || params.transportPrice === '') return base;

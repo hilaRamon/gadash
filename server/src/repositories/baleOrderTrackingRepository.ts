@@ -1,5 +1,6 @@
 import type { Types } from 'mongoose';
 import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
+import type { BaleOrderPricingForm } from '../models/BaleOrderTracking';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type BaleOrderTrackingInput = {
@@ -7,6 +8,7 @@ export type BaleOrderTrackingInput = {
   bale: Types.ObjectId;
   customer: Types.ObjectId;
   quantity: number;
+  pricingForm: BaleOrderPricingForm;
   pricePerTon: number;
   pricePerUnit: number;
   weight?: number | null;

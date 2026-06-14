@@ -72,12 +72,21 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
             <th>תיאור</th>${plotHeader}
             <th>מחיר</th>
           </tr>`
-    : `
+    : showTransport
+      ? `
+          <tr>
+            <th>תאריך</th>
+            <th>תיאור</th>
+            <th>כמות/משקל</th>
+            <th>מחיר ליחידה/טון</th>${transportHeader}
+            <th>מחיר</th>
+          </tr>`
+      : `
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>
             <th>כמות</th>
-            <th>מחיר ליחידה</th>${transportHeader}
+            <th>מחיר ליחידה</th>
             <th>מחיר</th>
           </tr>`;
 

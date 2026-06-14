@@ -1,3 +1,10 @@
+/**
+ * Create-billing UI: receives UnbilledPreview from the parent page and renders four
+ * selectable DataTables (operations, materials, bales, contractors) plus CustomerBillPaper.
+ *
+ * Does not fetch preview itself — only maps preview.* arrays to table rows and column schemas.
+ * Bill HTML is loaded separately inside CustomerBillPaper based on checked row IDs.
+ */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +23,7 @@ import { formatNumber } from "../../lib/formatNumber";
 import type { ColumnDef } from "../../schema/types";
 import { CustomerBillPaper } from "./CustomerBillPaper";
 
+// Subset of collection columns shown in each preview table (search disabled).
 function pickPreviewColumns(
   schema: CollectionSchema,
   columnKeys: string[],
@@ -37,6 +45,7 @@ function pickPreviewSchema(
 }
 
 const operationsPreviewSchema: CollectionSchema = {
+  // Column layout for the operations preview table (not sent by the server).
   ...operationsTrackingsAllSchema,
   columns: [
     ...pickPreviewColumns(operationsTrackingsAllSchema, [
@@ -92,6 +101,7 @@ const balePreviewSchema: CollectionSchema = {
       "date",
       "bale",
       "quantity",
+      "pricingForm",
       "pricePerTon",
       "pricePerUnit",
       "weight",
@@ -236,6 +246,7 @@ export function CreateCustomerBillingSections({
   const [includedIds, setIncludedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
+    // Default: all preview rows are included in the bill until the user unchecks them.
     if (!preview) {
       setIncludedIds(new Set());
       return;
@@ -280,6 +291,7 @@ export function CreateCustomerBillingSections({
     [customerId, queryClient, updateContractor],
   );
 
+  // Split server preview into four sections; each array becomes one DataTable.
   const allSections = useMemo<
     (SectionConfig & {
       onCellChange?: SectionProps["onCellChange"];

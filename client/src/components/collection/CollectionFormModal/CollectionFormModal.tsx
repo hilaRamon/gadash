@@ -6,7 +6,13 @@ import type {
 } from "../../../schema/types";
 import { useCollectionList } from "../../../hooks/collections/useCollectionList";
 import { buildPayload, getInitialValues, getRequiredFieldErrors } from "./helpers";
-import { applyBaleOrderFieldChange } from "./baleOrderForm";
+import {
+  applyBaleOrderFieldChange,
+  enrichBaleOrderPayload,
+  getBaleOrderRequiredErrors,
+  getBaleOrderVisibleFields,
+  inferBaleOrderPricingForm,
+} from "./baleOrderForm";
 import {
   applyContractorTrackingFieldChange,
   enrichContractorTrackingPayload,
@@ -184,16 +190,23 @@ export function CollectionFormModal({
     if (isContractorTrackingForm) {
       return getContractorTrackingVisibleFields(base, values);
     }
+    if (isBaleOrderForm) {
+      return getBaleOrderVisibleFields(base, values);
+    }
     return base;
   })();
 
   useEffect(() => {
     if (open) {
-      setValues(getInitialValues(schema.form.fields, editingRow));
+      const initial = getInitialValues(schema.form.fields, editingRow);
+      if (schema.collection === "baleOrderTrackings") {
+        initial.pricingForm = inferBaleOrderPricingForm(editingRow);
+      }
+      setValues(initial);
       setValidationError(null);
       setFieldErrors({});
     }
-  }, [open, editingRow, schema.form.fields]);
+  }, [open, editingRow, schema.form.fields, schema.collection]);
 
   useEffect(() => {
     if (!open || !hiddenOperationField) return;
@@ -276,10 +289,12 @@ export function CollectionFormModal({
     );
 
     if (matchingColumn?.format) {
-      return {
-        trueLabel: matchingColumn.format(true, {} as CollectionDocument),
-        falseLabel: matchingColumn.format(false, {} as CollectionDocument),
-      };
+      const rowContext = { ...values } as CollectionDocument;
+      const trueLabel = matchingColumn.format(true, rowContext);
+      const falseLabel = matchingColumn.format(false, rowContext);
+      if (trueLabel && falseLabel) {
+        return { trueLabel, falseLabel };
+      }
     }
 
     return {
@@ -309,7 +324,9 @@ export function CollectionFormModal({
       ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
       : isTransportTrackingForm
         ? getTransportTrackingRequiredErrors(fieldsForValidation, values)
-        : getRequiredFieldErrors(fieldsForValidation, values);
+        : isBaleOrderForm
+          ? getBaleOrderRequiredErrors(fieldsForValidation, values)
+          : getRequiredFieldErrors(fieldsForValidation, values);
     if (Object.keys(requiredFieldErrors).length > 0) {
       setFieldErrors(requiredFieldErrors);
       setValidationError(null);
@@ -336,6 +353,10 @@ export function CollectionFormModal({
     }
     if (isTransportTrackingForm) {
       onSubmit(enrichTransportTrackingPayload(payload, values));
+      return;
+    }
+    if (isBaleOrderForm) {
+      onSubmit(enrichBaleOrderPayload(payload, values));
       return;
     }
     onSubmit(payload);

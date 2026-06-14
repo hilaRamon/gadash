@@ -1,40 +1,41 @@
-import type { ApiDocument } from '../types/apiDocument';
+import type { ApiDocument } from "../types/apiDocument";
 import type {
   CustomerBillDocument,
   CustomerBillLine,
   CustomerBillSection,
   CustomerBillSectionLayout,
-} from '../types/customerBill';
-import { formatNumber } from './formatNumber';
-import { isFuelOperationType } from './unbilledTrackingFilters';
+} from "../types/customerBill";
+import { formatNumber } from "./formatNumber";
+import { isByWeightPricing } from "./baleOrderPricing";
+import { isFuelOperationType } from "./unbilledTrackingFilters";
 
 function formatBillDate(value: unknown): string {
-  const date = new Date(String(value ?? ''));
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('he-IL');
+  const date = new Date(String(value ?? ""));
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("he-IL");
 }
 
 function todayBillDate(): string {
-  return new Date().toLocaleDateString('he-IL');
+  return new Date().toLocaleDateString("he-IL");
 }
 
 function buildDescription(primary: string, secondary?: string | null): string {
-  const a = String(primary ?? '').trim();
-  const b = String(secondary ?? '').trim();
+  const a = String(primary ?? "").trim();
+  const b = String(secondary ?? "").trim();
   if (a && b) return `${a} — ${b}`;
   return a || b;
 }
 
 function calcUnitPrice(finalPrice: number, amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return '';
+  if (!Number.isFinite(amount) || amount <= 0) return "";
   return formatNumber(finalPrice / amount);
 }
 
 function compareByDate(a: CustomerBillLine, b: CustomerBillLine): number {
-  const dateA = new Date(a.date.split('.').reverse().join('-')).getTime();
-  const dateB = new Date(b.date.split('.').reverse().join('-')).getTime();
+  const dateA = new Date(a.date.split(".").reverse().join("-")).getTime();
+  const dateB = new Date(b.date.split(".").reverse().join("-")).getTime();
   if (Number.isNaN(dateA) || Number.isNaN(dateB)) {
-    return a.date.localeCompare(b.date, 'he');
+    return a.date.localeCompare(b.date, "he");
   }
   return dateA - dateB;
 }
@@ -42,8 +43,8 @@ function compareByDate(a: CustomerBillLine, b: CustomerBillLine): number {
 function operationLine(row: ApiDocument): CustomerBillLine {
   return {
     date: formatBillDate(row.date),
-    description: String(row.operationName ?? ''),
-    plotName: String(row.plotName ?? ''),
+    description: String(row.operationName ?? ""),
+    plotName: String(row.plotName ?? ""),
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -52,13 +53,13 @@ function operationLine(row: ApiDocument): CustomerBillLine {
 function contractorLine(row: ApiDocument): CustomerBillLine {
   const customerPrice = row.customerPrice;
   const price =
-    customerPrice != null && customerPrice !== ''
+    customerPrice != null && customerPrice !== ""
       ? Number(customerPrice)
       : Number(row.finalPrice ?? 0);
   return {
     date: formatBillDate(row.date),
-    description: String(row.operationName ?? ''),
-    plotName: String(row.plotName ?? ''),
+    description: String(row.operationName ?? ""),
+    plotName: String(row.plotName ?? ""),
     price,
     priceFormatted: formatNumber(price),
   };
@@ -70,12 +71,12 @@ function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
   const amount =
     Number.isFinite(amountValue) && amountValue > 0
       ? formatNumber(amountValue)
-      : '';
+      : "";
   return {
     date: formatBillDate(row.date),
     description: buildDescription(
-      String(row.materialName ?? ''),
-      showPlots ? String(row.plotName ?? '') : '',
+      String(row.materialName ?? ""),
+      showPlots ? String(row.plotName ?? "") : "",
     ),
     amount,
     unitPrice: calcUnitPrice(finalPrice, amountValue),
@@ -87,25 +88,39 @@ function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
 function baleLine(row: ApiDocument): CustomerBillLine {
   const quantity = Number(row.quantity ?? 0);
   const weight = Number(row.weight ?? 0);
-  const amountParts: string[] = [];
-  if (Number.isFinite(quantity) && quantity > 0) {
-    amountParts.push(`${formatNumber(quantity)} יח׳`);
-  }
-  if (Number.isFinite(weight) && weight > 0) {
-    amountParts.push(`${formatNumber(weight)} משקל`);
-  }
+  const pricePerTon = Number(row.pricePerTon ?? 0);
   const pricePerUnit = Number(row.pricePerUnit ?? 0);
   const transport = Number(row.transportPrice ?? 0);
+  const byWeight = isByWeightPricing(row.pricingForm);
+
+  let amount = "";
+  let unitPrice = "";
+
+  if (byWeight) {
+    if (Number.isFinite(weight) && weight > 0) {
+      amount = `${formatNumber(weight)} טון`;
+    }
+    if (Number.isFinite(pricePerTon) && pricePerTon > 0) {
+      unitPrice = formatNumber(pricePerTon);
+    }
+  } else {
+    if (Number.isFinite(quantity) && quantity > 0) {
+      amount = `${formatNumber(quantity)} יח׳`;
+    }
+    if (Number.isFinite(pricePerUnit) && pricePerUnit > 0) {
+      unitPrice = formatNumber(pricePerUnit);
+    }
+  }
+
   return {
     date: formatBillDate(row.date),
-    description: String(row.baleName ?? ''),
-    amount: amountParts.join(' · '),
-    unitPrice:
-      Number.isFinite(pricePerUnit) && pricePerUnit > 0
-        ? formatNumber(pricePerUnit)
-        : '',
+    description: String(row.baleName ?? ""),
+    amount,
+    unitPrice,
     transportPrice:
-      Number.isFinite(transport) && transport > 0 ? formatNumber(transport) : '',
+      Number.isFinite(transport) && transport > 0
+        ? formatNumber(transport)
+        : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -138,19 +153,18 @@ export function buildCustomerBillDocument(input: {
   baleOrders: ApiDocument[];
 }): CustomerBillDocument {
   const showPlots = input.showPlots !== false;
-  const operationsSection = buildSection(
-    'פעולות',
-    'operations',
-    [...input.operations.map(operationLine), ...input.contractors.map(contractorLine)],
-  );
+  const operationsSection = buildSection("פעולות", "operations", [
+    ...input.operations.map(operationLine),
+    ...input.contractors.map(contractorLine),
+  ]);
   const materialsSection = buildSection(
-    'חומרים',
-    'quantityWithUnitPrice',
+    "חומרים",
+    "quantityWithUnitPrice",
     input.materialUsage.map((row) => materialLine(row, showPlots)),
   );
   const balesSection = buildSection(
-    'הזמנת חבילות',
-    'quantityWithUnitPrice',
+    "הזמנת חבילות",
+    "quantityWithUnitPrice",
     input.baleOrders.map(baleLine),
   );
 
@@ -177,9 +191,9 @@ export function isValidOperationForBill(
     row.wasCharged !== true &&
     row.billable !== false &&
     row.plot != null &&
-    row.plot !== '' &&
+    row.plot !== "" &&
     !isFuelOperationType(row.operationType) &&
-    String(row.customer ?? '') === customerId
+    String(row.customer ?? "") === customerId
   );
 }
 
@@ -187,7 +201,7 @@ export function isValidContractorForBill(
   row: ApiDocument,
   customerId: string,
 ): boolean {
-  return row.wasCharged !== true && String(row.customer ?? '') === customerId;
+  return row.wasCharged !== true && String(row.customer ?? "") === customerId;
 }
 
 export function isValidMaterialForBill(
@@ -197,7 +211,7 @@ export function isValidMaterialForBill(
   return (
     row.wasCharged !== true &&
     row.billable !== false &&
-    String(row.customer ?? '') === customerId
+    String(row.customer ?? "") === customerId
   );
 }
 
@@ -205,5 +219,5 @@ export function isValidBaleOrderForBill(
   row: ApiDocument,
   customerId: string,
 ): boolean {
-  return row.wasCharged !== true && String(row.customer ?? '') === customerId;
+  return row.wasCharged !== true && String(row.customer ?? "") === customerId;
 }

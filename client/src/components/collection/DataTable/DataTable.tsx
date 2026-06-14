@@ -93,11 +93,23 @@ const HeaderFilterCell = styled.th`
 const CheckboxCol = styled.th`
   width: 2.5rem;
   text-align: center;
+
+  && {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
 `;
 
 const CheckboxCell = styled.td`
   width: 2.5rem;
   text-align: center;
+
+  && {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
 `;
 
 const ActionsCol = styled.th`

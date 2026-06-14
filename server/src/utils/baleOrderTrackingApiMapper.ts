@@ -44,6 +44,7 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     weight: doc.weight,
     pricePerTon,
     pricePerUnit,
+    pricingForm: doc.pricingForm,
     transportPrice: doc.transportPrice,
   });
 
@@ -56,6 +57,7 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     baleName: bale.name,
     customer: customer.id,
     customerName: customer.name,
+    pricingForm: doc.pricingForm,
     pricePerTon,
     pricePerUnit,
     transportPrice: doc.transportPrice,

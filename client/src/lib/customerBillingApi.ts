@@ -1,3 +1,12 @@
+/**
+ * Client API for customer billing: unbilled preview, bill HTML/PDF, create billing.
+ *
+ * When VITE_USE_MOCK !== "false", list/filter mock collections locally.
+ * Otherwise all bill data comes from the server; the client only renders JSON/HTML.
+ *
+ * UnbilledPreview is the payload for create-billing tables (four tracking arrays).
+ * Bill preview/PDF use a separate endpoint that builds the invoice document server-side.
+ */
 import api from "./api";
 import { createDocument, listCollection, updateDocument } from "./collectionApi";
 import {
@@ -38,6 +47,7 @@ export type CustomerWithUnbilled = {
   name: string;
 };
 
+/** Row arrays returned by unbilled-preview; split into four tables on the client. */
 export type UnbilledPreview = {
   operations: CollectionDocument[];
   materialUsage: CollectionDocument[];
@@ -45,6 +55,7 @@ export type UnbilledPreview = {
   contractors: CollectionDocument[];
 };
 
+/** Mock: load all trackings from in-memory store and filter by customer + uncharged rules. */
 async function fetchUnbilledPreviewMock(
   customerId: string,
 ): Promise<UnbilledPreview> {
@@ -130,6 +141,7 @@ export async function fetchCustomersWithUnbilled(): Promise<CustomerWithUnbilled
   return data.customers;
 }
 
+/** Unbilled trackings for one customer — used by CreateCustomerBillingSections tables. */
 export async function fetchUnbilledPreview(
   customerId: string,
 ): Promise<UnbilledPreview> {
@@ -149,6 +161,7 @@ export async function fetchUnbilledPreview(
   return data;
 }
 
+/** Maps checked table rows to the IDs sent when creating a bill or fetching bill HTML/PDF. */
 export function buildCustomerBillRequest(
   customerId: string,
   preview: UnbilledPreview,
@@ -181,6 +194,7 @@ export function hasIncludedBillItems(request: CustomerBillRequest): boolean {
   );
 }
 
+/** Mock only: build invoice HTML on the client (see buildCustomerBillData + renderCustomerBillHtml). */
 async function fetchCustomerBillPreviewMock(
   request: CustomerBillRequest,
   customerName: string,
@@ -271,6 +285,7 @@ export async function fetchSavedBillingBillPreview(
   return data;
 }
 
+/** Invoice HTML for selected rows — POST bill-preview on server (mock builds locally). */
 export async function fetchCustomerBillPreview(
   request: CustomerBillRequest,
   options: { customerName: string; preview: UnbilledPreview },

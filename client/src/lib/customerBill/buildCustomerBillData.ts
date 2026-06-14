@@ -6,6 +6,7 @@ import type {
   CustomerBillSectionLayout,
 } from "./types";
 import { formatNumber } from "../formatNumber";
+import { isByWeightPricing } from "../baleOrderPricing";
 import {
   isUnbilledBaleOrderForCustomer,
   isUnbilledContractorForCustomer,
@@ -69,7 +70,10 @@ function contractorLine(row: CollectionDocument): CustomerBillLine {
   };
 }
 
-function materialLine(row: CollectionDocument, showPlots: boolean): CustomerBillLine {
+function materialLine(
+  row: CollectionDocument,
+  showPlots: boolean,
+): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const finalPrice = Number(row.finalPrice ?? 0);
   const amount =
@@ -92,25 +96,39 @@ function materialLine(row: CollectionDocument, showPlots: boolean): CustomerBill
 function baleLine(row: CollectionDocument): CustomerBillLine {
   const quantity = Number(row.quantity ?? 0);
   const weight = Number(row.weight ?? 0);
-  const amountParts: string[] = [];
-  if (Number.isFinite(quantity) && quantity > 0) {
-    amountParts.push(`${formatNumber(quantity)} יח׳`);
-  }
-  if (Number.isFinite(weight) && weight > 0) {
-    amountParts.push(`${formatNumber(weight)} משקל`);
-  }
+  const pricePerTon = Number(row.pricePerTon ?? 0);
   const pricePerUnit = Number(row.pricePerUnit ?? 0);
   const transport = Number(row.transportPrice ?? 0);
+  const byWeight = isByWeightPricing(row.pricingForm);
+
+  let amount = "";
+  let unitPrice = "";
+
+  if (byWeight) {
+    if (Number.isFinite(weight) && weight > 0) {
+      amount = `${formatNumber(weight)} טון`;
+    }
+    if (Number.isFinite(pricePerTon) && pricePerTon > 0) {
+      unitPrice = formatNumber(pricePerTon);
+    }
+  } else {
+    if (Number.isFinite(quantity) && quantity > 0) {
+      amount = `${formatNumber(quantity)} יח׳`;
+    }
+    if (Number.isFinite(pricePerUnit) && pricePerUnit > 0) {
+      unitPrice = formatNumber(pricePerUnit);
+    }
+  }
+
   return {
     date: formatBillDate(row.date),
     description: String(row.baleName ?? ""),
-    amount: amountParts.join(" · "),
-    unitPrice:
-      Number.isFinite(pricePerUnit) && pricePerUnit > 0
-        ? formatNumber(pricePerUnit)
-        : "",
+    amount,
+    unitPrice,
     transportPrice:
-      Number.isFinite(transport) && transport > 0 ? formatNumber(transport) : "",
+      Number.isFinite(transport) && transport > 0
+        ? formatNumber(transport)
+        : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -143,11 +161,10 @@ export function buildCustomerBillDocumentFromRows(input: {
   baleOrders: CollectionDocument[];
 }): CustomerBillDocument {
   const showPlots = input.showPlots !== false;
-  const operationsSection = buildSection(
-    "פעולות",
-    "operations",
-    [...input.operations.map(operationLine), ...input.contractors.map(contractorLine)],
-  );
+  const operationsSection = buildSection("פעולות", "operations", [
+    ...input.operations.map(operationLine),
+    ...input.contractors.map(contractorLine),
+  ]);
   const materialsSection = buildSection(
     "חומרים",
     "quantityWithUnitPrice",

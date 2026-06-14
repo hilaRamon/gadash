@@ -10,6 +10,12 @@ import {
   baleOrderTrackingToApiDocument,
   baleOrderTrackingToApiDocuments,
 } from '../utils/baleOrderTrackingApiMapper';
+import {
+  BALE_ORDER_PRICING_FORMS,
+  inferPricingFormFromDoc,
+  isByWeightPricing,
+} from '../utils/baleOrderPricing';
+import type { BaleOrderPricingForm } from '../models/BaleOrderTracking';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -112,6 +118,14 @@ async function resolveStoredPrices(
   };
 }
 
+function parsePricingForm(value: unknown): BaleOrderPricingForm {
+  const pricingForm = String(value ?? '').trim();
+  if (!(BALE_ORDER_PRICING_FORMS as readonly string[]).includes(pricingForm)) {
+    throw new Error('תמחור לא תקין');
+  }
+  return pricingForm as BaleOrderPricingForm;
+}
+
 async function resolveCustomerObjectId(customerId: unknown): Promise<Types.ObjectId> {
   const id = String(customerId ?? '').trim();
   if (!Types.ObjectId.isValid(id)) {
@@ -144,6 +158,9 @@ async function buildTrackingPatch(
   if (mustHave('quantity')) {
     patch.quantity = parsePositiveNumber(body.quantity, 'כמות');
   }
+  if (mustHave('pricingForm')) {
+    patch.pricingForm = parsePricingForm(body.pricingForm);
+  }
   if (mustHave('pricePerTon')) {
     patch.pricePerTon = parsePositiveNumber(body.pricePerTon, 'מחיר לטון');
   }
@@ -151,7 +168,7 @@ async function buildTrackingPatch(
     patch.pricePerUnit = parsePositiveNumber(body.pricePerUnit, 'מחיר ליחידה');
   }
   if (mustHave('weight')) {
-    patch.weight = parseOptionalPositiveNumber(body.weight, 'משקל');
+    patch.weight = parseOptionalPositiveNumber(body.weight, 'משקל משאית');
   }
   if (mustHave('transportPrice')) {
     patch.transportPrice = parseOptionalPositiveNumber(body.transportPrice, 'מחיר הובלה');
@@ -169,6 +186,21 @@ async function buildTrackingPatch(
   return patch;
 }
 
+function applyPricingFormSideEffects(
+  patch: Partial<BaleOrderTrackingInput>,
+  pricingForm: BaleOrderPricingForm | undefined,
+): Partial<BaleOrderTrackingInput> {
+  if (pricingForm == null) return patch;
+  if (isByWeightPricing(pricingForm)) {
+    return patch;
+  }
+  return {
+    ...patch,
+    weight: null,
+    weighed: false,
+  };
+}
+
 export const baleOrderTrackingService = {
   async list(): Promise<ApiDocument[]> {
     const rows = await baleOrderTrackingRepository.findAll();
@@ -181,23 +213,26 @@ export const baleOrderTrackingService = {
       patch.date == null ||
       patch.bale == null ||
       patch.customer == null ||
-      patch.quantity == null
+      patch.quantity == null ||
+      patch.pricingForm == null
     ) {
       throw new Error('שדות חובה חסרים');
     }
 
     const prices = await resolveStoredPrices(body, patch.bale, { requireAll: false });
+    const withPricing = applyPricingFormSideEffects(patch, patch.pricingForm);
 
     const input: BaleOrderTrackingInput = {
       date: patch.date,
       bale: patch.bale,
       customer: patch.customer,
       quantity: patch.quantity,
+      pricingForm: patch.pricingForm,
       pricePerTon: prices.pricePerTon,
       pricePerUnit: prices.pricePerUnit,
-      weight: patch.weight ?? null,
+      weight: withPricing.weight ?? patch.weight ?? null,
       transportPrice: patch.transportPrice ?? null,
-      weighed: patch.weighed ?? false,
+      weighed: withPricing.weighed ?? patch.weighed ?? false,
       wasCharged: patch.wasCharged ?? false,
       notes: patch.notes ?? '',
     };
@@ -230,6 +265,12 @@ export const baleOrderTrackingService = {
       patch.pricePerTon = prices.pricePerTon;
       patch.pricePerUnit = prices.pricePerUnit;
     }
+
+    const pricingForm =
+      patch.pricingForm ??
+      inferPricingFormFromDoc(existing as { pricingForm?: unknown; weight?: unknown });
+    const withPricing = applyPricingFormSideEffects(patch, pricingForm);
+    Object.assign(patch, withPricing);
 
     const updated = await baleOrderTrackingRepository.update(id, patch);
     if (!updated) {

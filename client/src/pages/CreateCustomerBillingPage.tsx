@@ -1,3 +1,11 @@
+/**
+ * Create-customer-billing page: pick a customer, then show unbilled items and bill preview.
+ *
+ * Data flow:
+ * 1. useCustomersWithUnbilled → dropdown of customers with uncharged trackings
+ * 2. useUnbilledPreview(customerId) → server (or mock) returns four row arrays
+ * 3. CreateCustomerBillingSections receives preview and renders the selection tables + bill
+ */
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";

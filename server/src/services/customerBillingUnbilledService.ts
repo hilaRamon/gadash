@@ -1,3 +1,10 @@
+/**
+ * Server-side unbilled billing data for the create-billing flow.
+ *
+ * listCustomersWithUnbilled — customers that have at least one uncharged tracking row.
+ * getUnbilledPreview — four enriched tracking arrays for one customer (same shape the client expects).
+ * Rows are mapped through *ToApiDocuments helpers (finalPrice, names, etc.).
+ */
 import { Types } from 'mongoose';
 import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
 import { ContractorTrackingModel } from '../models/ContractorTracking';
@@ -137,6 +144,7 @@ export const customerBillingUnbilledService = {
     };
   },
 
+  /** Uncharged trackings for one customer; returned as JSON to the client preview tables. */
   async getUnbilledPreview(customerId: string): Promise<UnbilledPreview> {
     const customerObjectId = await resolveCustomerId(customerId);
     const plotIds = await loadPlotIdsForCustomer(customerObjectId);

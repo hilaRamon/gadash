@@ -1,3 +1,8 @@
+/**
+ * Printable invoice preview at the bottom of create-billing.
+ * Fetches HTML via useCustomerBillPreview (server bill-preview endpoint in production).
+ * Does not use the table preview data directly for layout — server rebuilds the bill document.
+ */
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";

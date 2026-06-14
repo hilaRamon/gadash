@@ -200,6 +200,7 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     weight: row.weight,
     pricePerTon,
     pricePerUnit,
+    pricingForm: row.pricingForm,
     transportPrice: row.transportPrice,
   });
 
