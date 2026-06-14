@@ -20,6 +20,19 @@ import {
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
+export function countCustomerPlots(
+  plots: CollectionDocument[],
+  customerId: string,
+): number {
+  if (!customerId) return 0;
+  return plots.filter((plot) => String(plot.customer ?? "") === customerId).length;
+}
+
+async function customerHasMultiplePlotsMock(customerId: string): Promise<boolean> {
+  const plots = await listCollection("plots");
+  return countCustomerPlots(plots, customerId) > 1;
+}
+
 export type CustomerWithUnbilled = {
   _id: string;
   name: string;
@@ -173,9 +186,11 @@ async function fetchCustomerBillPreviewMock(
   customerName: string,
   preview: UnbilledPreview,
 ): Promise<{ html: string }> {
+  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
   const bill = buildCustomerBillDocumentFromPreview({
     customerName,
     customerId: request.customerId,
+    showPlots,
     operations: preview.operations.filter((row) =>
       request.operationsTrackingIds.includes(row._id),
     ),
@@ -225,9 +240,13 @@ async function fetchSavedBillingBillPreviewMock(
     listCollection("contractorTrackings"),
   ]);
 
+  const showPlots = await customerHasMultiplePlotsMock(
+    String(billing.customer ?? ""),
+  );
   const bill = buildCustomerBillDocumentFromRows({
     customerName,
     billDate: formatStoredBillDate(billing.date),
+    showPlots,
     operations: pickRowsByIds(operations, toIdArray(billing.operationsTrackingIds)),
     contractors: pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
     materialUsage: pickRowsByIds(
@@ -288,9 +307,11 @@ async function createCustomerBillingMock(
   customerName: string,
   preview: UnbilledPreview,
 ) {
+  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
   const bill = buildCustomerBillDocumentFromPreview({
     customerName,
     customerId: request.customerId,
+    showPlots,
     operations: preview.operations.filter((row) =>
       request.operationsTrackingIds.includes(row._id),
     ),

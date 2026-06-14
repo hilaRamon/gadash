@@ -58,6 +58,7 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     customerName: customer.name,
     pricePerTon,
     pricePerUnit,
+    transportPrice: doc.transportPrice,
     finalPrice,
     weighed: doc.weighed === true,
     wasCharged: doc.wasCharged === true,

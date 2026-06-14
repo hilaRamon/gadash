@@ -6,6 +6,7 @@ export type CustomerBillLine = {
   plotName?: string;
   amount?: string;
   unitPrice?: string;
+  transportPrice?: string;
   price: number;
   priceFormatted: string;
 };
@@ -21,6 +22,7 @@ export type CustomerBillSection = {
 export type CustomerBillDocument = {
   customerName: string;
   billDate: string;
+  showPlots: boolean;
   sections: CustomerBillSection[];
   total: number;
   totalFormatted: string;

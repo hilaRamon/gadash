@@ -4,6 +4,7 @@ import { ContractorTrackingModel } from '../models/ContractorTracking';
 import { CustomerModel } from '../models/Customer';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { OperationTrackingModel } from '../models/OperationTracking';
+import { PlotModel } from '../models/Plot';
 import { customerBillingTrackingRepository } from '../repositories/customerBillingTrackingRepository';
 import type { CustomerBillDocument, CustomerBillRequest } from '../types/customerBill';
 import { baleOrderTrackingToApiDocuments } from '../utils/baleOrderTrackingApiMapper';
@@ -70,6 +71,14 @@ async function resolveCustomer(customerId: string): Promise<{ _id: Types.ObjectI
     _id: customer._id as Types.ObjectId,
     name: String(customer.name ?? ''),
   };
+}
+
+async function customerHasMultiplePlots(customerId: string): Promise<boolean> {
+  if (!Types.ObjectId.isValid(customerId)) return true;
+  const count = await PlotModel.countDocuments({
+    customer: new Types.ObjectId(customerId),
+  });
+  return count > 1;
 }
 
 export type ValidatedBillSelection = {
@@ -181,16 +190,20 @@ async function loadBillFromBillingTracking(
     'מעקבי הזמנות חבילות',
   );
 
-  const rows = await fetchTrackingRowsByIds({
-    operationIds,
-    contractorIds,
-    materialIds,
-    baleIds,
-  });
+  const [rows, showPlots] = await Promise.all([
+    fetchTrackingRowsByIds({
+      operationIds,
+      contractorIds,
+      materialIds,
+      baleIds,
+    }),
+    customerHasMultiplePlots(String(billing.customer ?? '')),
+  ]);
 
   const bill = buildCustomerBillDocument({
     customerName,
     billDate: formatStoredBillDate(billing.date),
+    showPlots,
     ...rows,
   });
 
@@ -226,12 +239,15 @@ export async function loadValidatedSelection(
     throw new Error('יש לבחור לפחות פריט אחד לחיוב');
   }
 
-  const fetched = await fetchTrackingRowsByIds({
-    operationIds,
-    contractorIds,
-    materialIds,
-    baleIds,
-  });
+  const [fetched, showPlots] = await Promise.all([
+    fetchTrackingRowsByIds({
+      operationIds,
+      contractorIds,
+      materialIds,
+      baleIds,
+    }),
+    customerHasMultiplePlots(customerId),
+  ]);
 
   const operations = fetched.operations.filter((row) =>
     isValidOperationForBill(row, customerId),
@@ -256,6 +272,7 @@ export async function loadValidatedSelection(
 
   const bill = buildCustomerBillDocument({
     customerName: customer.name,
+    showPlots,
     operations,
     contractors,
     materialUsage,

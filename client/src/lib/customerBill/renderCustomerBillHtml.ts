@@ -9,44 +9,67 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function renderOperationsRow(line: CustomerBillSection["lines"][number]): string {
+function renderOperationsRow(
+  line: CustomerBillSection["lines"][number],
+  showPlots: boolean,
+): string {
+  const plotCell = showPlots ? `
+      <td>${escapeHtml(line.plotName ?? "")}</td>` : "";
   return `
     <tr>
       <td>${escapeHtml(line.date)}</td>
-      <td>${escapeHtml(line.description)}</td>
-      <td>${escapeHtml(line.plotName ?? "")}</td>
+      <td>${escapeHtml(line.description)}</td>${plotCell}
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
 }
 
 function renderQuantityWithUnitPriceRow(
   line: CustomerBillSection["lines"][number],
+  showTransport: boolean,
 ): string {
+  const transportCell = showTransport
+    ? `
+      <td class="price">${escapeHtml(line.transportPrice ?? "")}</td>`
+    : "";
   return `
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>
       <td>${escapeHtml(line.amount ?? "")}</td>
-      <td class="price">${escapeHtml(line.unitPrice ?? "")}</td>
+      <td class="price">${escapeHtml(line.unitPrice ?? "")}</td>${transportCell}
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
 }
 
-function renderSection(section: CustomerBillSection): string {
+function isBaleSection(section: CustomerBillSection): boolean {
+  return section.title === "הזמנת חבילות";
+}
+
+function renderSection(section: CustomerBillSection, showPlots: boolean): string {
   const isOperations = section.layout === "operations";
+  const showTransport = isBaleSection(section);
   const rows = section.lines
     .map((line) =>
-      isOperations ? renderOperationsRow(line) : renderQuantityWithUnitPriceRow(line),
+      isOperations
+        ? renderOperationsRow(line, showPlots)
+        : renderQuantityWithUnitPriceRow(line, showTransport),
     )
     .join("");
-  const colspan = isOperations ? 3 : 4;
+  const colspan = isOperations ? (showPlots ? 3 : 2) : showTransport ? 5 : 4;
 
+  const plotHeader = showPlots
+    ? `
+            <th>חלקה</th>`
+    : "";
+  const transportHeader = showTransport
+    ? `
+            <th>הובלה</th>`
+    : "";
   const header = isOperations
     ? `
           <tr>
             <th>תאריך</th>
-            <th>תיאור</th>
-            <th>חלקה</th>
+            <th>תיאור</th>${plotHeader}
             <th>מחיר</th>
           </tr>`
     : `
@@ -54,12 +77,19 @@ function renderSection(section: CustomerBillSection): string {
             <th>תאריך</th>
             <th>תיאור</th>
             <th>כמות</th>
-            <th>מחיר ליחידה</th>
+            <th>מחיר ליחידה</th>${transportHeader}
             <th>מחיר</th>
           </tr>`;
 
+  const operationsClass = showPlots
+    ? "bill-section-operations"
+    : "bill-section-operations-no-plot";
+  const quantityClass = showTransport
+    ? "bill-section-bales"
+    : "bill-section-quantity";
+
   return `
-    <section class="bill-section ${isOperations ? "bill-section-operations" : "bill-section-quantity"}">
+    <section class="bill-section ${isOperations ? operationsClass : quantityClass}">
       <h2>${escapeHtml(section.title)}</h2>
       <table>
         <thead>${header}
@@ -140,6 +170,12 @@ const billStyles = `
     .bill-section-operations td:nth-child(3) { width: 24%; }
     .bill-section-operations th:nth-child(4),
     .bill-section-operations td:nth-child(4) { width: 22%; }
+    .bill-section-operations-no-plot th:nth-child(1),
+    .bill-section-operations-no-plot td:nth-child(1) { width: 16%; }
+    .bill-section-operations-no-plot th:nth-child(2),
+    .bill-section-operations-no-plot td:nth-child(2) { width: 62%; }
+    .bill-section-operations-no-plot th:nth-child(3),
+    .bill-section-operations-no-plot td:nth-child(3) { width: 22%; }
     .bill-section-quantity th:nth-child(1),
     .bill-section-quantity td:nth-child(1) { width: 14%; }
     .bill-section-quantity th:nth-child(2),
@@ -150,6 +186,18 @@ const billStyles = `
     .bill-section-quantity td:nth-child(4) { width: 20%; }
     .bill-section-quantity th:nth-child(5),
     .bill-section-quantity td:nth-child(5) { width: 22%; }
+    .bill-section-bales th:nth-child(1),
+    .bill-section-bales td:nth-child(1) { width: 12%; }
+    .bill-section-bales th:nth-child(2),
+    .bill-section-bales td:nth-child(2) { width: 24%; }
+    .bill-section-bales th:nth-child(3),
+    .bill-section-bales td:nth-child(3) { width: 12%; }
+    .bill-section-bales th:nth-child(4),
+    .bill-section-bales td:nth-child(4) { width: 16%; }
+    .bill-section-bales th:nth-child(5),
+    .bill-section-bales td:nth-child(5) { width: 12%; }
+    .bill-section-bales th:nth-child(6),
+    .bill-section-bales td:nth-child(6) { width: 24%; }
     td.price {
       white-space: nowrap;
     }
@@ -173,7 +221,9 @@ const billStyles = `
 `;
 
 function renderCustomerBillContent(bill: CustomerBillDocument): string {
-  const sections = bill.sections.map(renderSection).join("");
+  const sections = bill.sections
+    .map((section) => renderSection(section, bill.showPlots))
+    .join("");
 
   return `<div class="bill">
     <header class="bill-header">

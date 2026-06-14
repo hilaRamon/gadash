@@ -35,19 +35,20 @@ function toAmount(value: unknown): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
-function calcDisplayFinalPrice(doc: Record<string, unknown>): number {
+function calcUnitPrice(doc: Record<string, unknown>): number {
   const material = doc.material as PopulatedMaterialRef | undefined;
-  const amount = toAmount(doc.amount);
   if (!material || typeof material !== 'object') return 0;
 
   const cost = Number(material.currentBuyingCost ?? 0);
   const percent = Number(material.currentSalePercent ?? 15);
-  let unitPrice = 0;
-  if (Number.isFinite(cost) && Number.isFinite(percent)) {
-    unitPrice = calcCustomerCost(cost, percent);
-  }
+  if (!Number.isFinite(cost) || !Number.isFinite(percent)) return 0;
 
-  return Number((unitPrice * amount).toFixed(3));
+  return calcCustomerCost(cost, percent);
+}
+
+function calcDisplayFinalPrice(doc: Record<string, unknown>): number {
+  const amount = toAmount(doc.amount);
+  return Number((calcUnitPrice(doc) * amount).toFixed(3));
 }
 
 export function materialUsageTrackingToApiDocument(doc: Record<string, unknown>): ApiDocument {
@@ -75,6 +76,7 @@ export function materialUsageTrackingToApiDocument(doc: Record<string, unknown>)
     plotName: plot.name,
     employee: employee.id,
     employeeName: employee.name,
+    unitPrice: calcUnitPrice(doc),
     finalPrice: calcDisplayFinalPrice(doc),
   };
 }

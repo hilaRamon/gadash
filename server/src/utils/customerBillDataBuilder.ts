@@ -64,7 +64,7 @@ function contractorLine(row: ApiDocument): CustomerBillLine {
   };
 }
 
-function materialLine(row: ApiDocument): CustomerBillLine {
+function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const finalPrice = Number(row.finalPrice ?? 0);
   const amount =
@@ -73,7 +73,10 @@ function materialLine(row: ApiDocument): CustomerBillLine {
       : '';
   return {
     date: formatBillDate(row.date),
-    description: buildDescription(String(row.materialName ?? ''), String(row.plotName ?? '')),
+    description: buildDescription(
+      String(row.materialName ?? ''),
+      showPlots ? String(row.plotName ?? '') : '',
+    ),
     amount,
     unitPrice: calcUnitPrice(finalPrice, amountValue),
     price: finalPrice,
@@ -92,6 +95,7 @@ function baleLine(row: ApiDocument): CustomerBillLine {
     amountParts.push(`${formatNumber(weight)} משקל`);
   }
   const pricePerUnit = Number(row.pricePerUnit ?? 0);
+  const transport = Number(row.transportPrice ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.baleName ?? ''),
@@ -100,6 +104,8 @@ function baleLine(row: ApiDocument): CustomerBillLine {
       Number.isFinite(pricePerUnit) && pricePerUnit > 0
         ? formatNumber(pricePerUnit)
         : '',
+    transportPrice:
+      Number.isFinite(transport) && transport > 0 ? formatNumber(transport) : '',
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -125,11 +131,13 @@ function buildSection(
 export function buildCustomerBillDocument(input: {
   customerName: string;
   billDate?: string;
+  showPlots?: boolean;
   operations: ApiDocument[];
   contractors: ApiDocument[];
   materialUsage: ApiDocument[];
   baleOrders: ApiDocument[];
 }): CustomerBillDocument {
+  const showPlots = input.showPlots !== false;
   const operationsSection = buildSection(
     'פעולות',
     'operations',
@@ -138,7 +146,7 @@ export function buildCustomerBillDocument(input: {
   const materialsSection = buildSection(
     'חומרים',
     'quantityWithUnitPrice',
-    input.materialUsage.map(materialLine),
+    input.materialUsage.map((row) => materialLine(row, showPlots)),
   );
   const balesSection = buildSection(
     'הזמנת חבילות',
@@ -154,6 +162,7 @@ export function buildCustomerBillDocument(input: {
   return {
     customerName: input.customerName,
     billDate: input.billDate ?? todayBillDate(),
+    showPlots,
     sections,
     total: Number(total.toFixed(2)),
     totalFormatted: formatNumber(total),

@@ -4,13 +4,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DataTable } from "../collection/DataTable/DataTable";
 import { useTableQueryState } from "../../hooks/useTableQueryState";
 import { useUpdateDocument } from "../../hooks/collections/useCollectionMutations";
+import { useCollectionList } from "../../hooks/collections/useCollectionList";
 import { collectionKeys, customerBillingKeys } from "../../lib/queryKeys";
 import type { CollectionDocument, CollectionSchema } from "../../schema/types";
 import { operationsTrackingsAllSchema } from "../../schema/collections/operationsTrackingsSchema";
 import { materialUsageTrackingsSchema } from "../../schema/collections/materialUsageTrackingsSchema";
 import { baleOrderTrackingsSchema } from "../../schema/collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "../../schema/collections/contractorTrackingsSchema";
-import type { UnbilledPreview } from "../../lib/customerBillingApi";
+import { countCustomerPlots, type UnbilledPreview } from "../../lib/customerBillingApi";
 import { formatNumber } from "../../lib/formatNumber";
 import type { ColumnDef } from "../../schema/types";
 import { CustomerBillPaper } from "./CustomerBillPaper";
@@ -63,23 +64,53 @@ const operationsPreviewSchema: CollectionSchema = {
   ],
 };
 
-const materialPreviewSchema = pickPreviewSchema(materialUsageTrackingsSchema, [
-  "date",
-  "material",
-  "plot",
-  "amount",
-  "finalPrice",
-]);
+const materialPreviewSchema: CollectionSchema = {
+  ...materialUsageTrackingsSchema,
+  columns: [
+    ...pickPreviewColumns(materialUsageTrackingsSchema, [
+      "date",
+      "material",
+      "plot",
+      "amount",
+    ]),
+    {
+      key: "unitPrice",
+      label: "מחיר לק״ג",
+      type: "number",
+      sortable: true,
+      format: (value) => formatNumber(value),
+      width: "8rem",
+    },
+    ...pickPreviewColumns(materialUsageTrackingsSchema, ["finalPrice"]),
+  ],
+};
 
-const balePreviewSchema = pickPreviewSchema(baleOrderTrackingsSchema, [
-  "date",
-  "bale",
-  "quantity",
-  "pricePerTon",
-  "pricePerUnit",
-  "weight",
-  "finalPrice",
-]);
+const balePreviewSchema: CollectionSchema = {
+  ...baleOrderTrackingsSchema,
+  columns: [
+    ...pickPreviewColumns(baleOrderTrackingsSchema, [
+      "date",
+      "bale",
+      "quantity",
+      "pricePerTon",
+      "pricePerUnit",
+      "weight",
+    ]),
+    {
+      key: "transportPrice",
+      label: "הובלה",
+      type: "number",
+      sortable: true,
+      format: (value) => {
+        const amount = Number(value ?? "");
+        if (!Number.isFinite(amount) || amount <= 0) return "";
+        return formatNumber(amount);
+      },
+      width: "8rem",
+    },
+    ...pickPreviewColumns(baleOrderTrackingsSchema, ["finalPrice"]),
+  ],
+};
 
 const contractorPreviewColumnKeys = [
   "date",
@@ -99,6 +130,13 @@ const contractorPreviewSchema: CollectionSchema = {
         : col,
   ),
 };
+
+function withoutPlotColumn(schema: CollectionSchema): CollectionSchema {
+  return {
+    ...schema,
+    columns: schema.columns.filter((col) => col.key !== "plot"),
+  };
+}
 
 function collectPreviewRowIds(preview: UnbilledPreview): string[] {
   return [
@@ -193,6 +231,8 @@ export function CreateCustomerBillingSections({
 }: CreateCustomerBillingSectionsProps) {
   const queryClient = useQueryClient();
   const updateContractor = useUpdateDocument("contractorTrackings");
+  const { data: plots } = useCollectionList("plots");
+  const showPlots = plots == null || countCustomerPlots(plots, customerId) > 1;
   const [includedIds, setIncludedIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
@@ -244,16 +284,18 @@ export function CreateCustomerBillingSections({
     (SectionConfig & {
       onCellChange?: SectionProps["onCellChange"];
     })[]
-  >(
-    () => [
+  >(() => {
+    const sectionSchema = (schema: CollectionSchema) =>
+      showPlots ? schema : withoutPlotColumn(schema);
+    return [
       {
         title: "פעולות",
-        schema: operationsPreviewSchema,
+        schema: sectionSchema(operationsPreviewSchema),
         rows: preview?.operations ?? [],
       },
       {
         title: "שימוש בחומרים",
-        schema: materialPreviewSchema,
+        schema: sectionSchema(materialPreviewSchema),
         rows: preview?.materialUsage ?? [],
       },
       {
@@ -263,13 +305,12 @@ export function CreateCustomerBillingSections({
       },
       {
         title: "עבודות קבלן",
-        schema: contractorPreviewSchema,
+        schema: sectionSchema(contractorPreviewSchema),
         rows: preview?.contractors ?? [],
         onCellChange: handleContractorCellChange,
       },
-    ],
-    [preview, handleContractorCellChange],
-  );
+    ];
+  }, [preview, showPlots, handleContractorCellChange]);
 
   const nonEmptySections = useMemo(
     () => allSections.filter((section) => section.rows.length > 0),

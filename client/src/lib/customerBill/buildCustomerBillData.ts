@@ -69,7 +69,7 @@ function contractorLine(row: CollectionDocument): CustomerBillLine {
   };
 }
 
-function materialLine(row: CollectionDocument): CustomerBillLine {
+function materialLine(row: CollectionDocument, showPlots: boolean): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const finalPrice = Number(row.finalPrice ?? 0);
   const amount =
@@ -78,7 +78,10 @@ function materialLine(row: CollectionDocument): CustomerBillLine {
       : "";
   return {
     date: formatBillDate(row.date),
-    description: buildDescription(String(row.materialName ?? ""), String(row.plotName ?? "")),
+    description: buildDescription(
+      String(row.materialName ?? ""),
+      showPlots ? String(row.plotName ?? "") : "",
+    ),
     amount,
     unitPrice: calcUnitPrice(finalPrice, amountValue),
     price: finalPrice,
@@ -97,6 +100,7 @@ function baleLine(row: CollectionDocument): CustomerBillLine {
     amountParts.push(`${formatNumber(weight)} משקל`);
   }
   const pricePerUnit = Number(row.pricePerUnit ?? 0);
+  const transport = Number(row.transportPrice ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.baleName ?? ""),
@@ -105,6 +109,8 @@ function baleLine(row: CollectionDocument): CustomerBillLine {
       Number.isFinite(pricePerUnit) && pricePerUnit > 0
         ? formatNumber(pricePerUnit)
         : "",
+    transportPrice:
+      Number.isFinite(transport) && transport > 0 ? formatNumber(transport) : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -130,11 +136,13 @@ function buildSection(
 export function buildCustomerBillDocumentFromRows(input: {
   customerName: string;
   billDate?: string;
+  showPlots?: boolean;
   operations: CollectionDocument[];
   contractors: CollectionDocument[];
   materialUsage: CollectionDocument[];
   baleOrders: CollectionDocument[];
 }): CustomerBillDocument {
+  const showPlots = input.showPlots !== false;
   const operationsSection = buildSection(
     "פעולות",
     "operations",
@@ -143,7 +151,7 @@ export function buildCustomerBillDocumentFromRows(input: {
   const materialsSection = buildSection(
     "חומרים",
     "quantityWithUnitPrice",
-    input.materialUsage.map(materialLine),
+    input.materialUsage.map((row) => materialLine(row, showPlots)),
   );
   const balesSection = buildSection(
     "הזמנת חבילות",
@@ -159,6 +167,7 @@ export function buildCustomerBillDocumentFromRows(input: {
   return {
     customerName: input.customerName,
     billDate: input.billDate ?? todayBillDate(),
+    showPlots,
     sections,
     total: Number(total.toFixed(2)),
     totalFormatted: formatNumber(total),
@@ -168,6 +177,7 @@ export function buildCustomerBillDocumentFromRows(input: {
 export function buildCustomerBillDocumentFromPreview(input: {
   customerName: string;
   customerId: string;
+  showPlots?: boolean;
   operations: CollectionDocument[];
   contractors: CollectionDocument[];
   materialUsage: CollectionDocument[];
@@ -189,6 +199,7 @@ export function buildCustomerBillDocumentFromPreview(input: {
 
   return buildCustomerBillDocumentFromRows({
     customerName: input.customerName,
+    showPlots: input.showPlots,
     operations,
     contractors,
     materialUsage,
