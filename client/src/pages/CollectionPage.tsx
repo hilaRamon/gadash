@@ -20,6 +20,8 @@ import { CollectionFormModal } from '../components/collection/CollectionFormModa
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
 import { TransportTrackingPageExtras } from '../components/transport/TransportTrackingPageExtras'
 import { CustomerBillingViewModal } from '../components/customerBilling/CustomerBillingViewModal'
+import { isChargedTracking } from '../lib/chargedTracking'
+import { CHARGED_TRACKING_EDIT_ERROR } from '../lib/chargedTrackingErrors'
 import type { CollectionDocument } from '../schema/types'
 import './Page.css'
 
@@ -137,6 +139,10 @@ function CollectionPageContent({
   const handleFormSubmit = useCallback(
     async (values: Record<string, unknown>) => {
       setFormError(null)
+      if (editingRow && isChargedTracking(editingRow)) {
+        setFormError(CHARGED_TRACKING_EDIT_ERROR)
+        return
+      }
       try {
         if (editingRow) {
           await updateMutation.mutateAsync({ id: editingRow._id, body: values })
@@ -153,6 +159,7 @@ function CollectionPageContent({
 
   const handleCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
+      if (isChargedTracking(row)) return
       await updateMutation.mutateAsync({
         id: row._id,
         body: { [key]: value },
@@ -183,6 +190,10 @@ function CollectionPageContent({
 
   const isTransportTrackingPage = collectionId === 'transport-trackings'
   const isCustomerBillingPage = collectionId === 'customer-billing-trackings'
+  const canEditChargedTrackingRow = useCallback(
+    (row: CollectionDocument) => !isChargedTracking(row),
+    [],
+  )
   const canDeleteBillingRow = useCallback(
     (row: CollectionDocument) => row.paid !== true,
     [],
@@ -300,6 +311,7 @@ function CollectionPageContent({
           onToggleSelectAll={tableQuery.toggleSelectAll}
           onEdit={handleRowAction}
           rowAction={rowAction}
+          canEditRow={canEditChargedTrackingRow}
           canDeleteRow={
             isCustomerBillingPage ? canDeleteBillingRow : undefined
           }

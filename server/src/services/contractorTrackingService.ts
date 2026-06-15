@@ -11,6 +11,7 @@ import {
   type ContractorTrackingInput,
 } from '../repositories/contractorTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   contractorTrackingToApiDocument,
   contractorTrackingToApiDocuments,
@@ -222,6 +223,7 @@ export const contractorTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {

@@ -22,6 +22,7 @@ import {
 } from "./contractorTrackingPricing";
 import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
 import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
+import { CHARGED_TRACKING_EDIT_ERROR } from "./chargedTrackingErrors";
 import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
@@ -464,6 +465,9 @@ async function updateMock(
   const store = getMockStore(collection);
   const index = store.findIndex((d) => d._id === id);
   if (index === -1) throw new Error("לא נמצא");
+  if (store[index].wasCharged === true) {
+    throw new Error(CHARGED_TRACKING_EDIT_ERROR);
+  }
   store[index] = { ...store[index], ...body, _id: id };
   if (collection === "materialUsageTrackings") {
     const plot = plotsSeedData.find(

@@ -7,6 +7,7 @@ import {
   type MaterialUsageTrackingInput,
 } from '../repositories/materialUsageTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   materialUsageTrackingToApiDocument,
   materialUsageTrackingToApiDocuments,
@@ -189,6 +190,12 @@ export const materialUsageTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
+    const existing = await materialUsageTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
+
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');

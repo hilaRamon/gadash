@@ -7,6 +7,7 @@ import {
   type OperationTrackingInput,
 } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   operationTrackingToApiDocument,
   operationTrackingToApiDocuments,
@@ -200,6 +201,12 @@ export const operationTrackingService = {
       const endTime = patch.endTime ?? String(existing.endTime ?? '');
       assertTimeRange(startTime, endTime);
     }
+
+    const existing = await operationTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
     const updated = await operationTrackingRepository.update(id, patch);
     if (!updated) {

@@ -6,6 +6,7 @@ import {
   type BaleOrderTrackingInput,
 } from '../repositories/baleOrderTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   baleOrderTrackingToApiDocument,
   baleOrderTrackingToApiDocuments,
@@ -254,6 +255,7 @@ export const baleOrderTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
     const baleChanged = patch.bale != null;
     const pricesTouched =

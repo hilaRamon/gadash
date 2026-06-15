@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
 import { PAID_BILLING_DELETE_TOOLTIP } from "../../../lib/customerBillingErrors";
+import { CHARGED_TRACKING_EDIT_TOOLTIP } from "../../../lib/chargedTrackingErrors";
 import type {
   CollectionSchema,
   CollectionDocument,
@@ -162,6 +163,7 @@ export type DataTableProps = {
   onEdit: (row: CollectionDocument) => void;
   onDelete: (row: CollectionDocument) => void;
   canDeleteRow?: (row: CollectionDocument) => boolean;
+  canEditRow?: (row: CollectionDocument) => boolean;
   rowAction?: "edit" | "view";
   /** Hides row actions and column filter row. */
   previewMode?: boolean;
@@ -187,6 +189,7 @@ export function DataTable({
   onEdit,
   onDelete,
   canDeleteRow,
+  canEditRow,
   rowAction = "edit",
   previewMode = false,
   previewIncludeSelection,
@@ -300,6 +303,7 @@ export function DataTable({
           ) : (
             rows.map((row) => {
               const selected = queryState.selectedIds.includes(row._id);
+              const rowEditable = canEditRow == null || canEditRow(row);
               return (
                 <tr key={row._id} data-selected={selected || undefined}>
                   {showIncludeColumn && (
@@ -327,21 +331,25 @@ export function DataTable({
                   {schema.columns.map((col) => {
                     const value = getCellValue(row, col);
                     const canEditBoolean =
+                      rowEditable &&
                       onCellChange &&
                       col.type === "boolean" &&
                       !col.render &&
                       (col.inlineEditable?.(row) ?? true);
                     const canEditEnum =
+                      rowEditable &&
                       onCellChange &&
                       col.type === "enum" &&
                       !col.render &&
                       (col.enumOptions?.length ?? 0) > 0;
                     const canEditNumber =
+                      rowEditable &&
                       onCellChange &&
                       col.type === "number" &&
                       !col.render &&
                       col.inlineEditable?.(row) === true;
                     const canEditText =
+                      rowEditable &&
                       onCellChange &&
                       col.type === "text" &&
                       !col.render &&
@@ -410,13 +418,25 @@ export function DataTable({
                   {!previewMode && (
                     <ActionsCell>
                       <ActionsInner>
-                        <IconButton
-                          type="button"
-                          onClick={() => onEdit(row)}
-                          aria-label={rowAction === "view" ? "צפייה" : "עריכה"}
+                        <ActionTooltip
+                          text={
+                            canEditRow != null && !canEditRow(row)
+                              ? CHARGED_TRACKING_EDIT_TOOLTIP
+                              : undefined
+                          }
                         >
-                          {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
-                        </IconButton>
+                          <IconButton
+                            type="button"
+                            onClick={() => onEdit(row)}
+                            disabled={canEditRow != null && !canEditRow(row)}
+                            aria-label={rowAction === "view" ? "צפייה" : "עריכה"}
+                            aria-disabled={
+                              canEditRow != null && !canEditRow(row)
+                            }
+                          >
+                            {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
+                          </IconButton>
+                        </ActionTooltip>
                         <ActionTooltip
                           text={
                             canDeleteRow != null && !canDeleteRow(row)
