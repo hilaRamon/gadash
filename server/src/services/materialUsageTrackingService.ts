@@ -13,6 +13,7 @@ import {
   materialUsageTrackingToApiDocuments,
 } from '../utils/materialUsageTrackingApiMapper';
 import { calcCustomerCost } from '../utils/materialPricing';
+import { calcMaterialUsageAmount } from '../utils/materialUsageAmount';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -161,6 +162,21 @@ async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: num
   await applyMaterialQuantityDelta(materialId, -amount);
 }
 
+async function resolveComputedUsageAmount(
+  materialId: Types.ObjectId,
+  plotId: Types.ObjectId,
+): Promise<number | null> {
+  const [material, plot] = await Promise.all([
+    MaterialModel.findById(materialId).select('amountPerDunam').lean(),
+    PlotModel.findById(plotId).select('dunam').lean(),
+  ]);
+  if (!material || !plot) return null;
+  return calcMaterialUsageAmount(
+    Number(plot.dunam ?? 0),
+    material.amountPerDunam as number | null | undefined,
+  );
+}
+
 async function buildTrackingPatch(
   body: Record<string, unknown>,
   options: { requireAll?: boolean } = {},
@@ -182,7 +198,15 @@ async function buildTrackingPatch(
     patch.employee = await resolveEmployeeObjectId(body.employee);
   }
   if (mustHave('amount')) {
-    patch.amount = parseNumber(body.amount, 'כמות');
+    if (body.amount != null && body.amount !== '') {
+      patch.amount = parseNumber(body.amount, 'כמות');
+    }
+  } else if (Object.prototype.hasOwnProperty.call(body, 'amount')) {
+    if (body.amount == null || body.amount === '') {
+      patch.amount = undefined;
+    } else {
+      patch.amount = parseNumber(body.amount, 'כמות');
+    }
   }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
@@ -215,9 +239,19 @@ export const materialUsageTrackingService = {
       patch.date == null ||
       patch.material == null ||
       patch.plot == null ||
-      patch.employee == null ||
-      patch.amount == null
+      patch.employee == null
     ) {
+      throw new Error('שדות חובה חסרים');
+    }
+
+    if (patch.amount == null) {
+      const computed = await resolveComputedUsageAmount(patch.material, patch.plot);
+      if (computed != null) {
+        patch.amount = computed;
+      }
+    }
+
+    if (patch.amount == null) {
       throw new Error('שדות חובה חסרים');
     }
 
@@ -260,6 +294,31 @@ export const materialUsageTrackingService = {
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
+    }
+
+    const existingRecord = existing as Record<string, unknown>;
+    const existingMaterialId = toMaterialObjectId(existingRecord.material);
+    const existingPlotId = toMaterialObjectId(existingRecord.plot);
+    const plotChanged =
+      patch.plot != null && String(patch.plot) !== String(existingPlotId);
+    const materialChanged =
+      patch.material != null && String(patch.material) !== String(existingMaterialId);
+
+    if (plotChanged || materialChanged) {
+      const materialId = patch.material ?? existingMaterialId;
+      const plotId = patch.plot ?? existingPlotId;
+      const computed = await resolveComputedUsageAmount(materialId, plotId);
+      if (computed != null) {
+        patch.amount = computed;
+      }
+    }
+
+    if (materialChanged) {
+      const materialId = patch.material ?? existingMaterialId;
+      const unitPrice = await resolveMaterialUnitPrice(materialId);
+      if (unitPrice != null) {
+        patch.unitPrice = unitPrice;
+      }
     }
 
     if (patch.amount != null || patch.material != null) {

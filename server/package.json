@@ -28,6 +28,7 @@
     "migrate:backfill-was-charged": "tsx scripts/backfill-was-charged.ts",
     "migrate:bale-order-pricing-form": "tsx scripts/migrate-bale-order-pricing-form.ts",
     "migrate:customer-billing-statuses": "tsx scripts/migrate-customer-billing-statuses.ts",
+    "migrate:material-amount-per-dunam": "tsx scripts/migrate-material-amount-per-dunam.ts",
     "seed:customer-billing-example": "tsx scripts/seed-customer-billing-example.ts",
     "puppeteer:install": "puppeteer browsers install chrome"
   },

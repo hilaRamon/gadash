@@ -20,6 +20,11 @@ import {
   getContractorTrackingVisibleFields,
 } from "./contractorTrackingForm";
 import {
+  applyMaterialUsageFieldChange,
+  enrichMaterialUsagePayload,
+} from "./materialUsageTrackingForm";
+import { applyOperationTrackingFieldChange } from "./operationTrackingForm";
+import {
   applyTransportTrackingFieldChange,
   enrichTransportTrackingPayload,
   getTransportTrackingRequiredErrors,
@@ -139,6 +144,12 @@ const FieldErrorMessage = styled.p`
   font-size: 0.75rem;
 `;
 
+const InfoMessage = styled.p`
+  margin: 0 0 1rem;
+  color: #63b3ed;
+  font-size: 0.875rem;
+`;
+
 export function CollectionFormModal({
   open,
   schema,
@@ -154,12 +165,17 @@ export function CollectionFormModal({
   const [validationError, setValidationError] = useState<string | null>(null);
   // Title: helper errors shown under specific required fields.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [amountRecalcNotice, setAmountRecalcNotice] = useState<string | null>(null);
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const isContractorTrackingForm = schema.collection === "contractorTrackings";
   const isTransportTrackingForm = schema.collection === "transportTrackings";
+  const isMaterialUsageForm = schema.collection === "materialUsageTrackings";
+  const isOperationTrackingForm = schema.collection === "operationsTrackings";
   const { data: bales = [] } = useCollectionList("bales");
   const { data: movers = [] } = useCollectionList("movers");
+  const { data: materials = [] } = useCollectionList("materials");
+  const { data: plots = [] } = useCollectionList("plots");
   const hiddenOperationField = schema.form.fields.find(
     (field) =>
       field.hidden &&
@@ -205,6 +221,7 @@ export function CollectionFormModal({
       setValues(initial);
       setValidationError(null);
       setFieldErrors({});
+      setAmountRecalcNotice(null);
     }
   }, [open, editingRow, schema.form.fields, schema.collection]);
 
@@ -272,6 +289,23 @@ export function CollectionFormModal({
       }
       if (isTransportTrackingForm) {
         next = applyTransportTrackingFieldChange(key, value, next, movers);
+      }
+      if (isMaterialUsageForm) {
+        const result = applyMaterialUsageFieldChange(key, value, prev, {
+          materials,
+          plots,
+          editingRow,
+        });
+        next = result.next;
+        setAmountRecalcNotice(result.notice);
+      }
+      if (isOperationTrackingForm && !isAdminTrackingForm) {
+        const result = applyOperationTrackingFieldChange(key, value, prev, {
+          operations,
+          plots,
+          editingRow,
+        });
+        setAmountRecalcNotice(result.notice);
       }
       return next;
     });
@@ -359,6 +393,16 @@ export function CollectionFormModal({
       onSubmit(enrichBaleOrderPayload(payload, values));
       return;
     }
+    if (isMaterialUsageForm) {
+      onSubmit(
+        enrichMaterialUsagePayload(payload, values, {
+          materials,
+          plots,
+          editingRow,
+        }),
+      );
+      return;
+    }
     onSubmit(payload);
   };
 
@@ -399,6 +443,10 @@ export function CollectionFormModal({
 
           {(validationError || error) && (
             <ErrorMessage>{validationError ?? error}</ErrorMessage>
+          )}
+
+          {amountRecalcNotice && (
+            <InfoMessage role="status">{amountRecalcNotice}</InfoMessage>
           )}
 
           <Actions>

@@ -8,20 +8,22 @@ type MaterialSeedRow = {
   name: string
   currentQuantity: number
   currentBuyingCost: number
+  amountPerDunam?: number | null
 }
 
 const materials: MaterialSeedRow[] = [
   { name: 'זרעי חיטה-דראל', currentQuantity: 0, currentBuyingCost: 0 },
   { name: 'אורגי (עשת)', currentQuantity: 45, currentBuyingCost: 37 },
   { name: 'אוקסיגל', currentQuantity: 64.5, currentBuyingCost: 39 },
-  { name: 'אור', currentQuantity: 410, currentBuyingCost: 340 },
-  { name: 'אוראה', currentQuantity: 3, currentBuyingCost: 2.7 },
+  { name: 'אור', currentQuantity: 410, currentBuyingCost: 340, amountPerDunam: 0.004 },
+  { name: 'אוראה לפני זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 3 },
+  { name: 'אוראה אחרי זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 10 },
   { name: 'אורווה', currentQuantity: 616, currentBuyingCost: 0 },
   { name: 'אורז טורבו', currentQuantity: 157, currentBuyingCost: 0 },
-  { name: 'אופטוס 100', currentQuantity: 45, currentBuyingCost: 34.6 },
+  { name: 'אופטוס 100', currentQuantity: 45, currentBuyingCost: 34.6, amountPerDunam: 0.08 },
   { name: 'אל בועיינת', currentQuantity: 80, currentBuyingCost: 0 },
   { name: 'אל קלי אקסטרה', currentQuantity: 48, currentBuyingCost: 40.6 },
-  { name: 'אלבר מ', currentQuantity: 63, currentBuyingCost: 55 },
+  { name: 'אלבר מ', currentQuantity: 63, currentBuyingCost: 55, amountPerDunam: 0.1 },
   { name: 'אלגרו סופר', currentQuantity: 60, currentBuyingCost: 0 },
   { name: 'באפינדן', currentQuantity: 80.5, currentBuyingCost: 0 },
   { name: 'בורגן', currentQuantity: 110, currentBuyingCost: 0 },
@@ -44,14 +46,15 @@ const materials: MaterialSeedRow[] = [
   { name: 'זרעי שעורה-אלי', currentQuantity: 3.46, currentBuyingCost: 0 },
   { name: 'זרעי שעורה-שביב', currentQuantity: 4.8, currentBuyingCost: 4 },
   { name: 'זרעי תלתן', currentQuantity: 11, currentBuyingCost: 10 },
-  { name: 'טופ גן', currentQuantity: 45, currentBuyingCost: 37.6 },
-  { name: 'טייפון', currentQuantity: 13, currentBuyingCost: 9 },
+  { name: 'טופ גן', currentQuantity: 45, currentBuyingCost: 37.6, amountPerDunam: 0.08 },
+  { name: 'טייפון', currentQuantity: 13, currentBuyingCost: 9, amountPerDunam: 0.25 },
   { name: 'טלסטאר', currentQuantity: 41, currentBuyingCost: 0 },
   { name: 'טריפל', currentQuantity: 2.96, currentBuyingCost: 2.575 },
   { name: 'טרופר סופר', currentQuantity: 1.05, currentBuyingCost: 0 },
   { name: 'מארז חיסון 0.25+אורווה 0.5', currentQuantity: 2600, currentBuyingCost: 0 },
   { name: 'מוניטור', currentQuantity: 11206, currentBuyingCost: 0 },
   { name: 'משטח פלאט', currentQuantity: 41, currentBuyingCost: 34 },
+  { name: 'שטח', currentQuantity: 0, currentBuyingCost: 34, amountPerDunam: 0.015 },
   { name: 'פוליקור', currentQuantity: 82.5, currentBuyingCost: 0 },
   { name: 'פלאטון', currentQuantity: 57.5, currentBuyingCost: 0 },
   { name: 'קומפוסט', currentQuantity: 20, currentBuyingCost: 0 },
@@ -69,6 +72,7 @@ export const materialsSeedData: CollectionDocument[] = materials.map((row, index
   currentQuantity: 0,
   currentBuyingCost: row.currentBuyingCost,
   currentSalePercent: DEFAULT_SALE_PERCENT,
+  amountPerDunam: row.amountPerDunam ?? null,
   customerCost: calcCustomerCost(row.currentBuyingCost, DEFAULT_SALE_PERCENT),
   pricingHistory: [
     {

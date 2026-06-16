@@ -27,6 +27,7 @@ import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
+import { calcMaterialUsageAmount } from "./materialUsageAmount";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -472,6 +473,19 @@ async function createMock(
         ? resolveMaterialUsageUnitPrice({}, material)
         : null;
     }
+    if (
+      (doc.amount == null || doc.amount === "") &&
+      material &&
+      plot
+    ) {
+      const computed = calcMaterialUsageAmount(
+        Number(plot.dunam ?? 0),
+        material.amountPerDunam as number | null | undefined,
+      );
+      if (computed != null) {
+        doc.amount = computed;
+      }
+    }
   }
   store.push(doc);
   if (collection === "materialUsageTrackings") {
@@ -532,29 +546,95 @@ async function updateMock(
   if (store[index].wasCharged === true) {
     throw new Error(CHARGED_TRACKING_EDIT_ERROR);
   }
+  const previousRow = store[index];
   store[index] = { ...store[index], ...body, _id: id };
   if (collection === "materialUsageTrackings") {
+    const row = store[index];
+    const materialChanged =
+      body.material != null &&
+      String(body.material) !== String(previousRow.material ?? "");
+    const plotChanged =
+      body.plot != null && String(body.plot) !== String(previousRow.plot ?? "");
+
+    if (materialChanged) {
+      const material = materialsSeedData.find(
+        (item) => String(item._id) === String(row.material ?? ""),
+      );
+      if (material) {
+        row.unitPrice = resolveMaterialUsageUnitPrice({}, material);
+      }
+    }
+
+    if (plotChanged || materialChanged) {
+      const material = materialsSeedData.find(
+        (item) => String(item._id) === String(row.material ?? ""),
+      );
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(row.plot ?? ""),
+      );
+      if (material && plot) {
+        const computed = calcMaterialUsageAmount(
+          Number(plot.dunam ?? 0),
+          material.amountPerDunam as number | null | undefined,
+        );
+        if (computed != null) {
+          row.amount = computed;
+        }
+      }
+    }
+
     const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(store[index].plot ?? ""),
+      (p) => String(p._id) === String(row.plot ?? ""),
     );
     store[index].customer = plot?.customer ?? "";
     store[index].customerName = String(plot?.customerName ?? "");
     return enrichMaterialUsageRow(store[index]);
   }
   if (collection === "operationsTrackings") {
-    const plotId = store[index].plot;
+    const row = store[index];
+    const operationChanged =
+      body.operation != null &&
+      String(body.operation) !== String(previousRow.operation ?? "");
+    const plotChanged =
+      body.plot !== undefined &&
+      String(body.plot ?? "") !== String(previousRow.plot ?? "");
+
+    if (operationChanged) {
+      const operation = operationsSeedData.find(
+        (item) => String(item._id) === String(row.operation ?? ""),
+      );
+      if (operation) {
+        row.unitCost = Number(operation.currentCost ?? 0);
+      }
+    }
+
+    if (plotChanged) {
+      const plotId = row.plot;
+      if (plotId != null && plotId !== "") {
+        const plot = plotsSeedData.find(
+          (p) => String(p._id) === String(plotId),
+        );
+        if (plot) {
+          row.dunam = Number(plot.dunam ?? 0);
+        }
+      } else {
+        row.dunam = null;
+      }
+    }
+
+    const plotId = row.plot;
     if (plotId != null && plotId !== "") {
       const plot = plotsSeedData.find(
         (p) => String(p._id) === String(plotId),
       );
-      store[index].customer = plot?.customer ?? "";
-      store[index].customerName = String(plot?.customerName ?? "");
+      row.customer = plot?.customer ?? "";
+      row.customerName = String(plot?.customerName ?? "");
     } else {
-      store[index].plot = null;
-      store[index].customer = null;
-      store[index].customerName = "";
+      row.plot = null;
+      row.customer = null;
+      row.customerName = "";
     }
-    return enrichOperationTrackingRow(store[index]);
+    return enrichOperationTrackingRow(row);
   }
   if (collection === "fuelOperationsTrackings") {
     return enrichFuelOperationTrackingRow(store[index]);

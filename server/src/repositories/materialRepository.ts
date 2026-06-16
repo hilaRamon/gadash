@@ -9,6 +9,7 @@ export type MaterialPricingEntryInput = {
 
 export type MaterialInput = {
   name: string;
+  amountPerDunam?: number | null;
   currentQuantity: number;
   currentBuyingCost: number;
   currentSalePercent: number;
@@ -17,7 +18,7 @@ export type MaterialInput = {
 
 export type MaterialMetadataPatch = Pick<
   MaterialInput,
-  'name' | 'currentQuantity'
+  'name' | 'currentQuantity' | 'amountPerDunam'
 >;
 
 export const materialRepository = {

@@ -145,6 +145,13 @@ async function resolveEmployeeObjectId(employeeId: unknown): Promise<Types.Objec
   return employee._id as Types.ObjectId;
 }
 
+function toObjectIdRef(value: unknown): Types.ObjectId {
+  if (value && typeof value === 'object' && '_id' in value) {
+    return value._id as Types.ObjectId;
+  }
+  return value as Types.ObjectId;
+}
+
 async function buildTrackingPatch(
   body: Record<string, unknown>,
   options: { requireAll?: boolean } = {},
@@ -292,6 +299,29 @@ export const operationTrackingService = {
     );
     if (nextEmployeeId !== previousEmployeeId || nextDate.getTime() !== previousDate.getTime()) {
       await monthlyReportService.assertMonthNotLocked(nextEmployeeId, nextDate, adminOverride);
+    }
+
+    const existingRecord = existing as Record<string, unknown>;
+    const existingOperationId = toObjectIdRef(existingRecord.operation);
+    const existingPlotId = existingRecord.plot ? toObjectIdRef(existingRecord.plot) : null;
+    const operationChanged =
+      patch.operation != null && String(patch.operation) !== String(existingOperationId);
+    const plotChanged =
+      patch.plot !== undefined &&
+      String(patch.plot ?? '') !== String(existingPlotId ?? '');
+
+    if (operationChanged) {
+      const unitCost = await resolveOperationUnitCost(patch.operation!);
+      if (unitCost != null) {
+        patch.unitCost = unitCost;
+      }
+    }
+
+    if (plotChanged) {
+      const dunam = await resolvePlotDunam(patch.plot ?? null);
+      if (dunam != null) {
+        patch.dunam = dunam;
+      }
     }
 
     const updated = await operationTrackingRepository.update(id, patch);
