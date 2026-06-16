@@ -19,13 +19,17 @@ export const operationTrackingController = {
   }),
 
   remove: asyncHandler(async (req: Request, res: Response) => {
-    await operationTrackingService.remove(req.params.id);
+    const adminOverride =
+      req.body?.adminOverride === true || req.body?.adminOverride === 'true';
+    await operationTrackingService.remove(req.params.id, adminOverride);
     res.status(204).send();
   }),
 
   bulkRemove: asyncHandler(async (req: Request, res: Response) => {
     const ids = Array.isArray(req.body?.ids) ? (req.body.ids as string[]) : [];
-    await operationTrackingService.removeMany(ids);
+    const adminOverride =
+      req.body?.adminOverride === true || req.body?.adminOverride === 'true';
+    await operationTrackingService.removeMany(ids, adminOverride);
     res.status(204).send();
   }),
 };

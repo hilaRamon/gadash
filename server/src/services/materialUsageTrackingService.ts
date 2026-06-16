@@ -12,6 +12,7 @@ import {
   materialUsageTrackingToApiDocument,
   materialUsageTrackingToApiDocuments,
 } from '../utils/materialUsageTrackingApiMapper';
+import { calcCustomerCost } from '../utils/materialPricing';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -48,6 +49,26 @@ function parseWasCharged(value: unknown): boolean {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error('חויב לא תקין');
+}
+
+function parseUnitPrice(value: unknown): number {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('מחיר לק״ג לא תקין');
+  }
+  return num;
+}
+
+async function resolveMaterialUnitPrice(
+  materialId: Types.ObjectId,
+): Promise<number | null> {
+  const material = await MaterialModel.findById(materialId)
+    .select('currentBuyingCost currentSalePercent')
+    .lean();
+  if (!material) return null;
+  const cost = Number(material.currentBuyingCost ?? 0);
+  const percent = Number(material.currentSalePercent ?? 15);
+  return calcCustomerCost(cost, percent);
 }
 
 async function resolveMaterialObjectId(materialId: unknown): Promise<Types.ObjectId> {
@@ -89,7 +110,9 @@ async function resolveEmployeeObjectId(employeeId: unknown): Promise<Types.Objec
   return employee._id as Types.ObjectId;
 }
 
-async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: number) {
+async function applyMaterialQuantityDelta(materialId: Types.ObjectId, delta: number) {
+  if (delta === 0) return;
+
   const material = await MaterialModel.findById(materialId)
     .select('_id currentQuantity')
     .lean();
@@ -97,8 +120,9 @@ async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: num
     throw new Error('חומר לא נמצא');
   }
 
-  const currentQuantity = Number(material.currentQuantity ?? 0);
-  const nextQuantity = Number((currentQuantity - amount).toFixed(3));
+  const nextQuantity = Number(
+    (Number(material.currentQuantity ?? 0) + delta).toFixed(3),
+  );
   if (nextQuantity < 0) {
     throw new Error('אין מספיק כמות זמינה בחומר');
   }
@@ -108,6 +132,36 @@ async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: num
     { $set: { currentQuantity: nextQuantity } },
     { runValidators: true },
   );
+}
+
+function toMaterialObjectId(value: unknown): Types.ObjectId {
+  if (value && typeof value === 'object' && '_id' in value) {
+    return value._id as Types.ObjectId;
+  }
+  return value as Types.ObjectId;
+}
+
+async function syncMaterialQuantityAfterUsageUpdate(
+  existing: Record<string, unknown>,
+  patch: Partial<MaterialUsageTrackingInput>,
+) {
+  const oldMaterialId = toMaterialObjectId(existing.material);
+  const oldAmount = Number(existing.amount ?? 0);
+  const newMaterialId = patch.material ?? oldMaterialId;
+  const newAmount = patch.amount ?? oldAmount;
+
+  if (String(oldMaterialId) === String(newMaterialId)) {
+    if (patch.amount == null) return;
+    await applyMaterialQuantityDelta(oldMaterialId, oldAmount - newAmount);
+    return;
+  }
+
+  await applyMaterialQuantityDelta(oldMaterialId, oldAmount);
+  await applyMaterialQuantityDelta(newMaterialId, -newAmount);
+}
+
+async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: number) {
+  await applyMaterialQuantityDelta(materialId, -amount);
 }
 
 async function buildTrackingPatch(
@@ -142,6 +196,12 @@ async function buildTrackingPatch(
   if (mustHave('wasCharged')) {
     patch.wasCharged = parseWasCharged(body.wasCharged);
   }
+  if (Object.prototype.hasOwnProperty.call(body, 'unitPrice')) {
+    patch.unitPrice =
+      body.unitPrice == null || body.unitPrice === ''
+        ? null
+        : parseUnitPrice(body.unitPrice);
+  }
 
   return patch;
 }
@@ -170,6 +230,10 @@ export const materialUsageTrackingService = {
       plot: patch.plot,
       employee: patch.employee,
       amount: patch.amount,
+      unitPrice:
+        patch.unitPrice !== undefined
+          ? patch.unitPrice
+          : await resolveMaterialUnitPrice(patch.material),
       notes: patch.notes ?? '',
       billable: patch.billable ?? true,
       wasCharged: patch.wasCharged ?? false,
@@ -199,6 +263,13 @@ export const materialUsageTrackingService = {
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
+    }
+
+    if (patch.amount != null || patch.material != null) {
+      await syncMaterialQuantityAfterUsageUpdate(
+        existing as Record<string, unknown>,
+        patch,
+      );
     }
 
     const updated = await materialUsageTrackingRepository.update(id, patch);

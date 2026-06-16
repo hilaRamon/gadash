@@ -341,7 +341,8 @@ export function DataTable({
                       onCellChange &&
                       col.type === "enum" &&
                       !col.render &&
-                      (col.enumOptions?.length ?? 0) > 0;
+                      (col.enumOptions?.length ?? 0) > 0 &&
+                      (col.inlineEditable?.(row) ?? true);
                     const canEditNumber =
                       rowEditable &&
                       onCellChange &&

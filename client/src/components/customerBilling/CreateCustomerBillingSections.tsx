@@ -13,14 +13,17 @@ import { useTableQueryState } from "../../hooks/useTableQueryState";
 import { useUpdateDocument } from "../../hooks/collections/useCollectionMutations";
 import { useCollectionList } from "../../hooks/collections/useCollectionList";
 import { collectionKeys, customerBillingKeys } from "../../lib/queryKeys";
-import type { CollectionDocument, CollectionSchema } from "../../schema/types";
+import type { CollectionDocument, CollectionSchema, ColumnDef } from "../../schema/types";
 import { operationsTrackingsAllSchema } from "../../schema/collections/operationsTrackingsSchema";
 import { materialUsageTrackingsSchema } from "../../schema/collections/materialUsageTrackingsSchema";
 import { baleOrderTrackingsSchema } from "../../schema/collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "../../schema/collections/contractorTrackingsSchema";
 import { countCustomerPlots, type UnbilledPreview } from "../../lib/customerBillingApi";
+import {
+  BALE_ORDER_BY_UNIT,
+  isByWeightPricing,
+} from "../../lib/baleOrderPricing";
 import { formatNumber } from "../../lib/formatNumber";
-import type { ColumnDef } from "../../schema/types";
 import { CustomerBillPaper } from "./CustomerBillPaper";
 
 // Subset of collection columns shown in each preview table (search disabled).
@@ -44,7 +47,28 @@ function pickPreviewSchema(
   };
 }
 
-const operationsPreviewSchema: CollectionSchema = {
+function markColumnsEditable(
+  schema: CollectionSchema,
+  keys: string[],
+  options?: { nullableKeys?: string[] },
+): CollectionSchema {
+  const nullable = new Set(options?.nullableKeys ?? []);
+  return {
+    ...schema,
+    columns: schema.columns.map((col) =>
+      keys.includes(col.key)
+        ? {
+            ...col,
+            inlineEditable: () => true,
+            ...(nullable.has(col.key) ? { nullable: true } : {}),
+          }
+        : col,
+    ),
+  };
+}
+
+const operationsPreviewSchema: CollectionSchema = markColumnsEditable(
+  {
   // Column layout for the operations preview table (not sent by the server).
   ...operationsTrackingsAllSchema,
   columns: [
@@ -71,9 +95,12 @@ const operationsPreviewSchema: CollectionSchema = {
     },
     ...pickPreviewColumns(operationsTrackingsAllSchema, ["finalPrice"]),
   ],
-};
+  },
+  ["unitCost", "dunam"],
+);
 
-const materialPreviewSchema: CollectionSchema = {
+const materialPreviewSchema: CollectionSchema = markColumnsEditable(
+  {
   ...materialUsageTrackingsSchema,
   columns: [
     ...pickPreviewColumns(materialUsageTrackingsSchema, [
@@ -81,20 +108,56 @@ const materialPreviewSchema: CollectionSchema = {
       "material",
       "plot",
       "amount",
+      "unitPrice",
     ]),
-    {
-      key: "unitPrice",
-      label: "מחיר לק״ג",
-      type: "number",
-      sortable: true,
-      format: (value) => formatNumber(value),
-      width: "8rem",
-    },
     ...pickPreviewColumns(materialUsageTrackingsSchema, ["finalPrice"]),
   ],
-};
+  },
+  ["unitPrice", "amount"],
+);
 
-const balePreviewSchema: CollectionSchema = {
+function markBalePreviewColumnsEditable(schema: CollectionSchema): CollectionSchema {
+  const nullable = new Set(["weight", "transportPrice"]);
+  const editableKeys = new Set([
+    "pricePerTon",
+    "quantity",
+    "weight",
+    "pricePerUnit",
+    "transportPrice",
+  ]);
+
+  return {
+    ...schema,
+    columns: schema.columns.map((col) => {
+      if (col.key === "pricingForm") {
+        return { ...col, inlineEditable: () => false };
+      }
+      if (!editableKeys.has(col.key)) return col;
+
+      let inlineEditable: (row: CollectionDocument) => boolean;
+      switch (col.key) {
+        case "pricePerTon":
+        case "weight":
+          inlineEditable = (row) => isByWeightPricing(row.pricingForm);
+          break;
+        case "pricePerUnit":
+          inlineEditable = (row) =>
+            String(row.pricingForm ?? "") === BALE_ORDER_BY_UNIT;
+          break;
+        default:
+          inlineEditable = () => true;
+      }
+
+      return {
+        ...col,
+        inlineEditable,
+        ...(nullable.has(col.key) ? { nullable: true } : {}),
+      };
+    }),
+  };
+}
+
+const balePreviewSchema: CollectionSchema = markBalePreviewColumnsEditable({
   ...baleOrderTrackingsSchema,
   columns: [
     ...pickPreviewColumns(baleOrderTrackingsSchema, [
@@ -105,22 +168,11 @@ const balePreviewSchema: CollectionSchema = {
       "pricePerTon",
       "pricePerUnit",
       "weight",
+      "transportPrice",
     ]),
-    {
-      key: "transportPrice",
-      label: "הובלה",
-      type: "number",
-      sortable: true,
-      format: (value) => {
-        const amount = Number(value ?? "");
-        if (!Number.isFinite(amount) || amount <= 0) return "";
-        return formatNumber(amount);
-      },
-      width: "8rem",
-    },
     ...pickPreviewColumns(baleOrderTrackingsSchema, ["finalPrice"]),
   ],
-};
+});
 
 const contractorPreviewColumnKeys = [
   "date",
@@ -241,6 +293,9 @@ export function CreateCustomerBillingSections({
 }: CreateCustomerBillingSectionsProps) {
   const queryClient = useQueryClient();
   const updateContractor = useUpdateDocument("contractorTrackings");
+  const updateOperationTracking = useUpdateDocument("operationsTrackings");
+  const updateMaterialUsage = useUpdateDocument("materialUsageTrackings");
+  const updateBaleOrder = useUpdateDocument("baleOrderTrackings");
   const { data: plots } = useCollectionList("plots");
   const showPlots = plots == null || countCustomerPlots(plots, customerId) > 1;
   const [includedIds, setIncludedIds] = useState<Set<string>>(() => new Set());
@@ -274,6 +329,64 @@ export function CreateCustomerBillingSections({
     });
   }, []);
 
+  const refreshBillingPreviews = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: customerBillingKeys.unbilledPreview(customerId),
+    });
+    await queryClient.refetchQueries({
+      queryKey: customerBillingKeys.unbilledPreview(customerId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: customerBillingKeys.billPreviewForCustomer(customerId),
+    });
+  }, [customerId, queryClient]);
+
+  const handleOperationCellChange = useCallback(
+    async (row: CollectionDocument, key: string, value: unknown) => {
+      if (key === "unitCost" || key === "dunam") {
+        await updateOperationTracking.mutateAsync({
+          id: row._id,
+          body: { [key]: value },
+        });
+      } else {
+        return;
+      }
+      await refreshBillingPreviews();
+    },
+    [refreshBillingPreviews, updateOperationTracking],
+  );
+
+  const handleMaterialCellChange = useCallback(
+    async (row: CollectionDocument, key: string, value: unknown) => {
+      if (key !== "unitPrice" && key !== "amount") return;
+      await updateMaterialUsage.mutateAsync({
+        id: row._id,
+        body: { [key]: value },
+      });
+      await refreshBillingPreviews();
+    },
+    [refreshBillingPreviews, updateMaterialUsage],
+  );
+
+  const handleBaleCellChange = useCallback(
+    async (row: CollectionDocument, key: string, value: unknown) => {
+      const editableKeys = [
+        "pricePerTon",
+        "quantity",
+        "weight",
+        "pricePerUnit",
+        "transportPrice",
+      ];
+      if (!editableKeys.includes(key)) return;
+      await updateBaleOrder.mutateAsync({
+        id: row._id,
+        body: { [key]: value },
+      });
+      await refreshBillingPreviews();
+    },
+    [refreshBillingPreviews, updateBaleOrder],
+  );
+
   const handleContractorCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
       if (key !== "customerPrice") return;
@@ -281,14 +394,12 @@ export function CreateCustomerBillingSections({
         id: row._id,
         body: { customerPrice: value },
       });
-      await queryClient.invalidateQueries({
-        queryKey: customerBillingKeys.unbilledPreview(customerId),
-      });
+      await refreshBillingPreviews();
       await queryClient.invalidateQueries({
         queryKey: collectionKeys.list("contractorTrackings"),
       });
     },
-    [customerId, queryClient, updateContractor],
+    [queryClient, refreshBillingPreviews, updateContractor],
   );
 
   // Split server preview into four sections; each array becomes one DataTable.
@@ -304,16 +415,19 @@ export function CreateCustomerBillingSections({
         title: "פעולות",
         schema: sectionSchema(operationsPreviewSchema),
         rows: preview?.operations ?? [],
+        onCellChange: handleOperationCellChange,
       },
       {
         title: "שימוש בחומרים",
         schema: sectionSchema(materialPreviewSchema),
         rows: preview?.materialUsage ?? [],
+        onCellChange: handleMaterialCellChange,
       },
       {
         title: "הזמנות חציר",
         schema: balePreviewSchema,
         rows: preview?.baleOrders ?? [],
+        onCellChange: handleBaleCellChange,
       },
       {
         title: "עבודות קבלן",
@@ -322,7 +436,14 @@ export function CreateCustomerBillingSections({
         onCellChange: handleContractorCellChange,
       },
     ];
-  }, [preview, showPlots, handleContractorCellChange]);
+  }, [
+    preview,
+    showPlots,
+    handleOperationCellChange,
+    handleMaterialCellChange,
+    handleBaleCellChange,
+    handleContractorCellChange,
+  ]);
 
   const nonEmptySections = useMemo(
     () => allSections.filter((section) => section.rows.length > 0),

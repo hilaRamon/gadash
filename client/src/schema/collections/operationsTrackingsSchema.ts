@@ -65,7 +65,7 @@ function buildOperationsTrackingForm(
         label: "לחיוב",
         type: "boolean",
         hidden: hidePlotAndBillable,
-        defaultValue: false,
+        defaultValue: true,
       },
       {
         key: "wasCharged",
@@ -205,4 +205,3 @@ export const operationsTrackingsAdminSchema: CollectionSchema = {
     { hideOperation: true, hidePlotAndBillable: true },
   ),
 };
-

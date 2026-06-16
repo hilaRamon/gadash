@@ -191,7 +191,7 @@ function applyPricingFormSideEffects(
   patch: Partial<BaleOrderTrackingInput>,
   pricingForm: BaleOrderPricingForm | undefined,
 ): Partial<BaleOrderTrackingInput> {
-  if (pricingForm == null) return patch;
+  if (patch.pricingForm == null || pricingForm == null) return patch;
   if (isByWeightPricing(pricingForm)) {
     return patch;
   }
@@ -257,15 +257,14 @@ export const baleOrderTrackingService = {
     }
     assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
-    const baleChanged = patch.bale != null;
-    const pricesTouched =
-      bodyHasPriceField(body, 'pricePerTon') || bodyHasPriceField(body, 'pricePerUnit');
-
-    if (baleChanged || pricesTouched) {
-      const baleId = (patch.bale ?? existing.bale) as Types.ObjectId;
-      const prices = await resolveStoredPrices(body, baleId, { requireAll: pricesTouched });
-      patch.pricePerTon = prices.pricePerTon;
-      patch.pricePerUnit = prices.pricePerUnit;
+    if (patch.bale != null) {
+      const prices = await resolveStoredPrices(body, patch.bale, { requireAll: false });
+      if (!bodyHasPriceField(body, 'pricePerTon')) {
+        patch.pricePerTon = prices.pricePerTon;
+      }
+      if (!bodyHasPriceField(body, 'pricePerUnit')) {
+        patch.pricePerUnit = prices.pricePerUnit;
+      }
     }
 
     const pricingForm =

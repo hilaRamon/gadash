@@ -60,6 +60,56 @@ function parseNotes(value: unknown): string {
   return String(value ?? '').trim();
 }
 
+async function applyMaterialQuantityDelta(materialId: Types.ObjectId, delta: number) {
+  if (delta === 0) return;
+
+  const material = await MaterialModel.findById(materialId)
+    .select('_id currentQuantity')
+    .lean();
+  if (!material) {
+    throw new Error('חומר לא נמצא');
+  }
+
+  const nextQuantity = Number(
+    (Number(material.currentQuantity ?? 0) + delta).toFixed(3),
+  );
+  if (nextQuantity < 0) {
+    throw new Error('אין מספיק כמות זמינה בחומר');
+  }
+
+  await MaterialModel.findByIdAndUpdate(
+    material._id,
+    { $set: { currentQuantity: nextQuantity } },
+    { runValidators: true },
+  );
+}
+
+function toMaterialObjectId(value: unknown): Types.ObjectId {
+  if (value && typeof value === 'object' && '_id' in value) {
+    return value._id as Types.ObjectId;
+  }
+  return value as Types.ObjectId;
+}
+
+async function syncMaterialQuantityAfterPurchaseUpdate(
+  existing: Record<string, unknown>,
+  patch: Partial<MaterialPurchaseTrackingInput>,
+) {
+  const oldMaterialId = toMaterialObjectId(existing.material);
+  const oldAmount = Number(existing.amount ?? 0);
+  const newMaterialId = patch.material ?? oldMaterialId;
+  const newAmount = patch.amount ?? oldAmount;
+
+  if (String(oldMaterialId) === String(newMaterialId)) {
+    if (patch.amount == null) return;
+    await applyMaterialQuantityDelta(newMaterialId, newAmount - oldAmount);
+    return;
+  }
+
+  await applyMaterialQuantityDelta(oldMaterialId, -oldAmount);
+  await applyMaterialQuantityDelta(newMaterialId, newAmount);
+}
+
 async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingInput) {
   const material = await MaterialModel.findById(input.material).lean();
   if (!material) {
@@ -185,19 +235,27 @@ export const materialPurchaseTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
+    const existing = await materialPurchaseTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
 
     if (patch.unitPrice != null || patch.amount != null) {
-      const existing = await materialPurchaseTrackingRepository.findById(id);
-      if (!existing) {
-        throw new Error('לא נמצא');
-      }
       const unitPrice = patch.unitPrice ?? Number(existing.unitPrice ?? 0);
       const amount = patch.amount ?? Number(existing.amount ?? 0);
       patch.finalPrice = calcFinalPrice(unitPrice, amount);
+    }
+
+    if (patch.amount != null || patch.material != null) {
+      await syncMaterialQuantityAfterPurchaseUpdate(
+        existing as Record<string, unknown>,
+        patch,
+      );
     }
 
     const updated = await materialPurchaseTrackingRepository.update(id, patch);

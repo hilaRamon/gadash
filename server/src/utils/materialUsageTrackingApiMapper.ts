@@ -35,20 +35,27 @@ function toAmount(value: unknown): number {
   return Number.isFinite(amount) ? amount : 0;
 }
 
-function calcUnitPrice(doc: Record<string, unknown>): number {
-  const material = doc.material as PopulatedMaterialRef | undefined;
-  if (!material || typeof material !== 'object') return 0;
+function resolveTrackingUnitPrice(
+  doc: Record<string, unknown>,
+  materialRaw: PopulatedMaterialRef | undefined,
+): number {
+  const stored = doc.unitPrice;
+  if (stored != null && stored !== '' && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  if (!materialRaw || typeof materialRaw !== 'object') return 0;
 
-  const cost = Number(material.currentBuyingCost ?? 0);
-  const percent = Number(material.currentSalePercent ?? 15);
+  const cost = Number(materialRaw.currentBuyingCost ?? 0);
+  const percent = Number(materialRaw.currentSalePercent ?? 15);
   if (!Number.isFinite(cost) || !Number.isFinite(percent)) return 0;
 
   return calcCustomerCost(cost, percent);
 }
 
 function calcDisplayFinalPrice(doc: Record<string, unknown>): number {
+  const material = doc.material as PopulatedMaterialRef | undefined;
   const amount = toAmount(doc.amount);
-  return Number((calcUnitPrice(doc) * amount).toFixed(3));
+  return Number((resolveTrackingUnitPrice(doc, material) * amount).toFixed(3));
 }
 
 export function materialUsageTrackingToApiDocument(doc: Record<string, unknown>): ApiDocument {
@@ -63,6 +70,8 @@ export function materialUsageTrackingToApiDocument(doc: Record<string, unknown>)
   const employee = toRefParts(doc.employee);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
 
+  const materialRaw = doc.material as PopulatedMaterialRef | undefined;
+
   return {
     ...base,
     date: Number.isNaN(dateValue.getTime())
@@ -76,7 +85,7 @@ export function materialUsageTrackingToApiDocument(doc: Record<string, unknown>)
     plotName: plot.name,
     employee: employee.id,
     employeeName: employee.name,
-    unitPrice: calcUnitPrice(doc),
+    unitPrice: resolveTrackingUnitPrice(doc, materialRaw),
     finalPrice: calcDisplayFinalPrice(doc),
   };
 }

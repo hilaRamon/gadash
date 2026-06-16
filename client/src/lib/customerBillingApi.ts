@@ -194,38 +194,6 @@ export function hasIncludedBillItems(request: CustomerBillRequest): boolean {
   );
 }
 
-/** Mock only: build invoice HTML on the client (see buildCustomerBillData + renderCustomerBillHtml). */
-async function fetchCustomerBillPreviewMock(
-  request: CustomerBillRequest,
-  customerName: string,
-  preview: UnbilledPreview,
-): Promise<{ html: string }> {
-  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
-  const bill = buildCustomerBillDocumentFromPreview({
-    customerName,
-    customerId: request.customerId,
-    showPlots,
-    operations: preview.operations.filter((row) =>
-      request.operationsTrackingIds.includes(row._id),
-    ),
-    contractors: preview.contractors.filter((row) =>
-      request.contractorTrackingIds.includes(row._id),
-    ),
-    materialUsage: preview.materialUsage.filter((row) =>
-      request.materialUsageTrackingIds.includes(row._id),
-    ),
-    baleOrders: preview.baleOrders.filter((row) =>
-      request.baleOrderTrackingIds.includes(row._id),
-    ),
-  });
-  return { html: renderCustomerBillPreviewHtml(bill) };
-}
-
-function toIdArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => String(item ?? "")).filter(Boolean);
-}
-
 function pickRowsByIds(
   rows: CollectionDocument[],
   ids: string[],
@@ -233,6 +201,38 @@ function pickRowsByIds(
   if (ids.length === 0) return [];
   const idSet = new Set(ids);
   return rows.filter((row) => idSet.has(row._id));
+}
+
+/** Mock only: build invoice HTML from fresh collection rows (not cached preview). */
+async function fetchCustomerBillPreviewMock(
+  request: CustomerBillRequest,
+  customerName: string,
+): Promise<{ html: string }> {
+  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
+  const [operations, materialUsage, baleOrders, contractors] = await Promise.all([
+    listCollection("operationsTrackings"),
+    listCollection("materialUsageTrackings"),
+    listCollection("baleOrderTrackings"),
+    listCollection("contractorTrackings"),
+  ]);
+
+  const bill = buildCustomerBillDocumentFromRows({
+    customerName,
+    showPlots,
+    operations: pickRowsByIds(operations, request.operationsTrackingIds),
+    contractors: pickRowsByIds(contractors, request.contractorTrackingIds),
+    materialUsage: pickRowsByIds(
+      materialUsage,
+      request.materialUsageTrackingIds,
+    ),
+    baleOrders: pickRowsByIds(baleOrders, request.baleOrderTrackingIds),
+  });
+  return { html: renderCustomerBillPreviewHtml(bill) };
+}
+
+function toIdArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "")).filter(Boolean);
 }
 
 function formatStoredBillDate(value: unknown): string {
@@ -294,11 +294,7 @@ export async function fetchCustomerBillPreview(
     return { html: "" };
   }
   if (useMock) {
-    return fetchCustomerBillPreviewMock(
-      request,
-      options.customerName,
-      options.preview,
-    );
+    return fetchCustomerBillPreviewMock(request, options.customerName);
   }
   const { data } = await api.post<{ html: string }>(
     "/api/customerBillingTrackings/bill-preview",

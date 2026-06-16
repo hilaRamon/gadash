@@ -116,18 +116,65 @@ function getMockStore(collection: string): CollectionDocument[] {
   return mockStores.get(collection)!;
 }
 
+function resolveMaterialUsageUnitPrice(
+  row: Record<string, unknown>,
+  material: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.unitPrice;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  if (!material) return 0;
+  const customerCost = material.customerCost;
+  if (
+    customerCost != null &&
+    customerCost !== "" &&
+    Number.isFinite(Number(customerCost))
+  ) {
+    return Number(customerCost);
+  }
+  const cost = Number(material.currentBuyingCost ?? 0);
+  const percent = Number(material.currentSalePercent ?? 15);
+  return Number((cost * (1 + percent / 100)).toFixed(3));
+}
+
 function calcMaterialUsageFinalPrice(row: Record<string, unknown>): number {
   const materialId = String(row.material ?? "");
   const material = materialsSeedData.find((m) => String(m._id) === materialId);
-  const unitPrice = Number(material?.customerCost ?? 0);
+  const unitPrice = resolveMaterialUsageUnitPrice(row, material);
   const amount = Number(row.amount ?? 0);
   if (!Number.isFinite(unitPrice) || !Number.isFinite(amount)) return 0;
   return Number((unitPrice * amount).toFixed(2));
 }
 
 function enrichMaterialUsageRow(row: CollectionDocument): CollectionDocument {
+  const materialId = String(row.material ?? "");
+  const material = materialsSeedData.find((m) => String(m._id) === materialId);
+  const unitPrice = resolveMaterialUsageUnitPrice(row, material);
   const finalPrice = calcMaterialUsageFinalPrice(row);
-  return { ...row, finalPrice };
+  return { ...row, unitPrice, finalPrice };
+}
+
+function resolveOperationTrackingDunam(
+  row: Record<string, unknown>,
+  plot: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.dunam;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  return plot ? Number(plot.dunam ?? 0) : 0;
+}
+
+function resolveOperationTrackingUnitCost(
+  row: Record<string, unknown>,
+  operation: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.unitCost;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  return operation ? Number(operation.currentCost ?? 0) : 0;
 }
 
 function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
@@ -139,8 +186,8 @@ function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
   const plot = plotsSeedData.find(
     (item) => String(item._id) === String(row.plot ?? ""),
   );
-  const unitCost = Number(operation?.currentCost ?? 0);
-  const dunam = Number(plot?.dunam ?? 0);
+  const unitCost = resolveOperationTrackingUnitCost(row, operation);
+  const dunam = resolveOperationTrackingDunam(row, plot);
   if (
     !Number.isFinite(unitCost) ||
     !Number.isFinite(dunam) ||
@@ -165,8 +212,8 @@ function enrichOperationTrackingRow(
   const employee = employeesSeedData.find(
     (item) => String(item._id) === String(row.employee ?? ""),
   );
-  const unitCost = Number(operation?.currentCost ?? 0);
-  const dunam = plot ? Number(plot.dunam ?? 0) : 0;
+  const unitCost = resolveOperationTrackingUnitCost(row, operation);
+  const dunam = resolveOperationTrackingDunam(row, plot);
 
   return {
     ...row,
@@ -417,12 +464,26 @@ async function createMock(
     );
     doc.customer = plot?.customer ?? "";
     doc.customerName = String(plot?.customerName ?? "");
+    const material = materialsSeedData.find(
+      (item) => String(item._id) === String(doc.material ?? ""),
+    );
+    if (doc.unitPrice == null || doc.unitPrice === "") {
+      doc.unitPrice = material
+        ? resolveMaterialUsageUnitPrice({}, material)
+        : null;
+    }
   }
   store.push(doc);
   if (collection === "materialUsageTrackings") {
     return enrichMaterialUsageRow(doc);
   }
   if (collection === "operationsTrackings") {
+    const operation = operationsSeedData.find(
+      (item) => String(item._id) === String(doc.operation ?? ""),
+    );
+    if (doc.unitCost == null || doc.unitCost === "") {
+      doc.unitCost = operation ? Number(operation.currentCost ?? 0) : null;
+    }
     const plotId = doc.plot;
     if (plotId != null && plotId !== "") {
       const plot = plotsSeedData.find(
@@ -430,6 +491,9 @@ async function createMock(
       );
       doc.customer = plot?.customer ?? "";
       doc.customerName = String(plot?.customerName ?? "");
+      if (doc.dunam == null || doc.dunam === "") {
+        doc.dunam = plot ? Number(plot.dunam ?? 0) : null;
+      }
     } else {
       doc.plot = null;
       doc.customer = null;

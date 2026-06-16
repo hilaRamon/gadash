@@ -12,6 +12,8 @@ export type OperationTrackingInput = {
   notes?: string;
   billable: boolean;
   wasCharged?: boolean;
+  dunam?: number | null;
+  unitCost?: number | null;
 };
 
 const operationPopulate = {
@@ -80,5 +82,28 @@ export const operationTrackingRepository = {
       { _id: { $in: ids } },
       { wasCharged: false },
     );
+  },
+
+  findByEmployeeAndDateRange(employeeId: string, start: Date, end: Date) {
+    return OperationTrackingModel.find({
+      employee: new Types.ObjectId(employeeId),
+      date: { $gte: start, $lte: end },
+    })
+      .select('date startTime endTime employee')
+      .sort({ date: 1 })
+      .lean();
+  },
+
+  findDistinctEmployeeIdsInDateRange(start: Date, end: Date) {
+    return OperationTrackingModel.distinct('employee', {
+      date: { $gte: start, $lte: end },
+    });
+  },
+
+  findByIds(ids: string[]) {
+    if (ids.length === 0) return Promise.resolve([]);
+    return OperationTrackingModel.find({ _id: { $in: toObjectIds(ids) } })
+      .select('date employee')
+      .lean();
   },
 };

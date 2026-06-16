@@ -22,6 +22,16 @@ export const customerBillingKeys = {
     [...customerBillingKeys.all, 'unbilledPreview', customerId] as const,
   billPreview: (customerId: string, request: unknown) =>
     [...customerBillingKeys.all, 'billPreview', customerId, request] as const,
+  billPreviewForCustomer: (customerId: string) =>
+    [...customerBillingKeys.all, 'billPreview', customerId] as const,
   savedBillPreview: (billingId: string) =>
     [...customerBillingKeys.all, 'savedBillPreview', billingId] as const,
+}
+
+export const monthlyReportKeys = {
+  all: ['monthlyReport'] as const,
+  employee: (employeeId: string, month: string) =>
+    [...monthlyReportKeys.all, 'employee', employeeId, month] as const,
+  summary: (month: string) =>
+    [...monthlyReportKeys.all, 'summary', month] as const,
 }

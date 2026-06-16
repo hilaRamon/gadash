@@ -8,6 +8,7 @@ export type MaterialUsageTrackingInput = {
   plot: Types.ObjectId;
   employee: Types.ObjectId;
   amount: number;
+  unitPrice?: number | null;
   notes?: string;
   billable: boolean;
   wasCharged?: boolean;

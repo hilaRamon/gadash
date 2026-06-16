@@ -11,6 +11,8 @@ const operationTrackingSchema = new Schema(
     notes: { type: String, default: '' },
     billable: { type: Boolean, required: true, default: true },
     wasCharged: { type: Boolean, default: false },
+    dunam: { type: Number, default: null, min: 0 },
+    unitCost: { type: Number, default: null, min: 0 },
   },
   { timestamps: true, versionKey: false },
 );
