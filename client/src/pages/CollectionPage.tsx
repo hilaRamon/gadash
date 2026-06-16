@@ -137,7 +137,7 @@ function CollectionPageContent({
   }, [])
 
   const handleFormSubmit = useCallback(
-    async (values: Record<string, unknown>) => {
+    async (values: Record<string, unknown> | Record<string, unknown>[]) => {
       setFormError(null)
       if (editingRow && isChargedTracking(editingRow)) {
         setFormError(CHARGED_TRACKING_EDIT_ERROR)
@@ -145,7 +145,14 @@ function CollectionPageContent({
       }
       try {
         if (editingRow) {
-          await updateMutation.mutateAsync({ id: editingRow._id, body: values })
+          await updateMutation.mutateAsync({
+            id: editingRow._id,
+            body: values as Record<string, unknown>,
+          })
+        } else if (Array.isArray(values)) {
+          for (const payload of values) {
+            await createMutation.mutateAsync(payload)
+          }
         } else {
           await createMutation.mutateAsync(values)
         }

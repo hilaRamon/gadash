@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled, { css } from "styled-components";
 import type {
   CollectionDocument,
@@ -21,8 +21,15 @@ import {
 } from "./contractorTrackingForm";
 import {
   applyMaterialUsageFieldChange,
+  buildMaterialUsageCreatePayloads,
   enrichMaterialUsagePayload,
+  getMaterialUsageMultiCreateErrors,
+  recalcMaterialUsageLineAmounts,
+  toggleMaterialUsageLine,
+  updateMaterialUsageLine,
+  type MaterialUsageLineEntry,
 } from "./materialUsageTrackingForm";
+import { MaterialUsageMultiCreateFields } from "./MaterialUsageMultiCreateFields";
 import { applyOperationTrackingFieldChange } from "./operationTrackingForm";
 import {
   applyTransportTrackingFieldChange,
@@ -41,7 +48,7 @@ type CollectionFormModalProps = {
   isPending?: boolean;
   error?: string | null;
   onClose: () => void;
-  onSubmit: (values: Record<string, unknown>) => void;
+  onSubmit: (values: Record<string, unknown> | Record<string, unknown>[]) => void;
 };
 
 const buttonBase = css`
@@ -80,9 +87,9 @@ const Overlay = styled.div`
   background: rgba(0, 0, 0, 0.55);
 `;
 
-const Modal = styled.div`
+const Modal = styled.div<{ $wide?: boolean }>`
   width: 100%;
-  max-width: 28rem;
+  max-width: ${({ $wide }) => ($wide ? "32rem" : "28rem")};
   max-height: 90vh;
   padding: 1.5rem;
   border-radius: 12px;
@@ -166,11 +173,18 @@ export function CollectionFormModal({
   // Title: helper errors shown under specific required fields.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [amountRecalcNotice, setAmountRecalcNotice] = useState<string | null>(null);
+  const [materialUsageEntries, setMaterialUsageEntries] = useState<
+    MaterialUsageLineEntry[]
+  >([]);
+  const materialUsagePlotRef = useRef("");
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const isContractorTrackingForm = schema.collection === "contractorTrackings";
   const isTransportTrackingForm = schema.collection === "transportTrackings";
   const isMaterialUsageForm = schema.collection === "materialUsageTrackings";
+  const isMaterialUsageMultiCreate = isMaterialUsageForm && !editingRow;
   const isOperationTrackingForm = schema.collection === "operationsTrackings";
   const { data: bales = [] } = useCollectionList("bales");
   const { data: movers = [] } = useCollectionList("movers");
@@ -209,6 +223,9 @@ export function CollectionFormModal({
     if (isBaleOrderForm) {
       return getBaleOrderVisibleFields(base, values);
     }
+    if (isMaterialUsageMultiCreate) {
+      return base.filter((field) => field.key !== "material" && field.key !== "amount");
+    }
     return base;
   })();
 
@@ -222,8 +239,44 @@ export function CollectionFormModal({
       setValidationError(null);
       setFieldErrors({});
       setAmountRecalcNotice(null);
+      setMaterialUsageEntries([]);
+      materialUsagePlotRef.current = "";
     }
   }, [open, editingRow, schema.form.fields, schema.collection]);
+
+  useEffect(() => {
+    if (!open || !isMaterialUsageMultiCreate) return;
+
+    const plotId = values.plot?.trim() ?? "";
+    if (!plotId || materialUsageEntries.length === 0) return;
+    if (materials.length === 0 || plots.length === 0) return;
+
+    const plotChanged = materialUsagePlotRef.current !== plotId;
+    materialUsagePlotRef.current = plotId;
+
+    setMaterialUsageEntries((entries) => {
+      if (entries.length === 0) return entries;
+      const next = recalcMaterialUsageLineAmounts(
+        entries,
+        plotId,
+        { materials, plots },
+        { onlyEmpty: !plotChanged },
+      );
+      const unchanged = entries.every(
+        (entry, index) =>
+          entry.materialId === next[index]?.materialId &&
+          entry.amount === next[index]?.amount,
+      );
+      return unchanged ? entries : next;
+    });
+  }, [
+    open,
+    isMaterialUsageMultiCreate,
+    values.plot,
+    materialUsageEntries.length,
+    materials,
+    plots,
+  ]);
 
   useEffect(() => {
     if (!open || !hiddenOperationField) return;
@@ -349,7 +402,11 @@ export function CollectionFormModal({
           }
           return field;
         })
-      : schema.form.fields;
+      : isMaterialUsageMultiCreate
+        ? schema.form.fields.filter(
+            (field) => field.key !== "material" && field.key !== "amount",
+          )
+        : schema.form.fields;
 
     const fieldsForValidation = fieldsForSubmit.filter((field) =>
       visibleFields.some((v) => v.key === field.key),
@@ -361,8 +418,15 @@ export function CollectionFormModal({
         : isBaleOrderForm
           ? getBaleOrderRequiredErrors(fieldsForValidation, values)
           : getRequiredFieldErrors(fieldsForValidation, values);
-    if (Object.keys(requiredFieldErrors).length > 0) {
-      setFieldErrors(requiredFieldErrors);
+    const materialUsageErrors = isMaterialUsageMultiCreate
+      ? getMaterialUsageMultiCreateErrors(materialUsageEntries)
+      : {};
+    const mergedFieldErrors = {
+      ...requiredFieldErrors,
+      ...materialUsageErrors,
+    };
+    if (Object.keys(mergedFieldErrors).length > 0) {
+      setFieldErrors(mergedFieldErrors);
       setValidationError(null);
       return;
     }
@@ -394,13 +458,24 @@ export function CollectionFormModal({
       return;
     }
     if (isMaterialUsageForm) {
-      onSubmit(
-        enrichMaterialUsagePayload(payload, values, {
-          materials,
-          plots,
-          editingRow,
-        }),
-      );
+      if (isMaterialUsageMultiCreate) {
+        onSubmit(
+          buildMaterialUsageCreatePayloads(
+            payload,
+            materialUsageEntries,
+            values,
+            { materials, plots, editingRow },
+          ),
+        );
+      } else {
+        onSubmit(
+          enrichMaterialUsagePayload(payload, values, {
+            materials,
+            plots,
+            editingRow,
+          }),
+        );
+      }
       return;
     }
     onSubmit(payload);
@@ -412,33 +487,82 @@ export function CollectionFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        $wide={isMaterialUsageMultiCreate}
         onClick={(e) => e.stopPropagation()}
       >
         <ModalTitle id="modal-title">{title}</ModalTitle>
         <form onSubmit={handleSubmit} noValidate>
           {visibleFields.map((field) => (
-            <FormField key={field.key}>
-              <Label htmlFor={`field-${field.key}`}>
-                {field.label}
-                {field.required && " *"}
-              </Label>
-              <FormFieldControl
-                field={field}
-                value={values[field.key] ?? ""}
-                setFieldValue={setFieldValue}
-                disabled={
-                  (isAdminTrackingForm && field.key === "billable") ||
-                  (isTransportTrackingForm &&
-                    (field.key === "hours" || field.key === "finalPrice"))
-                }
-                booleanLabels={
-                  field.type === "boolean" ? getBooleanLabels(field.key) : undefined
-                }
-              />
-              {fieldErrors[field.key] && (
-                <FieldErrorMessage>{fieldErrors[field.key]}</FieldErrorMessage>
+            <div key={field.key}>
+              <FormField>
+                <Label htmlFor={`field-${field.key}`}>
+                  {field.label}
+                  {field.required && " *"}
+                </Label>
+                <FormFieldControl
+                  field={field}
+                  value={values[field.key] ?? ""}
+                  setFieldValue={setFieldValue}
+                  disabled={
+                    (isAdminTrackingForm && field.key === "billable") ||
+                    (isTransportTrackingForm &&
+                      (field.key === "hours" || field.key === "finalPrice"))
+                  }
+                  booleanLabels={
+                    field.type === "boolean" ? getBooleanLabels(field.key) : undefined
+                  }
+                />
+                {fieldErrors[field.key] && (
+                  <FieldErrorMessage>{fieldErrors[field.key]}</FieldErrorMessage>
+                )}
+              </FormField>
+
+              {isMaterialUsageMultiCreate && field.key === "plot" && (
+                <MaterialUsageMultiCreateFields
+                  materials={materials}
+                  entries={materialUsageEntries}
+                  fieldErrors={fieldErrors}
+                  plotId={values.plot ?? ""}
+                  onToggleMaterial={(materialId, checked) => {
+                    setMaterialUsageEntries((entries) =>
+                      toggleMaterialUsageLine(
+                        entries,
+                        materialId,
+                        checked,
+                        valuesRef.current.plot ?? "",
+                        { materials, plots },
+                      ),
+                    );
+                    setFieldErrors((prev) => {
+                      if (!prev.materials && !prev[materialId]) return prev;
+                      const next = { ...prev };
+                      delete next.materials;
+                      delete next[materialId];
+                      return next;
+                    });
+                  }}
+                  onUpdateLine={(materialId, patch) => {
+                    setMaterialUsageEntries((entries) =>
+                      updateMaterialUsageLine(
+                        entries,
+                        materialId,
+                        patch,
+                        valuesRef.current.plot ?? "",
+                        { materials, plots },
+                      ),
+                    );
+                    setFieldErrors((prev) => {
+                      const nextKey = patch.materialId ?? materialId;
+                      if (!prev[materialId] && !prev[nextKey]) return prev;
+                      const next = { ...prev };
+                      delete next[materialId];
+                      delete next[nextKey];
+                      return next;
+                    });
+                  }}
+                />
               )}
-            </FormField>
+            </div>
           ))}
 
           {(validationError || error) && (
