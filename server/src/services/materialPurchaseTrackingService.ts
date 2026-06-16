@@ -20,6 +20,14 @@ function parseDate(value: unknown): Date {
   return date;
 }
 
+function parseNumber(value: unknown, label: string): number {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    throw new Error(`${label} לא תקין`);
+  }
+  return num;
+}
+
 function parsePositiveNumber(value: unknown, label: string): number {
   const num = Number(value);
   if (!Number.isFinite(num) || num < 0) {
@@ -73,9 +81,6 @@ async function applyMaterialQuantityDelta(materialId: Types.ObjectId, delta: num
   const nextQuantity = Number(
     (Number(material.currentQuantity ?? 0) + delta).toFixed(3),
   );
-  if (nextQuantity < 0) {
-    throw new Error('אין מספיק כמות זמינה בחומר');
-  }
 
   await MaterialModel.findByIdAndUpdate(
     material._id,
@@ -179,7 +184,7 @@ async function buildTrackingPatch(
   }
 
   if (mustHave('amount')) {
-    patch.amount = parsePositiveNumber(body.amount, 'כמות');
+    patch.amount = parseNumber(body.amount, 'כמות');
   }
 
   if (mustHave('notes')) {

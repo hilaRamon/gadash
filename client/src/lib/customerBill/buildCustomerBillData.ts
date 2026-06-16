@@ -32,7 +32,7 @@ function buildDescription(primary: string, secondary?: string | null): string {
 }
 
 function calcUnitPrice(finalPrice: number, amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return "";
+  if (!Number.isFinite(amount) || amount === 0) return "";
   return formatNumber(finalPrice / amount);
 }
 
@@ -77,7 +77,7 @@ function materialLine(
   const amountValue = Number(row.amount ?? 0);
   const finalPrice = Number(row.finalPrice ?? 0);
   const amount =
-    Number.isFinite(amountValue) && amountValue > 0
+    Number.isFinite(amountValue) && amountValue !== 0
       ? formatNumber(amountValue)
       : "";
   return {

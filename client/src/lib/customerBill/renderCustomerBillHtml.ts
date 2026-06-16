@@ -35,7 +35,7 @@ function renderQuantityWithUnitPriceRow(
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>
-      <td>${escapeHtml(line.amount ?? "")}</td>
+      <td class="numeric">${escapeHtml(line.amount ?? "")}</td>
       <td class="price">${escapeHtml(line.unitPrice ?? "")}</td>${transportCell}
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
@@ -207,8 +207,13 @@ const billStyles = `
     .bill-section-bales td:nth-child(5) { width: 12%; }
     .bill-section-bales th:nth-child(6),
     .bill-section-bales td:nth-child(6) { width: 24%; }
-    td.price {
+    td.price,
+    td.numeric,
+    .bill-total-amount {
+      direction: ltr;
+      text-align: right;
       white-space: nowrap;
+      unicode-bidi: isolate;
     }
     .subtotal-row td {
       font-weight: 700;

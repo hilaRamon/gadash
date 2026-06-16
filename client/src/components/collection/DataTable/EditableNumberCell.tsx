@@ -144,6 +144,7 @@ export function EditableNumberCell({
       <CellInput
         type="text"
         inputMode="decimal"
+        dir="ltr"
         name={`cell-number-${row._id}-${column.key}`}
         autoComplete="off"
         autoCorrect="off"

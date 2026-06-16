@@ -238,6 +238,14 @@ const PaperContent = styled.div`
   table td {
     text-align: right;
   }
+
+  td.price,
+  td.numeric,
+  .bill-total-amount {
+    direction: ltr;
+    text-align: right;
+    unicode-bidi: isolate;
+  }
 `;
 
 const StatusText = styled.p`
