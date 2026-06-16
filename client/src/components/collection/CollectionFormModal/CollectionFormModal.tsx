@@ -1,46 +1,34 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import styled, { css } from "styled-components";
 import type {
   CollectionDocument,
   CollectionSchema,
 } from "../../../schema/types";
 import { useCollectionList } from "../../../hooks/collections/useCollectionList";
-import { buildPayload, getInitialValues, getRequiredFieldErrors } from "./helpers";
 import {
   applyBaleOrderFieldChange,
-  enrichBaleOrderPayload,
-  getBaleOrderRequiredErrors,
   getBaleOrderVisibleFields,
-  inferBaleOrderPricingForm,
 } from "./baleOrderForm";
 import {
   applyContractorTrackingFieldChange,
-  enrichContractorTrackingPayload,
-  getContractorTrackingRequiredErrors,
   getContractorTrackingVisibleFields,
 } from "./contractorTrackingForm";
 import {
   applyMaterialUsageFieldChange,
-  buildMaterialUsageCreatePayloads,
-  enrichMaterialUsagePayload,
-  getMaterialUsageMultiCreateErrors,
-  recalcMaterialUsageLineAmounts,
-  toggleMaterialUsageLine,
-  updateMaterialUsageLine,
   type MaterialUsageLineEntry,
 } from "./materialUsageTrackingForm";
 import { MaterialUsageMultiCreateFields } from "./MaterialUsageMultiCreateFields";
 import { applyOperationTrackingFieldChange } from "./operationTrackingForm";
 import {
   applyTransportTrackingFieldChange,
-  enrichTransportTrackingPayload,
-  getTransportTrackingRequiredErrors,
 } from "./transportTrackingForm";
-import {
-  calcFinalPrice,
-  calcHoursBetween,
-} from "../../../lib/transportTrackingPricing";
 import { FormFieldControl } from "./FormFieldControl";
+import {
+  useCollectionFormInitEffects,
+  useCollectionFormUpdateEffects,
+  submitCollectionForm,
+  useMaterialUsageMultiCreateHandlers,
+} from "./hooks";
 type CollectionFormModalProps = {
   open: boolean;
   schema: CollectionSchema;
@@ -177,8 +165,6 @@ export function CollectionFormModal({
     MaterialUsageLineEntry[]
   >([]);
   const materialUsagePlotRef = useRef("");
-  const valuesRef = useRef(values);
-  valuesRef.current = values;
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const isContractorTrackingForm = schema.collection === "contractorTrackings";
@@ -229,100 +215,41 @@ export function CollectionFormModal({
     return base;
   })();
 
-  useEffect(() => {
-    if (open) {
-      const initial = getInitialValues(schema.form.fields, editingRow);
-      if (schema.collection === "baleOrderTrackings") {
-        initial.pricingForm = inferBaleOrderPricingForm(editingRow);
-      }
-      setValues(initial);
-      setValidationError(null);
-      setFieldErrors({});
-      setAmountRecalcNotice(null);
-      setMaterialUsageEntries([]);
-      materialUsagePlotRef.current = "";
-    }
-  }, [open, editingRow, schema.form.fields, schema.collection]);
+  useCollectionFormInitEffects({
+    open,
+    schema,
+    editingRow,
+    operations,
+    hiddenOperationField,
+    isAdminTrackingForm,
+    isContractorTrackingForm,
+    isTransportTrackingForm,
+    materialUsagePlotRef,
+    setValues,
+    setValidationError,
+    setFieldErrors,
+    setAmountRecalcNotice,
+    setMaterialUsageEntries,
+  });
 
-  useEffect(() => {
-    if (!open || !isMaterialUsageMultiCreate) return;
-
-    const plotId = values.plot?.trim() ?? "";
-    if (!plotId || materialUsageEntries.length === 0) return;
-    if (materials.length === 0 || plots.length === 0) return;
-
-    const plotChanged = materialUsagePlotRef.current !== plotId;
-    materialUsagePlotRef.current = plotId;
-
-    setMaterialUsageEntries((entries) => {
-      if (entries.length === 0) return entries;
-      const next = recalcMaterialUsageLineAmounts(
-        entries,
-        plotId,
-        { materials, plots },
-        { onlyEmpty: !plotChanged },
-      );
-      const unchanged = entries.every(
-        (entry, index) =>
-          entry.materialId === next[index]?.materialId &&
-          entry.amount === next[index]?.amount,
-      );
-      return unchanged ? entries : next;
-    });
-  }, [
+  useCollectionFormUpdateEffects({
     open,
     isMaterialUsageMultiCreate,
-    values.plot,
-    materialUsageEntries.length,
+    values,
+    materialUsageEntries,
     materials,
     plots,
-  ]);
+    materialUsagePlotRef,
+    setMaterialUsageEntries,
+  });
 
-  useEffect(() => {
-    if (!open || !hiddenOperationField) return;
-
-    const matching = hiddenOperationField.referenceFilter
-      ? operations.filter(hiddenOperationField.referenceFilter)
-      : operations;
-    if (matching.length !== 1) return;
-
-    const soleOperationId = String(matching[0]._id);
-    setValues((prev) => {
-      if (prev.operation?.trim()) return prev;
-      if (prev.operation === soleOperationId) return prev;
-      return { ...prev, operation: soleOperationId };
-    });
-  }, [open, hiddenOperationField, operations, editingRow]);
-
-  useEffect(() => {
-    if (!open || !isAdminTrackingForm) return;
-    setValues((prev) => {
-      const next = { ...prev, billable: "false", plot: "" };
-      if (prev.billable === "false" && prev.plot === "") return prev;
-      return next;
-    });
-  }, [open, isAdminTrackingForm]);
-
-  useEffect(() => {
-    if (!open || !isContractorTrackingForm) return;
-    setValues((prev) => applyContractorTrackingFieldChange("pricingForm", prev.pricingForm ?? "", prev));
-  }, [open, isContractorTrackingForm]);
-
-  useEffect(() => {
-    if (!open || !isTransportTrackingForm) return;
-    setValues((prev) => {
-      const hours = calcHoursBetween(prev.startTime ?? "", prev.endTime ?? "");
-      if (hours == null) return prev;
-      const rate = Number(prev.hourlyRate);
-      return {
-        ...prev,
-        hours: String(hours),
-        finalPrice: Number.isFinite(rate)
-          ? String(calcFinalPrice(rate, hours))
-          : prev.finalPrice ?? "",
-      };
-    });
-  }, [open, isTransportTrackingForm]);
+  const materialUsageHandlers = useMaterialUsageMultiCreateHandlers({
+    plotId: values.plot ?? "",
+    materials,
+    plots,
+    setMaterialUsageEntries,
+    setFieldErrors,
+  });
 
   if (!open) return null;
 
@@ -332,6 +259,9 @@ export function CollectionFormModal({
     : (schema.form.createTitle ?? `הוספת ${schema.label}`);
 
   const setFieldValue = (key: string, value: string) => {
+    let shouldUpdateNotice = false;
+    let nextNotice: string | null = null;
+
     setValues((prev) => {
       let next = { ...prev, [key]: value };
       if (isBaleOrderForm) {
@@ -350,7 +280,8 @@ export function CollectionFormModal({
           editingRow,
         });
         next = result.next;
-        setAmountRecalcNotice(result.notice);
+        shouldUpdateNotice = true;
+        nextNotice = result.notice;
       }
       if (isOperationTrackingForm && !isAdminTrackingForm) {
         const result = applyOperationTrackingFieldChange(key, value, prev, {
@@ -358,10 +289,16 @@ export function CollectionFormModal({
           plots,
           editingRow,
         });
-        setAmountRecalcNotice(result.notice);
+        shouldUpdateNotice = true;
+        nextNotice = result.notice;
       }
       return next;
     });
+
+    if (shouldUpdateNotice) {
+      setAmountRecalcNotice(nextNotice);
+    }
+
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -392,93 +329,24 @@ export function CollectionFormModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fieldsForSubmit = isAdminTrackingForm
-      ? schema.form.fields.map((field) => {
-          if (field.key === "plot") {
-            return { ...field, hidden: true, required: false, defaultValue: null };
-          }
-          if (field.key === "billable") {
-            return { ...field, hidden: true, defaultValue: false };
-          }
-          return field;
-        })
-      : isMaterialUsageMultiCreate
-        ? schema.form.fields.filter(
-            (field) => field.key !== "material" && field.key !== "amount",
-          )
-        : schema.form.fields;
-
-    const fieldsForValidation = fieldsForSubmit.filter((field) =>
-      visibleFields.some((v) => v.key === field.key),
-    );
-    const requiredFieldErrors = isContractorTrackingForm
-      ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
-      : isTransportTrackingForm
-        ? getTransportTrackingRequiredErrors(fieldsForValidation, values)
-        : isBaleOrderForm
-          ? getBaleOrderRequiredErrors(fieldsForValidation, values)
-          : getRequiredFieldErrors(fieldsForValidation, values);
-    const materialUsageErrors = isMaterialUsageMultiCreate
-      ? getMaterialUsageMultiCreateErrors(materialUsageEntries)
-      : {};
-    const mergedFieldErrors = {
-      ...requiredFieldErrors,
-      ...materialUsageErrors,
-    };
-    if (Object.keys(mergedFieldErrors).length > 0) {
-      setFieldErrors(mergedFieldErrors);
-      setValidationError(null);
-      return;
-    }
-
-    setFieldErrors({});
-    const payload = buildPayload(fieldsForSubmit, values);
-    if (!payload) return;
-
-    if ("error" in payload && typeof payload.error === "string") {
-      setValidationError(payload.error);
-      return;
-    }
-
-    setValidationError(null);
-    if (isAdminTrackingForm) {
-      onSubmit({ ...payload, billable: false, plot: null });
-      return;
-    }
-    if (isContractorTrackingForm) {
-      onSubmit(enrichContractorTrackingPayload(payload, values));
-      return;
-    }
-    if (isTransportTrackingForm) {
-      onSubmit(enrichTransportTrackingPayload(payload, values));
-      return;
-    }
-    if (isBaleOrderForm) {
-      onSubmit(enrichBaleOrderPayload(payload, values));
-      return;
-    }
-    if (isMaterialUsageForm) {
-      if (isMaterialUsageMultiCreate) {
-        onSubmit(
-          buildMaterialUsageCreatePayloads(
-            payload,
-            materialUsageEntries,
-            values,
-            { materials, plots, editingRow },
-          ),
-        );
-      } else {
-        onSubmit(
-          enrichMaterialUsagePayload(payload, values, {
-            materials,
-            plots,
-            editingRow,
-          }),
-        );
-      }
-      return;
-    }
-    onSubmit(payload);
+    submitCollectionForm({
+      schema,
+      values,
+      visibleFields,
+      materialUsageEntries,
+      materials,
+      plots,
+      editingRow,
+      isAdminTrackingForm,
+      isMaterialUsageMultiCreate,
+      isMaterialUsageForm,
+      isContractorTrackingForm,
+      isTransportTrackingForm,
+      isBaleOrderForm,
+      setFieldErrors,
+      setValidationError,
+      onSubmit,
+    });
   };
 
   return (
@@ -523,43 +391,8 @@ export function CollectionFormModal({
                   entries={materialUsageEntries}
                   fieldErrors={fieldErrors}
                   plotId={values.plot ?? ""}
-                  onToggleMaterial={(materialId, checked) => {
-                    setMaterialUsageEntries((entries) =>
-                      toggleMaterialUsageLine(
-                        entries,
-                        materialId,
-                        checked,
-                        valuesRef.current.plot ?? "",
-                        { materials, plots },
-                      ),
-                    );
-                    setFieldErrors((prev) => {
-                      if (!prev.materials && !prev[materialId]) return prev;
-                      const next = { ...prev };
-                      delete next.materials;
-                      delete next[materialId];
-                      return next;
-                    });
-                  }}
-                  onUpdateLine={(materialId, patch) => {
-                    setMaterialUsageEntries((entries) =>
-                      updateMaterialUsageLine(
-                        entries,
-                        materialId,
-                        patch,
-                        valuesRef.current.plot ?? "",
-                        { materials, plots },
-                      ),
-                    );
-                    setFieldErrors((prev) => {
-                      const nextKey = patch.materialId ?? materialId;
-                      if (!prev[materialId] && !prev[nextKey]) return prev;
-                      const next = { ...prev };
-                      delete next[materialId];
-                      delete next[nextKey];
-                      return next;
-                    });
-                  }}
+                  onToggleMaterial={materialUsageHandlers.onToggleMaterial}
+                  onUpdateLine={materialUsageHandlers.onUpdateLine}
                 />
               )}
             </div>
