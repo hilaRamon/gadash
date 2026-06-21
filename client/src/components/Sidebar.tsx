@@ -27,6 +27,7 @@ import {
   fuelTrackingCollections,
   materialTrackingCollections,
   operationsTrackingCollections,
+  reportCollections,
   sidebarSections,
 } from '../config/navigation'
 
@@ -159,6 +160,15 @@ export function Sidebar() {
           >
             {sidebarSections[2].title}
           </SidebarSectionTitleLink>
+          <SidebarList>
+            {reportCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+          </SidebarList>
         </SidebarSection>
       </SidebarNav>
     </SidebarContainer>

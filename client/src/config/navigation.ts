@@ -163,6 +163,25 @@ export const customerBillingTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export type ReportCollection = {
+  id: string;
+  label: string;
+  path: string;
+};
+
+export const reportCollections: ReportCollection[] = [
+  {
+    id: "employee-monthly-report",
+    label: "דוח חודשי לעובד",
+    path: "/reports/employee-monthly",
+  },
+  {
+    id: "monthly-summary",
+    label: "סיכום חודשי",
+    path: "/reports/monthly-summary",
+  },
+];
+
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
