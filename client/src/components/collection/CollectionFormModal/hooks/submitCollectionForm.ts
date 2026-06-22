@@ -20,8 +20,11 @@ import {
   type MaterialUsageLineEntry,
 } from "../materialUsageTrackingForm";
 import {
+  buildOperationTrackingCreatePayloads,
   enrichOperationTrackingPayload,
+  getOperationTrackingMultiCreateErrors,
   getOperationTrackingRequiredErrors,
+  type OperationTrackingLineEntry,
 } from "../operationTrackingForm";
 import {
   enrichTransportTrackingPayload,
@@ -33,11 +36,13 @@ export type SubmitCollectionFormOptions = {
   values: Record<string, string>;
   visibleFields: FormFieldDef[];
   materialUsageEntries: MaterialUsageLineEntry[];
+  operationTrackingEntries: OperationTrackingLineEntry[];
   materials: CollectionDocument[];
   plots: CollectionDocument[];
   editingRow: CollectionDocument | null;
   isAdminTrackingForm: boolean;
   isMaterialUsageMultiCreate: boolean;
+  isOperationTrackingMultiCreate: boolean;
   isMaterialUsageForm: boolean;
   isContractorTrackingForm: boolean;
   isOperationTrackingForm: boolean;
@@ -54,11 +59,13 @@ export function submitCollectionForm({
   values,
   visibleFields,
   materialUsageEntries,
+  operationTrackingEntries,
   materials,
   plots,
   editingRow,
   isAdminTrackingForm,
   isMaterialUsageMultiCreate,
+  isOperationTrackingMultiCreate,
   isMaterialUsageForm,
   isContractorTrackingForm,
   isOperationTrackingForm,
@@ -83,6 +90,10 @@ export function submitCollectionForm({
       ? schema.form.fields.filter(
           (field) => field.key !== "material" && field.key !== "amount",
         )
+      : isOperationTrackingMultiCreate
+        ? schema.form.fields.filter(
+            (field) => field.key !== "operation" && field.key !== "amount",
+          )
       : schema.form.fields;
 
   const fieldsForValidation = fieldsForSubmit.filter((field) =>
@@ -90,7 +101,7 @@ export function submitCollectionForm({
   );
   const requiredFieldErrors = isContractorTrackingForm
     ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
-    : isOperationTrackingForm
+    : isOperationTrackingForm && !isOperationTrackingMultiCreate
       ? getOperationTrackingRequiredErrors(fieldsForValidation, values, operations)
     : isTransportTrackingForm
       ? getTransportTrackingRequiredErrors(fieldsForValidation, values)
@@ -100,9 +111,13 @@ export function submitCollectionForm({
   const materialUsageErrors = isMaterialUsageMultiCreate
     ? getMaterialUsageMultiCreateErrors(materialUsageEntries)
     : {};
+  const operationTrackingErrors = isOperationTrackingMultiCreate
+    ? getOperationTrackingMultiCreateErrors(operationTrackingEntries)
+    : {};
   const mergedFieldErrors = {
     ...requiredFieldErrors,
     ...materialUsageErrors,
+    ...operationTrackingErrors,
   };
   if (Object.keys(mergedFieldErrors).length > 0) {
     setFieldErrors(mergedFieldErrors);
@@ -129,6 +144,16 @@ export function submitCollectionForm({
   }
   if (isContractorTrackingForm) {
     onSubmit(enrichContractorTrackingPayload(payload, values));
+    return;
+  }
+  if (isOperationTrackingMultiCreate) {
+    onSubmit(
+      buildOperationTrackingCreatePayloads(payload, operationTrackingEntries, values, {
+        operations,
+        plots,
+        editingRow,
+      }),
+    );
     return;
   }
   if (isOperationTrackingForm) {

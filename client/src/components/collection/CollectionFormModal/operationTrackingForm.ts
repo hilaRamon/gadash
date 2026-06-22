@@ -9,10 +9,24 @@ import {
   suggestOperationAmount,
 } from "../../../lib/operationTrackingPricing";
 
+export type OperationTrackingLineEntry = {
+  operationId: string;
+  amount: string;
+};
+
 type OperationTrackingFormContext = {
   operations: CollectionDocument[];
   plots: CollectionDocument[];
   editingRow: CollectionDocument | null;
+};
+
+type OperationAmountContext = Pick<
+  OperationTrackingFormContext,
+  "operations" | "plots"
+> & {
+  plotId: string;
+  startTime: string;
+  endTime: string;
 };
 
 function findOperation(
@@ -27,6 +41,139 @@ function findPlot(
   plotId: string,
 ): CollectionDocument | undefined {
   return plots.find((row) => String(row._id) === String(plotId));
+}
+
+export function calcOperationTrackingAmountForLine(
+  operationId: string,
+  context: OperationAmountContext,
+): string {
+  const normalizedOperationId = operationId.trim();
+  if (!normalizedOperationId) return "";
+
+  const operation = findOperation(context.operations, normalizedOperationId);
+  if (!operation) return "";
+
+  const plot = context.plotId
+    ? findPlot(context.plots, context.plotId)
+    : undefined;
+  const pricingForm = String(operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM);
+  const suggested = suggestOperationAmount(pricingForm, {
+    startTime: context.startTime,
+    endTime: context.endTime,
+    plotDunam: plot ? Number(plot.dunam ?? 0) : null,
+  });
+
+  return suggested == null ? "" : String(suggested);
+}
+
+export function toggleOperationTrackingLine(
+  entries: OperationTrackingLineEntry[],
+  operationId: string,
+  checked: boolean,
+  context: OperationAmountContext,
+): OperationTrackingLineEntry[] {
+  if (!checked) {
+    return entries.filter((entry) => entry.operationId !== operationId);
+  }
+  if (entries.some((entry) => entry.operationId === operationId)) {
+    return entries;
+  }
+  return [
+    ...entries,
+    {
+      operationId,
+      amount: calcOperationTrackingAmountForLine(operationId, context),
+    },
+  ];
+}
+
+export function updateOperationTrackingLine(
+  entries: OperationTrackingLineEntry[],
+  operationId: string,
+  patch: Partial<Pick<OperationTrackingLineEntry, "operationId" | "amount">>,
+  context: OperationAmountContext,
+): OperationTrackingLineEntry[] {
+  return entries.map((entry) => {
+    if (entry.operationId !== operationId) return entry;
+    const nextOperationId = patch.operationId ?? entry.operationId;
+    const shouldRecalcAmount =
+      patch.operationId != null && patch.operationId !== entry.operationId;
+    return {
+      operationId: nextOperationId,
+      amount: shouldRecalcAmount
+        ? calcOperationTrackingAmountForLine(nextOperationId, context)
+        : (patch.amount ?? entry.amount),
+    };
+  });
+}
+
+export function recalcOperationTrackingLineAmounts(
+  entries: OperationTrackingLineEntry[],
+  context: OperationAmountContext,
+  options?: { onlyEmpty?: boolean },
+): OperationTrackingLineEntry[] {
+  return entries.map((entry) => {
+    if (options?.onlyEmpty && entry.amount.trim()) {
+      return entry;
+    }
+    return {
+      ...entry,
+      amount: calcOperationTrackingAmountForLine(entry.operationId, context),
+    };
+  });
+}
+
+export function getOperationTrackingMultiCreateErrors(
+  entries: OperationTrackingLineEntry[],
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (entries.length === 0) {
+    errors.operations = "יש לבחור לפחות פעולה אחת";
+    return errors;
+  }
+
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (!entry.operationId.trim()) {
+      errors[entry.operationId || "unknown"] = "יש לבחור פעולה";
+      continue;
+    }
+    if (seen.has(entry.operationId)) {
+      errors[entry.operationId] = "פעולה כבר נבחרה";
+      continue;
+    }
+    seen.add(entry.operationId);
+    if (!entry.amount.trim()) {
+      errors[entry.operationId] = "יש להזין כמות";
+      continue;
+    }
+    const amount = Number(entry.amount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      errors[entry.operationId] = "כמות לא תקינה";
+    }
+  }
+
+  return errors;
+}
+
+export function buildOperationTrackingCreatePayloads(
+  basePayload: Record<string, unknown>,
+  entries: OperationTrackingLineEntry[],
+  values: Record<string, string>,
+  context: OperationTrackingFormContext,
+): Record<string, unknown>[] {
+  return entries.map((entry) =>
+    enrichOperationTrackingPayload(
+      {
+        ...basePayload,
+        operation: entry.operationId,
+        amount: entry.amount === "" ? "" : Number(entry.amount),
+      },
+      { ...values, operation: entry.operationId, amount: entry.amount },
+      context.operations,
+      context.plots,
+    ),
+  );
 }
 
 function resolvePricingFromSelections(
