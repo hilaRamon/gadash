@@ -67,6 +67,12 @@ function markColumnsEditable(
   };
 }
 
+const operationPricingFormOptions = [
+  { value: "דונם", label: "דונם" },
+  { value: "שעתי", label: "שעתי" },
+  { value: "כמות יחידות", label: "כמות יחידות" },
+] as const;
+
 const operationsPreviewSchema: CollectionSchema = markColumnsEditable(
   {
   // Column layout for the operations preview table (not sent by the server).
@@ -78,16 +84,24 @@ const operationsPreviewSchema: CollectionSchema = markColumnsEditable(
       "plot",
     ]),
     {
+      key: "pricingForm",
+      label: "צורת תמחור",
+      type: "enum",
+      enumOptions: [...operationPricingFormOptions],
+      width: "8rem",
+      inlineEditable: () => false,
+    },
+    {
       key: "unitCost",
-      label: "מחיר לדונם",
+      label: "מחיר ליחידה",
       type: "number",
       sortable: true,
       format: (value) => formatNumber(value),
       width: "8rem",
     },
     {
-      key: "dunam",
-      label: "דונם",
+      key: "amount",
+      label: "כמות",
       type: "number",
       sortable: true,
       format: (value) => formatNumber(value),
@@ -96,7 +110,7 @@ const operationsPreviewSchema: CollectionSchema = markColumnsEditable(
     ...pickPreviewColumns(operationsTrackingsAllSchema, ["finalPrice"]),
   ],
   },
-  ["unitCost", "dunam"],
+  ["unitCost", "amount"],
 );
 
 const materialPreviewSchema: CollectionSchema = markColumnsEditable(
@@ -343,7 +357,7 @@ export function CreateCustomerBillingSections({
 
   const handleOperationCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
-      if (key === "unitCost" || key === "dunam") {
+      if (key === "unitCost" || key === "amount") {
         await updateOperationTracking.mutateAsync({
           id: row._id,
           body: { [key]: value },

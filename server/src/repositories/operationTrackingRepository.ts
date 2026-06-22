@@ -12,13 +12,13 @@ export type OperationTrackingInput = {
   notes?: string;
   billable: boolean;
   wasCharged?: boolean;
-  dunam?: number | null;
+  amount?: number | null;
   unitCost?: number | null;
 };
 
 const operationPopulate = {
   path: 'operation',
-  select: '_id name operationType currentCost',
+  select: '_id name operationType currentCost pricingForm',
 };
 const plotPopulate = {
   path: 'plot',

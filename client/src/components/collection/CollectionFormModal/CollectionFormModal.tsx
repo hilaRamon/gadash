@@ -283,14 +283,17 @@ export function CollectionFormModal({
         shouldUpdateNotice = true;
         nextNotice = result.notice;
       }
-      if (isOperationTrackingForm && !isAdminTrackingForm) {
+      if (isOperationTrackingForm) {
         const result = applyOperationTrackingFieldChange(key, value, prev, {
           operations,
           plots,
           editingRow,
         });
-        shouldUpdateNotice = true;
-        nextNotice = result.notice;
+        if (!isAdminTrackingForm) {
+          shouldUpdateNotice = true;
+          nextNotice = result.notice;
+        }
+        return result.next;
       }
       return next;
     });
@@ -341,8 +344,10 @@ export function CollectionFormModal({
       isMaterialUsageMultiCreate,
       isMaterialUsageForm,
       isContractorTrackingForm,
+      isOperationTrackingForm,
       isTransportTrackingForm,
       isBaleOrderForm,
+      operations,
       setFieldErrors,
       setValidationError,
       onSubmit,

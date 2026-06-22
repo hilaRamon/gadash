@@ -28,6 +28,10 @@ import {
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
+import {
+  calcFinalPrice as calcOperationFinalPrice,
+  resolveOperationAmount,
+} from "./operationTrackingPricing";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -156,15 +160,18 @@ function enrichMaterialUsageRow(row: CollectionDocument): CollectionDocument {
   return { ...row, unitPrice, finalPrice };
 }
 
-function resolveOperationTrackingDunam(
+function resolveOperationTrackingAmount(
   row: Record<string, unknown>,
+  operation: Record<string, unknown> | null | undefined,
   plot: Record<string, unknown> | null | undefined,
-): number {
-  const stored = row.dunam;
-  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
-    return Number(stored);
-  }
-  return plot ? Number(plot.dunam ?? 0) : 0;
+): number | null {
+  const pricingForm = String(operation?.pricingForm ?? "דונם");
+  return resolveOperationAmount(pricingForm, {
+    startTime: String(row.startTime ?? ""),
+    endTime: String(row.endTime ?? ""),
+    amount: row.amount as string | number | null | undefined,
+    plotDunam: plot ? Number(plot.dunam ?? 0) : null,
+  });
 }
 
 function resolveOperationTrackingUnitCost(
@@ -188,16 +195,16 @@ function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
     (item) => String(item._id) === String(row.plot ?? ""),
   );
   const unitCost = resolveOperationTrackingUnitCost(row, operation);
-  const dunam = resolveOperationTrackingDunam(row, plot);
+  const amount = resolveOperationTrackingAmount(row, operation, plot);
   if (
+    amount == null ||
     !Number.isFinite(unitCost) ||
-    !Number.isFinite(dunam) ||
     unitCost < 0 ||
-    dunam < 0
+    amount < 0
   ) {
     return 0;
   }
-  return Number((dunam * unitCost).toFixed(2));
+  return calcOperationFinalPrice(unitCost, amount);
 }
 
 function enrichOperationTrackingRow(
@@ -214,7 +221,7 @@ function enrichOperationTrackingRow(
     (item) => String(item._id) === String(row.employee ?? ""),
   );
   const unitCost = resolveOperationTrackingUnitCost(row, operation);
-  const dunam = resolveOperationTrackingDunam(row, plot);
+  const amount = resolveOperationTrackingAmount(row, operation, plot);
 
   return {
     ...row,
@@ -225,7 +232,8 @@ function enrichOperationTrackingRow(
     plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
     unitCost,
-    dunam,
+    amount,
+    pricingForm: String(operation?.pricingForm ?? "דונם"),
     finalPrice: calcOperationTrackingFinalPrice(row),
   };
 }
@@ -499,19 +507,30 @@ async function createMock(
       doc.unitCost = operation ? Number(operation.currentCost ?? 0) : null;
     }
     const plotId = doc.plot;
+    let plot: (typeof plotsSeedData)[number] | undefined;
     if (plotId != null && plotId !== "") {
-      const plot = plotsSeedData.find(
-        (p) => String(p._id) === String(plotId),
-      );
+      plot = plotsSeedData.find((p) => String(p._id) === String(plotId));
       doc.customer = plot?.customer ?? "";
       doc.customerName = String(plot?.customerName ?? "");
-      if (doc.dunam == null || doc.dunam === "") {
-        doc.dunam = plot ? Number(plot.dunam ?? 0) : null;
-      }
     } else {
       doc.plot = null;
       doc.customer = null;
       doc.customerName = "";
+    }
+    if (
+      !Object.prototype.hasOwnProperty.call(body, "amount") &&
+      (doc.amount == null || doc.amount === "")
+    ) {
+      const pricingForm = String(operation?.pricingForm ?? "דונם");
+      const resolved = resolveOperationAmount(pricingForm, {
+        startTime: String(doc.startTime ?? ""),
+        endTime: String(doc.endTime ?? ""),
+        amount: null,
+        plotDunam: plot ? Number(plot.dunam ?? 0) : null,
+      });
+      if (resolved != null) {
+        doc.amount = resolved;
+      }
     }
     return enrichOperationTrackingRow(doc);
   }
@@ -598,35 +617,24 @@ async function updateMock(
     const plotChanged =
       body.plot !== undefined &&
       String(body.plot ?? "") !== String(previousRow.plot ?? "");
+    const timesChanged = body.startTime != null || body.endTime != null;
+    const amountExplicitlySent = Object.prototype.hasOwnProperty.call(body, "amount");
 
-    if (operationChanged) {
-      const operation = operationsSeedData.find(
-        (item) => String(item._id) === String(row.operation ?? ""),
-      );
-      if (operation) {
-        row.unitCost = Number(operation.currentCost ?? 0);
-      }
-    }
+    const operation = operationsSeedData.find(
+      (item) => String(item._id) === String(row.operation ?? ""),
+    );
 
-    if (plotChanged) {
-      const plotId = row.plot;
-      if (plotId != null && plotId !== "") {
-        const plot = plotsSeedData.find(
-          (p) => String(p._id) === String(plotId),
-        );
-        if (plot) {
-          row.dunam = Number(plot.dunam ?? 0);
-        }
-      } else {
-        row.dunam = null;
-      }
+    if (operationChanged && operation) {
+      row.unitCost = Number(operation.currentCost ?? 0);
     }
 
     const plotId = row.plot;
+    const plot =
+      plotId != null && plotId !== ""
+        ? plotsSeedData.find((p) => String(p._id) === String(plotId))
+        : undefined;
+
     if (plotId != null && plotId !== "") {
-      const plot = plotsSeedData.find(
-        (p) => String(p._id) === String(plotId),
-      );
       row.customer = plot?.customer ?? "";
       row.customerName = String(plot?.customerName ?? "");
     } else {
@@ -634,6 +642,18 @@ async function updateMock(
       row.customer = null;
       row.customerName = "";
     }
+
+    if (!amountExplicitlySent && (operationChanged || plotChanged || timesChanged)) {
+      const pricingForm = String(operation?.pricingForm ?? "דונם");
+      const resolved = resolveOperationAmount(pricingForm, {
+        startTime: String(row.startTime ?? ""),
+        endTime: String(row.endTime ?? ""),
+        amount: null,
+        plotDunam: plot ? Number(plot.dunam ?? 0) : null,
+      });
+      row.amount = resolved;
+    }
+
     return enrichOperationTrackingRow(row);
   }
   if (collection === "fuelOperationsTrackings") {

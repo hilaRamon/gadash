@@ -60,6 +60,7 @@ function buildOperationsTrackingForm(
       },
       { key: "startTime", label: "שעת התחלה", type: "time", required: true },
       { key: "endTime", label: "שעת סיום", type: "time", required: true },
+      { key: "amount", label: "כמות", type: "number" },
       {
         key: "billable",
         label: "לחיוב",
@@ -135,6 +136,15 @@ const baseColumns: CollectionSchema["columns"] = [
     type: "text",
     searchable: true,
     width: "6.5rem",
+  },
+  {
+    key: "amount",
+    label: "כמות",
+    type: "number",
+    sortable: true,
+    format: (value) => formatNumber(value),
+    width: "7rem",
+    inlineEditable: (row) => String(row.operationType ?? "") !== "מנהלה",
   },
   {
     key: "finalPrice",

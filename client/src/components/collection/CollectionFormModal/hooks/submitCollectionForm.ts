@@ -20,6 +20,10 @@ import {
   type MaterialUsageLineEntry,
 } from "../materialUsageTrackingForm";
 import {
+  enrichOperationTrackingPayload,
+  getOperationTrackingRequiredErrors,
+} from "../operationTrackingForm";
+import {
   enrichTransportTrackingPayload,
   getTransportTrackingRequiredErrors,
 } from "../transportTrackingForm";
@@ -36,8 +40,10 @@ export type SubmitCollectionFormOptions = {
   isMaterialUsageMultiCreate: boolean;
   isMaterialUsageForm: boolean;
   isContractorTrackingForm: boolean;
+  isOperationTrackingForm: boolean;
   isTransportTrackingForm: boolean;
   isBaleOrderForm: boolean;
+  operations: CollectionDocument[];
   setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>;
   setValidationError: Dispatch<SetStateAction<string | null>>;
   onSubmit: (values: Record<string, unknown> | Record<string, unknown>[]) => void;
@@ -55,8 +61,10 @@ export function submitCollectionForm({
   isMaterialUsageMultiCreate,
   isMaterialUsageForm,
   isContractorTrackingForm,
+  isOperationTrackingForm,
   isTransportTrackingForm,
   isBaleOrderForm,
+  operations,
   setFieldErrors,
   setValidationError,
   onSubmit,
@@ -82,6 +90,8 @@ export function submitCollectionForm({
   );
   const requiredFieldErrors = isContractorTrackingForm
     ? getContractorTrackingRequiredErrors(fieldsForValidation, values)
+    : isOperationTrackingForm
+      ? getOperationTrackingRequiredErrors(fieldsForValidation, values, operations)
     : isTransportTrackingForm
       ? getTransportTrackingRequiredErrors(fieldsForValidation, values)
       : isBaleOrderForm
@@ -111,11 +121,20 @@ export function submitCollectionForm({
 
   setValidationError(null);
   if (isAdminTrackingForm) {
-    onSubmit({ ...payload, billable: false, plot: null });
+    const enriched = isOperationTrackingForm
+      ? enrichOperationTrackingPayload(payload, values, operations, plots)
+      : payload;
+    onSubmit({ ...enriched, billable: false, plot: null });
     return;
   }
   if (isContractorTrackingForm) {
     onSubmit(enrichContractorTrackingPayload(payload, values));
+    return;
+  }
+  if (isOperationTrackingForm) {
+    onSubmit(
+      enrichOperationTrackingPayload(payload, values, operations, plots),
+    );
     return;
   }
   if (isTransportTrackingForm) {

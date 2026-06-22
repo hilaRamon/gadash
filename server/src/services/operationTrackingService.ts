@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { EmployeeModel } from '../models/Employee';
 import { OperationModel } from '../models/Operation';
+import type { PricingForm } from '../models/Operation';
 import { PlotModel } from '../models/Plot';
 import {
   operationTrackingRepository,
@@ -12,6 +13,11 @@ import {
   operationTrackingToApiDocument,
   operationTrackingToApiDocuments,
 } from '../utils/operationTrackingApiMapper';
+import {
+  OPERATION_PRICING_BY_DUNAM,
+  requireOperationAmount,
+  resolveOperationAmount,
+} from '../utils/operationTrackingPricing';
 import { monthlyReportService } from './monthlyReportService';
 
 function parseAdminOverride(body: Record<string, unknown>): boolean {
@@ -72,10 +78,10 @@ function parseWasCharged(value: unknown): boolean {
   throw new Error('חויב לא תקין');
 }
 
-function parseDunam(value: unknown): number {
+function parseAmount(value: unknown): number {
   const num = Number(value);
   if (!Number.isFinite(num) || num < 0) {
-    throw new Error('דונם לא תקין');
+    throw new Error('כמות לא תקינה');
   }
   return num;
 }
@@ -83,7 +89,7 @@ function parseDunam(value: unknown): number {
 function parseUnitCost(value: unknown): number {
   const num = Number(value);
   if (!Number.isFinite(num) || num < 0) {
-    throw new Error('מחיר לדונם לא תקין');
+    throw new Error('מחיר ליחידה לא תקין');
   }
   return num;
 }
@@ -95,12 +101,20 @@ async function resolvePlotDunam(plotId: Types.ObjectId | null): Promise<number |
   return Number(plot.dunam ?? 0);
 }
 
-async function resolveOperationUnitCost(
-  operationId: Types.ObjectId,
-): Promise<number | null> {
-  const operation = await OperationModel.findById(operationId).select('currentCost').lean();
-  if (!operation) return null;
-  return Number(operation.currentCost ?? 0);
+async function resolveOperationDetails(operationId: Types.ObjectId): Promise<{
+  currentCost: number;
+  pricingForm: PricingForm;
+}> {
+  const operation = await OperationModel.findById(operationId)
+    .select('currentCost pricingForm')
+    .lean();
+  if (!operation) {
+    throw new Error('פעולה לא נמצאה');
+  }
+  return {
+    currentCost: Number(operation.currentCost ?? 0),
+    pricingForm: (operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM) as PricingForm,
+  };
 }
 
 async function resolveOperationObjectId(operationId: unknown): Promise<Types.ObjectId> {
@@ -187,9 +201,9 @@ async function buildTrackingPatch(
   if (mustHave('wasCharged')) {
     patch.wasCharged = parseWasCharged(body.wasCharged);
   }
-  if (Object.prototype.hasOwnProperty.call(body, 'dunam')) {
-    patch.dunam =
-      body.dunam == null || body.dunam === '' ? null : parseDunam(body.dunam);
+  if (Object.prototype.hasOwnProperty.call(body, 'amount')) {
+    patch.amount =
+      body.amount == null || body.amount === '' ? null : parseAmount(body.amount);
   }
   if (Object.prototype.hasOwnProperty.call(body, 'unitCost')) {
     patch.unitCost =
@@ -205,6 +219,35 @@ async function buildTrackingPatch(
   }
 
   return patch;
+}
+
+async function resolveAmountForSave(options: {
+  pricingForm: PricingForm;
+  explicitAmount: number | null | undefined;
+  startTime: string;
+  endTime: string;
+  plotId: Types.ObjectId | null;
+}): Promise<number | null> {
+  if (options.explicitAmount !== undefined) {
+    if (options.explicitAmount != null) {
+      return options.explicitAmount;
+    }
+    const plotDunam = await resolvePlotDunam(options.plotId);
+    return resolveOperationAmount(options.pricingForm, {
+      startTime: options.startTime,
+      endTime: options.endTime,
+      amount: null,
+      plotDunam,
+    });
+  }
+
+  const plotDunam = await resolvePlotDunam(options.plotId);
+  return requireOperationAmount(options.pricingForm, {
+    startTime: options.startTime,
+    endTime: options.endTime,
+    amount: null,
+    plotDunam,
+  });
 }
 
 export const operationTrackingService = {
@@ -234,6 +277,17 @@ export const operationTrackingService = {
       adminOverride,
     );
 
+    const operationDetails = await resolveOperationDetails(patch.operation);
+    const amount = await resolveAmountForSave({
+      pricingForm: operationDetails.pricingForm,
+      explicitAmount: Object.prototype.hasOwnProperty.call(body, 'amount')
+        ? patch.amount
+        : undefined,
+      startTime: patch.startTime,
+      endTime: patch.endTime,
+      plotId: patch.plot ?? null,
+    });
+
     const input: OperationTrackingInput = {
       date: patch.date,
       operation: patch.operation,
@@ -244,14 +298,9 @@ export const operationTrackingService = {
       notes: patch.notes ?? '',
       billable: patch.billable ?? true,
       wasCharged: patch.wasCharged ?? false,
-      dunam:
-        patch.dunam !== undefined
-          ? patch.dunam
-          : await resolvePlotDunam(patch.plot ?? null),
+      amount,
       unitCost:
-        patch.unitCost !== undefined
-          ? patch.unitCost
-          : await resolveOperationUnitCost(patch.operation),
+        patch.unitCost !== undefined ? patch.unitCost : operationDetails.currentCost,
     };
 
     const created = await operationTrackingRepository.create(input);
@@ -309,19 +358,30 @@ export const operationTrackingService = {
     const plotChanged =
       patch.plot !== undefined &&
       String(patch.plot ?? '') !== String(existingPlotId ?? '');
+    const timesChanged = patch.startTime != null || patch.endTime != null;
+    const amountExplicitlySent = Object.prototype.hasOwnProperty.call(body, 'amount');
+
+    const nextOperationId = patch.operation ?? existingOperationId;
+    const nextPlotId = patch.plot !== undefined ? patch.plot : existingPlotId;
+    const nextStartTime = patch.startTime ?? String(existing.startTime ?? '');
+    const nextEndTime = patch.endTime ?? String(existing.endTime ?? '');
 
     if (operationChanged) {
-      const unitCost = await resolveOperationUnitCost(patch.operation!);
-      if (unitCost != null) {
-        patch.unitCost = unitCost;
-      }
+      const operationDetails = await resolveOperationDetails(patch.operation!);
+      patch.unitCost = operationDetails.currentCost;
     }
 
-    if (plotChanged) {
-      const dunam = await resolvePlotDunam(patch.plot ?? null);
-      if (dunam != null) {
-        patch.dunam = dunam;
-      }
+    if (amountExplicitlySent) {
+      patch.amount = patch.amount ?? null;
+    } else if (operationChanged || plotChanged || timesChanged) {
+      const operationDetails = await resolveOperationDetails(nextOperationId);
+      patch.amount = await resolveAmountForSave({
+        pricingForm: operationDetails.pricingForm,
+        explicitAmount: undefined,
+        startTime: nextStartTime,
+        endTime: nextEndTime,
+        plotId: nextPlotId,
+      });
     }
 
     const updated = await operationTrackingRepository.update(id, patch);

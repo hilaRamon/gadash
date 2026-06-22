@@ -1,5 +1,9 @@
 import type { ApiDocument } from '../types/apiDocument';
 import { toApiDocument } from './toApiDocument';
+import {
+  calcFinalPrice,
+  resolveOperationAmount,
+} from './operationTrackingPricing';
 
 type PopulatedRef = {
   _id?: unknown;
@@ -14,6 +18,7 @@ type PopulatedPlotRef = PopulatedRef & {
 type PopulatedOperationRef = PopulatedRef & {
   operationType?: unknown;
   currentCost?: unknown;
+  pricingForm?: unknown;
 };
 
 function toRefParts(value: unknown): { id: string; name: string } {
@@ -30,20 +35,6 @@ function toRefParts(value: unknown): { id: string; name: string } {
   };
 }
 
-function resolveTrackingDunam(
-  doc: Record<string, unknown>,
-  plotRaw: PopulatedPlotRef | undefined,
-): number {
-  const stored = doc.dunam;
-  if (stored != null && stored !== '' && Number.isFinite(Number(stored))) {
-    return Number(stored);
-  }
-  if (plotRaw && typeof plotRaw === 'object') {
-    return Number(plotRaw.dunam ?? 0);
-  }
-  return 0;
-}
-
 function resolveTrackingUnitCost(
   doc: Record<string, unknown>,
   operationRaw: PopulatedOperationRef | undefined,
@@ -58,22 +49,48 @@ function resolveTrackingUnitCost(
   return 0;
 }
 
-function calcFinalPrice(doc: Record<string, unknown>): number {
+function resolvePlotDunam(plotRaw: PopulatedPlotRef | undefined): number | null {
+  if (!plotRaw || typeof plotRaw !== 'object') return null;
+  const dunam = Number(plotRaw.dunam ?? 0);
+  return Number.isFinite(dunam) ? dunam : null;
+}
+
+function resolveTrackingAmount(
+  doc: Record<string, unknown>,
+  operationRaw: PopulatedOperationRef | undefined,
+  plotRaw: PopulatedPlotRef | undefined,
+): number | null {
+  const pricingForm =
+    operationRaw && typeof operationRaw === 'object'
+      ? String(operationRaw.pricingForm ?? 'דונם')
+      : 'דונם';
+
+  return resolveOperationAmount(pricingForm, {
+    startTime: String(doc.startTime ?? ''),
+    endTime: String(doc.endTime ?? ''),
+    amount:
+      doc.amount == null || doc.amount === ''
+        ? null
+        : Number(doc.amount),
+    plotDunam: resolvePlotDunam(plotRaw),
+  });
+}
+
+function calcOperationFinalPrice(
+  doc: Record<string, unknown>,
+  operationRaw: PopulatedOperationRef | undefined,
+  plotRaw: PopulatedPlotRef | undefined,
+): number {
   if (doc.billable === false) return 0;
+  if (!operationRaw || typeof operationRaw !== 'object') return 0;
 
-  const operation = doc.operation as PopulatedOperationRef | undefined;
-  const plot = doc.plot as PopulatedPlotRef | undefined;
-  if (!operation || typeof operation !== 'object' || !plot || typeof plot !== 'object') {
+  const unitCost = resolveTrackingUnitCost(doc, operationRaw);
+  const amount = resolveTrackingAmount(doc, operationRaw, plotRaw);
+  if (amount == null || !Number.isFinite(unitCost) || unitCost < 0 || amount < 0) {
     return 0;
   }
 
-  const unitCost = resolveTrackingUnitCost(doc, operation);
-  const dunam = resolveTrackingDunam(doc, plot);
-  if (!Number.isFinite(unitCost) || !Number.isFinite(dunam) || unitCost < 0 || dunam < 0) {
-    return 0;
-  }
-
-  return Number((dunam * unitCost).toFixed(2));
+  return calcFinalPrice(unitCost, amount);
 }
 
 export function operationTrackingToApiDocument(doc: Record<string, unknown>): ApiDocument {
@@ -93,7 +110,7 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
   const employee = toRefParts(doc.employee);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
   const unitCost = resolveTrackingUnitCost(doc, operationRaw);
-  const dunam = resolveTrackingDunam(doc, plotRaw);
+  const amount = resolveTrackingAmount(doc, operationRaw, plotRaw);
 
   return {
     ...base,
@@ -110,8 +127,12 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
     employee: employee.id,
     employeeName: employee.name,
     unitCost,
-    dunam,
-    finalPrice: calcFinalPrice(doc),
+    amount,
+    pricingForm:
+      operationRaw && typeof operationRaw === 'object'
+        ? String(operationRaw.pricingForm ?? 'דונם')
+        : 'דונם',
+    finalPrice: calcOperationFinalPrice(doc, operationRaw, plotRaw),
   };
 }
 
