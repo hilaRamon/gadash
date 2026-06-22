@@ -28,7 +28,7 @@ import {
 
 const operationPopulate = {
   path: 'operation',
-  select: '_id name operationType currentCost',
+  select: '_id name operationType currentCost pricingForm',
 };
 const plotPopulate = {
   path: 'plot',

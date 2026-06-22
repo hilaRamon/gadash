@@ -18,7 +18,11 @@ import {
   type MaterialUsageLineEntry,
 } from "./materialUsageTrackingForm";
 import { MaterialUsageMultiCreateFields } from "./MaterialUsageMultiCreateFields";
-import { applyOperationTrackingFieldChange } from "./operationTrackingForm";
+import { OperationTrackingMultiCreateFields } from "./OperationTrackingMultiCreateFields";
+import {
+  applyOperationTrackingFieldChange,
+  type OperationTrackingLineEntry,
+} from "./operationTrackingForm";
 import {
   applyTransportTrackingFieldChange,
 } from "./transportTrackingForm";
@@ -28,6 +32,7 @@ import {
   useCollectionFormUpdateEffects,
   submitCollectionForm,
   useMaterialUsageMultiCreateHandlers,
+  useOperationTrackingMultiCreateHandlers,
 } from "./hooks";
 type CollectionFormModalProps = {
   open: boolean;
@@ -164,7 +169,11 @@ export function CollectionFormModal({
   const [materialUsageEntries, setMaterialUsageEntries] = useState<
     MaterialUsageLineEntry[]
   >([]);
+  const [operationTrackingEntries, setOperationTrackingEntries] = useState<
+    OperationTrackingLineEntry[]
+  >([]);
   const materialUsagePlotRef = useRef("");
+  const operationTrackingContextRef = useRef("");
 
   const isBaleOrderForm = schema.collection === "baleOrderTrackings";
   const isContractorTrackingForm = schema.collection === "contractorTrackings";
@@ -195,6 +204,11 @@ export function CollectionFormModal({
   const isAdminTrackingForm =
     isAdminTrackingPage ||
     (schema.collection === "operationsTrackings" && isManahelaOperation);
+  const isOperationTrackingMultiCreate =
+    isOperationTrackingForm && !editingRow && !isAdminTrackingForm;
+  const operationFormField = schema.form.fields.find(
+    (field) => field.key === "operation" && field.referenceCollection === "operations",
+  );
 
   const adminFormKeysToHide = new Set(["operation", "plot", "billable"]);
   const visibleFields = (() => {
@@ -211,6 +225,9 @@ export function CollectionFormModal({
     }
     if (isMaterialUsageMultiCreate) {
       return base.filter((field) => field.key !== "material" && field.key !== "amount");
+    }
+    if (isOperationTrackingMultiCreate) {
+      return base.filter((field) => field.key !== "operation" && field.key !== "amount");
     }
     return base;
   })();
@@ -230,17 +247,23 @@ export function CollectionFormModal({
     setFieldErrors,
     setAmountRecalcNotice,
     setMaterialUsageEntries,
+    setOperationTrackingEntries,
   });
 
   useCollectionFormUpdateEffects({
     open,
     isMaterialUsageMultiCreate,
+    isOperationTrackingMultiCreate,
     values,
     materialUsageEntries,
+    operationTrackingEntries,
     materials,
+    operations,
     plots,
     materialUsagePlotRef,
+    operationTrackingContextRef,
     setMaterialUsageEntries,
+    setOperationTrackingEntries,
   });
 
   const materialUsageHandlers = useMaterialUsageMultiCreateHandlers({
@@ -248,6 +271,16 @@ export function CollectionFormModal({
     materials,
     plots,
     setMaterialUsageEntries,
+    setFieldErrors,
+  });
+
+  const operationTrackingHandlers = useOperationTrackingMultiCreateHandlers({
+    plotId: values.plot ?? "",
+    startTime: values.startTime ?? "",
+    endTime: values.endTime ?? "",
+    operations,
+    plots,
+    setOperationTrackingEntries,
     setFieldErrors,
   });
 
@@ -283,14 +316,17 @@ export function CollectionFormModal({
         shouldUpdateNotice = true;
         nextNotice = result.notice;
       }
-      if (isOperationTrackingForm && !isAdminTrackingForm) {
+      if (isOperationTrackingForm && !isOperationTrackingMultiCreate) {
         const result = applyOperationTrackingFieldChange(key, value, prev, {
           operations,
           plots,
           editingRow,
         });
-        shouldUpdateNotice = true;
-        nextNotice = result.notice;
+        if (!isAdminTrackingForm) {
+          shouldUpdateNotice = true;
+          nextNotice = result.notice;
+        }
+        return result.next;
       }
       return next;
     });
@@ -334,15 +370,19 @@ export function CollectionFormModal({
       values,
       visibleFields,
       materialUsageEntries,
+      operationTrackingEntries,
       materials,
       plots,
       editingRow,
       isAdminTrackingForm,
       isMaterialUsageMultiCreate,
+      isOperationTrackingMultiCreate,
       isMaterialUsageForm,
       isContractorTrackingForm,
+      isOperationTrackingForm,
       isTransportTrackingForm,
       isBaleOrderForm,
+      operations,
       setFieldErrors,
       setValidationError,
       onSubmit,
@@ -355,7 +395,7 @@ export function CollectionFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        $wide={isMaterialUsageMultiCreate}
+        $wide={isMaterialUsageMultiCreate || isOperationTrackingMultiCreate}
         onClick={(e) => e.stopPropagation()}
       >
         <ModalTitle id="modal-title">{title}</ModalTitle>
@@ -393,6 +433,17 @@ export function CollectionFormModal({
                   plotId={values.plot ?? ""}
                   onToggleMaterial={materialUsageHandlers.onToggleMaterial}
                   onUpdateLine={materialUsageHandlers.onUpdateLine}
+                />
+              )}
+
+              {isOperationTrackingMultiCreate && field.key === "endTime" && (
+                <OperationTrackingMultiCreateFields
+                  operations={operations}
+                  entries={operationTrackingEntries}
+                  fieldErrors={fieldErrors}
+                  operationFilter={operationFormField?.referenceFilter}
+                  onToggleOperation={operationTrackingHandlers.onToggleOperation}
+                  onUpdateLine={operationTrackingHandlers.onUpdateLine}
                 />
               )}
             </div>

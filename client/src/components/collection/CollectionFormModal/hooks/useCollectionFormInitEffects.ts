@@ -12,6 +12,7 @@ import {
   calcHoursBetween,
 } from "../../../../lib/transportTrackingPricing";
 import type { MaterialUsageLineEntry } from "../materialUsageTrackingForm";
+import type { OperationTrackingLineEntry } from "../operationTrackingForm";
 
 type UseCollectionFormInitEffectsOptions = {
   open: boolean;
@@ -28,6 +29,9 @@ type UseCollectionFormInitEffectsOptions = {
   setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>;
   setAmountRecalcNotice: Dispatch<SetStateAction<string | null>>;
   setMaterialUsageEntries: Dispatch<SetStateAction<MaterialUsageLineEntry[]>>;
+  setOperationTrackingEntries: Dispatch<
+    SetStateAction<OperationTrackingLineEntry[]>
+  >;
 };
 
 export function useCollectionFormInitEffects({
@@ -45,6 +49,7 @@ export function useCollectionFormInitEffects({
   setFieldErrors,
   setAmountRecalcNotice,
   setMaterialUsageEntries,
+  setOperationTrackingEntries,
 }: UseCollectionFormInitEffectsOptions) {
   useEffect(() => {
     if (open) {
@@ -57,6 +62,7 @@ export function useCollectionFormInitEffects({
       setFieldErrors({});
       setAmountRecalcNotice(null);
       setMaterialUsageEntries([]);
+      setOperationTrackingEntries([]);
       materialUsagePlotRef.current = "";
     }
   }, [
@@ -70,6 +76,7 @@ export function useCollectionFormInitEffects({
     setFieldErrors,
     setAmountRecalcNotice,
     setMaterialUsageEntries,
+    setOperationTrackingEntries,
   ]);
 
   useEffect(() => {

@@ -4,6 +4,7 @@ export type CustomerBillLine = {
   date: string;
   description: string;
   plotName?: string;
+  pricingForm?: string;
   amount?: string;
   unitPrice?: string;
   transportPrice?: string;

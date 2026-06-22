@@ -41,10 +41,19 @@ function compareByDate(a: CustomerBillLine, b: CustomerBillLine): number {
 }
 
 function operationLine(row: ApiDocument): CustomerBillLine {
+  const amountValue = Number(row.amount ?? 0);
+  const unitCost = Number(row.unitCost ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
     plotName: String(row.plotName ?? ""),
+    pricingForm: String(row.pricingForm ?? ''),
+    amount:
+      Number.isFinite(amountValue) && amountValue !== 0
+        ? formatNumber(amountValue)
+        : '',
+    unitPrice:
+      Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : '',
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };

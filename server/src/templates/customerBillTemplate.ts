@@ -19,6 +19,8 @@ function renderOperationsRow(
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>${plotCell}
+      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>
+      <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
 }
@@ -55,7 +57,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
         : renderQuantityWithUnitPriceRow(line, showTransport),
     )
     .join('');
-  const colspan = isOperations ? (showPlots ? 3 : 2) : showTransport ? 5 : 4;
+  const colspan = isOperations ? (showPlots ? 5 : 4) : showTransport ? 5 : 4;
 
   const plotHeader = showPlots
     ? `
@@ -70,6 +72,8 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>${plotHeader}
+            <th>מחיר לדונם/יחידה</th>
+            <th>כמות</th>
             <th>מחיר</th>
           </tr>`
     : showTransport
@@ -172,19 +176,27 @@ const billStyles = `
       color: #4a5568;
     }
     .bill-section-operations th:nth-child(1),
-    .bill-section-operations td:nth-child(1) { width: 16%; }
+    .bill-section-operations td:nth-child(1) { width: 12%; }
     .bill-section-operations th:nth-child(2),
-    .bill-section-operations td:nth-child(2) { width: 38%; }
+    .bill-section-operations td:nth-child(2) { width: 24%; }
     .bill-section-operations th:nth-child(3),
-    .bill-section-operations td:nth-child(3) { width: 24%; }
+    .bill-section-operations td:nth-child(3) { width: 18%; }
     .bill-section-operations th:nth-child(4),
-    .bill-section-operations td:nth-child(4) { width: 22%; }
+    .bill-section-operations td:nth-child(4) { width: 16%; }
+    .bill-section-operations th:nth-child(5),
+    .bill-section-operations td:nth-child(5) { width: 12%; }
+    .bill-section-operations th:nth-child(6),
+    .bill-section-operations td:nth-child(6) { width: 18%; }
     .bill-section-operations-no-plot th:nth-child(1),
-    .bill-section-operations-no-plot td:nth-child(1) { width: 16%; }
+    .bill-section-operations-no-plot td:nth-child(1) { width: 14%; }
     .bill-section-operations-no-plot th:nth-child(2),
-    .bill-section-operations-no-plot td:nth-child(2) { width: 62%; }
+    .bill-section-operations-no-plot td:nth-child(2) { width: 36%; }
     .bill-section-operations-no-plot th:nth-child(3),
-    .bill-section-operations-no-plot td:nth-child(3) { width: 22%; }
+    .bill-section-operations-no-plot td:nth-child(3) { width: 18%; }
+    .bill-section-operations-no-plot th:nth-child(4),
+    .bill-section-operations-no-plot td:nth-child(4) { width: 14%; }
+    .bill-section-operations-no-plot th:nth-child(5),
+    .bill-section-operations-no-plot td:nth-child(5) { width: 18%; }
     .bill-section-quantity th:nth-child(1),
     .bill-section-quantity td:nth-child(1) { width: 14%; }
     .bill-section-quantity th:nth-child(2),
