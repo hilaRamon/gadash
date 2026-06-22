@@ -19,6 +19,8 @@ import { baleOrderTrackingRouter } from "./baleOrderTrackingRouter";
 import { contractorTrackingRouter } from "./contractorTrackingRouter";
 import { transportTrackingRouter } from "./transportTrackingRouter";
 import { transportChargeStateRouter } from "./transportChargeStateRouter";
+import { customerBillingTrackingRouter } from "./customerBillingTrackingRouter";
+import { monthlyReportRouter } from "./monthlyReportRouter";
 
 export const apiRouter = Router();
 
@@ -50,3 +52,7 @@ apiRouter.use("/transportTrackings", transportTrackingRouter);
 apiRouter.use("/transport-trackings", transportTrackingRouter);
 apiRouter.use("/transportChargeState", transportChargeStateRouter);
 apiRouter.use("/transport-charge-state", transportChargeStateRouter);
+apiRouter.use("/customerBillingTrackings", customerBillingTrackingRouter);
+apiRouter.use("/customer-billing-trackings", customerBillingTrackingRouter);
+apiRouter.use("/monthly-report", monthlyReportRouter);
+apiRouter.use("/monthly-reports", monthlyReportRouter);

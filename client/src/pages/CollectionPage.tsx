@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { getCollectionSchema } from '../schema/registry'
 import type { CollectionSchema } from '../schema/types'
@@ -18,6 +19,9 @@ import { DataTable } from '../components/collection/DataTable'
 import { CollectionFormModal } from '../components/collection/CollectionFormModal'
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
 import { TransportTrackingPageExtras } from '../components/transport/TransportTrackingPageExtras'
+import { CustomerBillingViewModal } from '../components/customerBilling/CustomerBillingViewModal'
+import { isChargedTracking } from '../lib/chargedTracking'
+import { CHARGED_TRACKING_EDIT_ERROR } from '../lib/chargedTrackingErrors'
 import type { CollectionDocument } from '../schema/types'
 import './Page.css'
 
@@ -29,6 +33,15 @@ type DeleteTarget =
   | { type: 'single'; row: CollectionDocument }
   | { type: 'bulk'; ids: string[] }
   | null
+
+function getMutationErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const response = (err as { response?: { data?: { error?: string } } }).response
+    if (response?.data?.error) return response.data.error
+  }
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
 
 function matchesOperationTrackingPageFilter(
   collectionId: string,
@@ -75,11 +88,15 @@ function CollectionPageContent({
   schema: CollectionSchema
   collectionId: string
 }) {
+  const navigate = useNavigate()
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingRow, setEditingRow] = useState<CollectionDocument | null>(null)
+  const [viewingBillingRow, setViewingBillingRow] =
+    useState<CollectionDocument | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const { data: rows = [], isLoading, isError, error } = useCollectionList(
@@ -120,11 +137,22 @@ function CollectionPageContent({
   }, [])
 
   const handleFormSubmit = useCallback(
-    async (values: Record<string, unknown>) => {
+    async (values: Record<string, unknown> | Record<string, unknown>[]) => {
       setFormError(null)
+      if (editingRow && isChargedTracking(editingRow)) {
+        setFormError(CHARGED_TRACKING_EDIT_ERROR)
+        return
+      }
       try {
         if (editingRow) {
-          await updateMutation.mutateAsync({ id: editingRow._id, body: values })
+          await updateMutation.mutateAsync({
+            id: editingRow._id,
+            body: values as Record<string, unknown>,
+          })
+        } else if (Array.isArray(values)) {
+          for (const payload of values) {
+            await createMutation.mutateAsync(payload)
+          }
         } else {
           await createMutation.mutateAsync(values)
         }
@@ -138,6 +166,7 @@ function CollectionPageContent({
 
   const handleCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
+      if (isChargedTracking(row)) return
       await updateMutation.mutateAsync({
         id: row._id,
         body: { [key]: value },
@@ -152,6 +181,7 @@ function CollectionPageContent({
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return
+    setDeleteError(null)
     try {
       if (deleteTarget.type === 'single') {
         await deleteMutation.mutateAsync(deleteTarget.row._id)
@@ -160,17 +190,51 @@ function CollectionPageContent({
         tableQuery.resetSelection()
       }
       setDeleteTarget(null)
-    } catch {
-      // keep dialog open on error
+    } catch (err) {
+      setDeleteError(getMutationErrorMessage(err, 'שגיאה במחיקה'))
     }
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery])
 
   const isTransportTrackingPage = collectionId === 'transport-trackings'
+  const isCustomerBillingPage = collectionId === 'customer-billing-trackings'
+  const canEditChargedTrackingRow = useCallback(
+    (row: CollectionDocument) => !isChargedTracking(row),
+    [],
+  )
+  const canDeleteBillingRow = useCallback(
+    (row: CollectionDocument) => row.paid !== true,
+    [],
+  )
+  const rowAction = schema.rowAction ?? 'edit'
+  const handleAdd = isCustomerBillingPage
+    ? () => navigate('/trackings/customer-billing/new')
+    : openCreate
+  const openViewBilling = useCallback((row: CollectionDocument) => {
+    setViewingBillingRow(row)
+  }, [])
+
+  const closeViewBilling = useCallback(() => {
+    setViewingBillingRow(null)
+  }, [])
+
+  const handleRowAction =
+    isCustomerBillingPage && schema.rowAction === 'view'
+      ? openViewBilling
+      : schema.rowAction === 'view'
+        ? () => {}
+        : openEdit
   const isFormPending = createMutation.isPending || updateMutation.isPending
   const isDeletePending = deleteMutation.isPending || bulkDeleteMutation.isPending
 
   const deleteDialog = useMemo(() => {
     if (!deleteTarget) return null
+
+    const billingNote = isCustomerBillingPage ? (
+      <>
+        <br />
+        פריטי המעקב יוחזרו לחיוב מחדש.
+      </>
+    ) : null
 
     if (deleteTarget.type === 'single') {
       const name = getDocumentLabel(schema, deleteTarget.row)
@@ -181,6 +245,7 @@ function CollectionPageContent({
             האם למחוק את <strong>{name}</strong> מתוך {schema.label}?
             <br />
             לא ניתן לשחזר.
+            {billingNote}
           </>
         ),
       }
@@ -201,10 +266,11 @@ function CollectionPageContent({
             ))}
           </DeleteDialogList>
           לא ניתן לשחזר.
+          {billingNote}
         </>
       ),
     }
-  }, [deleteTarget, rows, schema])
+  }, [deleteTarget, isCustomerBillingPage, rows, schema])
 
   return (
     <div className="page page-collection">
@@ -216,18 +282,19 @@ function CollectionPageContent({
           queryState={tableQuery.state}
           selectedCount={tableQuery.state.selectedIds.length}
           isDeleting={bulkDeleteMutation.isPending}
-          onAdd={openCreate}
+          onAdd={handleAdd}
           onGlobalSearchChange={tableQuery.setGlobalSearch}
           onSortChange={(field, direction) => {
             if (!field) tableQuery.setSort('', direction)
             else tableQuery.setSort(field, direction)
           }}
-          onBulkDelete={() =>
+          onBulkDelete={() => {
+            setDeleteError(null)
             setDeleteTarget({
               type: 'bulk',
               ids: tableQuery.state.selectedIds,
             })
-          }
+          }}
           exportDisabled={isLoading || isError}
           onExportExcel={handleExportExcel}
           />
@@ -249,8 +316,16 @@ function CollectionPageContent({
           onCellChange={handleCellChange}
           onToggleSelect={tableQuery.toggleSelected}
           onToggleSelectAll={tableQuery.toggleSelectAll}
-          onEdit={openEdit}
-          onDelete={(row) => setDeleteTarget({ type: 'single', row })}
+          onEdit={handleRowAction}
+          rowAction={rowAction}
+          canEditRow={canEditChargedTrackingRow}
+          canDeleteRow={
+            isCustomerBillingPage ? canDeleteBillingRow : undefined
+          }
+          onDelete={(row) => {
+            setDeleteError(null)
+            setDeleteTarget({ type: 'single', row })
+          }}
         />
       </section>
 
@@ -270,9 +345,21 @@ function CollectionPageContent({
         message={deleteDialog?.message ?? ''}
         confirmLabel="מחק"
         isPending={isDeletePending}
+        error={deleteError}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null)
+          setDeleteError(null)
+        }}
       />
+
+      {isCustomerBillingPage && (
+        <CustomerBillingViewModal
+          open={viewingBillingRow !== null}
+          billing={viewingBillingRow}
+          onClose={closeViewBilling}
+        />
+      )}
     </div>
   )
 }

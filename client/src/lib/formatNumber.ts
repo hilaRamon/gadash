@@ -1,7 +1,16 @@
 /**
  * Formats a number for display: hides ".00" (and trailing zeros), keeps
  * meaningful fractional digits (e.g. 5.5, 12.25).
+ * Wrapped in LTR isolates so negative signs render on the left in RTL UI.
  */
+const LTR_ISOLATE_START = '\u2066'
+const LTR_ISOLATE_END = '\u2069'
+
+function wrapLtrNumeric(text: string): string {
+  if (!text) return text
+  return `${LTR_ISOLATE_START}${text}${LTR_ISOLATE_END}`
+}
+
 export function formatNumber(value: unknown): string {
   const amount = Number(value ?? '');
   if (!Number.isFinite(amount)) return '';
@@ -13,8 +22,8 @@ export function formatNumber(value: unknown): string {
   const frac = Math.round((abs - intPart) * 100);
 
   const intStr = intPart.toLocaleString('he-IL');
-  if (frac === 0) return `${sign}${intStr}`;
+  if (frac === 0) return wrapLtrNumeric(`${sign}${intStr}`);
 
   const fracStr = String(frac).padStart(2, '0').replace(/0+$/, '');
-  return `${sign}${intStr}.${fracStr}`;
+  return wrapLtrNumeric(`${sign}${intStr}.${fracStr}`);
 }

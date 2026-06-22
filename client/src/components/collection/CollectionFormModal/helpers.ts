@@ -44,7 +44,13 @@ export function getInitialValues(
 
     if (field.type === "boolean") {
       if (raw == null || raw === "") {
-        values[field.key] = row ? "false" : "true";
+        if (field.defaultValue === false) {
+          values[field.key] = "false";
+        } else if (field.defaultValue === true) {
+          values[field.key] = "true";
+        } else {
+          values[field.key] = row ? "false" : "true";
+        }
       } else {
         values[field.key] = raw === true || raw === "true" ? "true" : "false";
       }

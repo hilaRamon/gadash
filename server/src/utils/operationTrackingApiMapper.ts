@@ -30,6 +30,34 @@ function toRefParts(value: unknown): { id: string; name: string } {
   };
 }
 
+function resolveTrackingDunam(
+  doc: Record<string, unknown>,
+  plotRaw: PopulatedPlotRef | undefined,
+): number {
+  const stored = doc.dunam;
+  if (stored != null && stored !== '' && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  if (plotRaw && typeof plotRaw === 'object') {
+    return Number(plotRaw.dunam ?? 0);
+  }
+  return 0;
+}
+
+function resolveTrackingUnitCost(
+  doc: Record<string, unknown>,
+  operationRaw: PopulatedOperationRef | undefined,
+): number {
+  const stored = doc.unitCost;
+  if (stored != null && stored !== '' && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  if (operationRaw && typeof operationRaw === 'object') {
+    return Number(operationRaw.currentCost ?? 0);
+  }
+  return 0;
+}
+
 function calcFinalPrice(doc: Record<string, unknown>): number {
   if (doc.billable === false) return 0;
 
@@ -39,8 +67,8 @@ function calcFinalPrice(doc: Record<string, unknown>): number {
     return 0;
   }
 
-  const unitCost = Number(operation.currentCost ?? 0);
-  const dunam = Number(plot.dunam ?? 0);
+  const unitCost = resolveTrackingUnitCost(doc, operation);
+  const dunam = resolveTrackingDunam(doc, plot);
   if (!Number.isFinite(unitCost) || !Number.isFinite(dunam) || unitCost < 0 || dunam < 0) {
     return 0;
   }
@@ -64,6 +92,8 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
       : { id: '', name: '' };
   const employee = toRefParts(doc.employee);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
+  const unitCost = resolveTrackingUnitCost(doc, operationRaw);
+  const dunam = resolveTrackingDunam(doc, plotRaw);
 
   return {
     ...base,
@@ -79,6 +109,8 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
     plotName: plot.name || null,
     employee: employee.id,
     employeeName: employee.name,
+    unitCost,
+    dunam,
     finalPrice: calcFinalPrice(doc),
   };
 }

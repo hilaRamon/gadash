@@ -1,15 +1,38 @@
-import type { CollectionSchema } from '../types'
+import type { CollectionDocument, CollectionSchema } from '../types'
 import { formatNumber } from '../../lib/formatNumber'
+import {
+  BALE_ORDER_BY_UNIT,
+  BALE_ORDER_PRICING_FORMS,
+  isByWeightPricing,
+} from '../../lib/baleOrderPricing'
+
+const pricingFormOptions = BALE_ORDER_PRICING_FORMS.map((value) => ({
+  value,
+  label: value,
+}))
+
+function formatWeightPricingValue(
+  value: unknown,
+  row: CollectionDocument,
+  formatValue: (next: unknown) => string,
+): string {
+  if (!isByWeightPricing(row.pricingForm)) return ''
+  return formatValue(value)
+}
+
+function formatUnitPricingValue(
+  value: unknown,
+  row: CollectionDocument,
+  formatValue: (next: unknown) => string,
+): string {
+  if (String(row.pricingForm ?? '') !== BALE_ORDER_BY_UNIT) return ''
+  return formatValue(value)
+}
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleDateString('he-IL')
-}
-
-function formatTotalWithTransport(value: unknown): string {
-  if (value == null || value === '') return ''
-  return formatNumber(value)
 }
 
 export const baleOrderTrackingsSchema: CollectionSchema = {
@@ -40,12 +63,6 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       getValue: (row) => row.customerName ?? row.customer,
     },
     {
-      key: 'location',
-      label: 'מקום',
-      type: 'text',
-      searchable: true,
-    },
-    {
       key: 'quantity',
       label: 'כמות',
       type: 'number',
@@ -53,11 +70,20 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       width: '6rem',
     },
     {
+      key: 'pricingForm',
+      label: 'תמחור',
+      type: 'enum',
+      sortable: true,
+      enumOptions: pricingFormOptions,
+      width: '8rem',
+    },
+    {
       key: 'pricePerTon',
       label: 'מחיר לטון',
       type: 'number',
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value, row) =>
+        formatWeightPricingValue(value, row, (next) => formatNumber(next)),
       width: '8rem',
     },
     {
@@ -65,21 +91,29 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       label: 'מחיר ליחידה',
       type: 'number',
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value, row) =>
+        formatUnitPricingValue(value, row, (next) => formatNumber(next)),
       width: '8rem',
     },
     {
       key: 'weight',
-      label: 'משקל',
+      label: 'משקל משאית',
       type: 'number',
       sortable: true,
+      format: (value, row) =>
+        formatWeightPricingValue(value, row, (next) => formatNumber(next)),
       width: '6rem',
     },
     {
-      key: 'transport',
-      label: 'הובלה',
-      type: 'text',
-      searchable: true,
+      key: 'weighed',
+      label: 'נשקל',
+      type: 'boolean',
+      sortable: true,
+      format: (value, row) =>
+        formatWeightPricingValue(value, row, (next) =>
+          next === true ? 'כן' : 'לא',
+        ),
+      width: '6rem',
     },
     {
       key: 'transportPrice',
@@ -96,14 +130,6 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       sortable: true,
       format: (value) => formatNumber(value),
       width: '8rem',
-    },
-    {
-      key: 'totalWithTransport',
-      label: 'מחיר כולל הובלה',
-      type: 'number',
-      sortable: true,
-      format: (value) => formatTotalWithTransport(value),
-      width: '9rem',
     },
     {
       key: 'notes',
@@ -125,8 +151,6 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
         required: true,
         referenceCollection: 'bales',
       },
-      { key: 'pricePerTon', label: 'מחיר לטון', type: 'number' },
-      { key: 'pricePerUnit', label: 'מחיר ליחידה', type: 'number' },
       {
         key: 'customer',
         label: 'לקוח',
@@ -134,11 +158,26 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
         required: true,
         referenceCollection: 'customers',
       },
-      { key: 'location', label: 'מקום', type: 'text' },
       { key: 'quantity', label: 'כמות', type: 'number', required: true },
-      { key: 'weight', label: 'משקל', type: 'number' },
-      { key: 'transport', label: 'הובלה', type: 'text' },
+      {
+        key: 'pricingForm',
+        label: 'תמחור',
+        type: 'select',
+        required: true,
+        enumOptions: pricingFormOptions,
+      },
+      { key: 'pricePerTon', label: 'מחיר לטון', type: 'number' },
+      { key: 'pricePerUnit', label: 'מחיר ליחידה', type: 'number' },
+      { key: 'weight', label: 'משקל משאית', type: 'number' },
+      { key: 'weighed', label: 'נשקל', type: 'boolean', defaultValue: false },
       { key: 'transportPrice', label: 'מחיר הובלה', type: 'number' },
+      {
+        key: 'wasCharged',
+        label: 'חויב',
+        type: 'boolean',
+        hidden: true,
+        defaultValue: false,
+      },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
   },

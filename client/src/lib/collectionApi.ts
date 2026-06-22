@@ -14,20 +14,20 @@ import { suppliersSeedData } from "../data/suppliersSeed";
 import { materialPurchaseTrackingsSeedData } from "../data/materialPurchaseTrackingsSeed";
 import { materialUsageTrackingsSeedData } from "../data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "../schema/types";
-import {
-  calcBaleOrderFinalPrice,
-  calcBaleOrderTotalWithTransport,
-  resolveBaleOrderPrices,
-} from "./baleOrderPricing";
+import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "./baleOrderPricing";
 import type { TableQueryParams } from "../schema/tableQuery";
 import {
   calcFinalPrice,
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
+import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
+import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
+import { CHARGED_TRACKING_EDIT_ERROR } from "./chargedTrackingErrors";
 import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
+import { calcMaterialUsageAmount } from "./materialUsageAmount";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
@@ -76,6 +76,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   if (collection === "materialUsageTrackings") {
     return materialUsageTrackingsSeedData.map((row) => ({ ...row }));
   }
+  if (collection === "customerBillingTrackings") {
+    return seedCustomerBillingTrackings();
+  }
 
   const labels: Record<string, string> = {
     employees: "עובד",
@@ -96,6 +99,7 @@ function seedMockData(collection: string): CollectionDocument[] {
     baleOrderTrackings: "הזמנת חבילות",
     contractorTrackings: "מעקב קבלן",
     transportTrackings: "מעקב הובלה",
+    customerBillingTrackings: "מעקב חיוב לקוח",
   };
   const prefix = labels[collection] ?? "פריט";
 
@@ -113,18 +117,65 @@ function getMockStore(collection: string): CollectionDocument[] {
   return mockStores.get(collection)!;
 }
 
+function resolveMaterialUsageUnitPrice(
+  row: Record<string, unknown>,
+  material: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.unitPrice;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  if (!material) return 0;
+  const customerCost = material.customerCost;
+  if (
+    customerCost != null &&
+    customerCost !== "" &&
+    Number.isFinite(Number(customerCost))
+  ) {
+    return Number(customerCost);
+  }
+  const cost = Number(material.currentBuyingCost ?? 0);
+  const percent = Number(material.currentSalePercent ?? 15);
+  return Number((cost * (1 + percent / 100)).toFixed(3));
+}
+
 function calcMaterialUsageFinalPrice(row: Record<string, unknown>): number {
   const materialId = String(row.material ?? "");
   const material = materialsSeedData.find((m) => String(m._id) === materialId);
-  const unitPrice = Number(material?.customerCost ?? 0);
+  const unitPrice = resolveMaterialUsageUnitPrice(row, material);
   const amount = Number(row.amount ?? 0);
   if (!Number.isFinite(unitPrice) || !Number.isFinite(amount)) return 0;
   return Number((unitPrice * amount).toFixed(2));
 }
 
 function enrichMaterialUsageRow(row: CollectionDocument): CollectionDocument {
+  const materialId = String(row.material ?? "");
+  const material = materialsSeedData.find((m) => String(m._id) === materialId);
+  const unitPrice = resolveMaterialUsageUnitPrice(row, material);
   const finalPrice = calcMaterialUsageFinalPrice(row);
-  return { ...row, finalPrice };
+  return { ...row, unitPrice, finalPrice };
+}
+
+function resolveOperationTrackingDunam(
+  row: Record<string, unknown>,
+  plot: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.dunam;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  return plot ? Number(plot.dunam ?? 0) : 0;
+}
+
+function resolveOperationTrackingUnitCost(
+  row: Record<string, unknown>,
+  operation: Record<string, unknown> | null | undefined,
+): number {
+  const stored = row.unitCost;
+  if (stored != null && stored !== "" && Number.isFinite(Number(stored))) {
+    return Number(stored);
+  }
+  return operation ? Number(operation.currentCost ?? 0) : 0;
 }
 
 function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
@@ -136,8 +187,8 @@ function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
   const plot = plotsSeedData.find(
     (item) => String(item._id) === String(row.plot ?? ""),
   );
-  const unitCost = Number(operation?.currentCost ?? 0);
-  const dunam = Number(plot?.dunam ?? 0);
+  const unitCost = resolveOperationTrackingUnitCost(row, operation);
+  const dunam = resolveOperationTrackingDunam(row, plot);
   if (
     !Number.isFinite(unitCost) ||
     !Number.isFinite(dunam) ||
@@ -162,6 +213,9 @@ function enrichOperationTrackingRow(
   const employee = employeesSeedData.find(
     (item) => String(item._id) === String(row.employee ?? ""),
   );
+  const unitCost = resolveOperationTrackingUnitCost(row, operation);
+  const dunam = resolveOperationTrackingDunam(row, plot);
+
   return {
     ...row,
     operationName: String(operation?.name ?? ""),
@@ -170,6 +224,8 @@ function enrichOperationTrackingRow(
     customerName: String(plot?.customerName ?? ""),
     plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
+    unitCost,
+    dunam,
     finalPrice: calcOperationTrackingFinalPrice(row),
   };
 }
@@ -193,11 +249,9 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     weight: row.weight,
     pricePerTon,
     pricePerUnit,
+    pricingForm: row.pricingForm,
+    transportPrice: row.transportPrice,
   });
-  const totalWithTransport = calcBaleOrderTotalWithTransport(
-    finalPrice,
-    row.transportPrice,
-  );
 
   return {
     ...row,
@@ -206,7 +260,55 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerTon,
     pricePerUnit,
     finalPrice,
-    totalWithTransport,
+    weighed: row.weighed === true,
+  };
+}
+
+function seedCustomerBillingTrackings(): CollectionDocument[] {
+  const today = new Date().toISOString().slice(0, 10);
+  return Array.from({ length: 5 }, (_, i) => {
+    const customer = customersSeedData[i % customersSeedData.length];
+    return {
+      _id: `customerBill${String(i + 1).padStart(16, "0")}`,
+      date: today,
+      customer: customer?._id ?? "",
+      customerName: String(customer?.name ?? ""),
+      status: CUSTOMER_BILLING_STATUSES[i % CUSTOMER_BILLING_STATUSES.length],
+      paid: i % 2 === 0,
+      finalPrice: (i + 1) * 1500,
+      notes: i % 2 === 0 ? "הערה לדוגמה" : "",
+      operationsTrackingIds: [],
+      materialUsageTrackingIds: [],
+      contractorTrackingIds: [],
+      baleOrderTrackingIds: [],
+    };
+  });
+}
+
+function enrichCustomerBillingTrackingRow(
+  row: CollectionDocument,
+): CollectionDocument {
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(row.customer ?? ""),
+  );
+  return {
+    ...row,
+    customerName: String(customer?.name ?? ""),
+    paid: row.paid === true,
+    status: String(row.status ?? "לא אושר כלל"),
+    finalPrice: Number(row.finalPrice ?? 0),
+    operationsTrackingIds: Array.isArray(row.operationsTrackingIds)
+      ? row.operationsTrackingIds.map(String)
+      : [],
+    materialUsageTrackingIds: Array.isArray(row.materialUsageTrackingIds)
+      ? row.materialUsageTrackingIds.map(String)
+      : [],
+    contractorTrackingIds: Array.isArray(row.contractorTrackingIds)
+      ? row.contractorTrackingIds.map(String)
+      : [],
+    baleOrderTrackingIds: Array.isArray(row.baleOrderTrackingIds)
+      ? row.baleOrderTrackingIds.map(String)
+      : [],
   };
 }
 
@@ -254,11 +356,17 @@ function enrichContractorTrackingRow(
   const unitPrice = Number(row.unitPrice ?? 0);
   const finalPrice = calcFinalPrice(unitPrice, unitAmount);
 
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(plot?.customer ?? ""),
+  );
+
   return {
     ...row,
     contractorName: String(contractor?.name ?? ""),
     plotName: String(plot?.name ?? ""),
     operationName: String(operation?.name ?? ""),
+    customer: plot?.customer ?? null,
+    customerName: String(customer?.name ?? plot?.customerName ?? ""),
     unitAmount,
     finalPrice,
     customerPrice:
@@ -335,6 +443,9 @@ async function listMock(collection: string): Promise<CollectionDocument[]> {
   if (collection === "transportTrackings") {
     return rows.map(enrichTransportTrackingRow);
   }
+  if (collection === "customerBillingTrackings") {
+    return rows.map(enrichCustomerBillingTrackingRow);
+  }
   return rows;
 }
 
@@ -354,12 +465,39 @@ async function createMock(
     );
     doc.customer = plot?.customer ?? "";
     doc.customerName = String(plot?.customerName ?? "");
+    const material = materialsSeedData.find(
+      (item) => String(item._id) === String(doc.material ?? ""),
+    );
+    if (doc.unitPrice == null || doc.unitPrice === "") {
+      doc.unitPrice = material
+        ? resolveMaterialUsageUnitPrice({}, material)
+        : null;
+    }
+    if (
+      (doc.amount == null || doc.amount === "") &&
+      material &&
+      plot
+    ) {
+      const computed = calcMaterialUsageAmount(
+        Number(plot.dunam ?? 0),
+        material.amountPerDunam as number | null | undefined,
+      );
+      if (computed != null) {
+        doc.amount = computed;
+      }
+    }
   }
   store.push(doc);
   if (collection === "materialUsageTrackings") {
     return enrichMaterialUsageRow(doc);
   }
   if (collection === "operationsTrackings") {
+    const operation = operationsSeedData.find(
+      (item) => String(item._id) === String(doc.operation ?? ""),
+    );
+    if (doc.unitCost == null || doc.unitCost === "") {
+      doc.unitCost = operation ? Number(operation.currentCost ?? 0) : null;
+    }
     const plotId = doc.plot;
     if (plotId != null && plotId !== "") {
       const plot = plotsSeedData.find(
@@ -367,6 +505,9 @@ async function createMock(
       );
       doc.customer = plot?.customer ?? "";
       doc.customerName = String(plot?.customerName ?? "");
+      if (doc.dunam == null || doc.dunam === "") {
+        doc.dunam = plot ? Number(plot.dunam ?? 0) : null;
+      }
     } else {
       doc.plot = null;
       doc.customer = null;
@@ -387,6 +528,9 @@ async function createMock(
   if (collection === "transportTrackings") {
     return enrichTransportTrackingRow(doc);
   }
+  if (collection === "customerBillingTrackings") {
+    return enrichCustomerBillingTrackingRow(doc);
+  }
   return doc;
 }
 
@@ -399,29 +543,98 @@ async function updateMock(
   const store = getMockStore(collection);
   const index = store.findIndex((d) => d._id === id);
   if (index === -1) throw new Error("לא נמצא");
+  if (store[index].wasCharged === true) {
+    throw new Error(CHARGED_TRACKING_EDIT_ERROR);
+  }
+  const previousRow = store[index];
   store[index] = { ...store[index], ...body, _id: id };
   if (collection === "materialUsageTrackings") {
+    const row = store[index];
+    const materialChanged =
+      body.material != null &&
+      String(body.material) !== String(previousRow.material ?? "");
+    const plotChanged =
+      body.plot != null && String(body.plot) !== String(previousRow.plot ?? "");
+
+    if (materialChanged) {
+      const material = materialsSeedData.find(
+        (item) => String(item._id) === String(row.material ?? ""),
+      );
+      if (material) {
+        row.unitPrice = resolveMaterialUsageUnitPrice({}, material);
+      }
+    }
+
+    if (plotChanged || materialChanged) {
+      const material = materialsSeedData.find(
+        (item) => String(item._id) === String(row.material ?? ""),
+      );
+      const plot = plotsSeedData.find(
+        (p) => String(p._id) === String(row.plot ?? ""),
+      );
+      if (material && plot) {
+        const computed = calcMaterialUsageAmount(
+          Number(plot.dunam ?? 0),
+          material.amountPerDunam as number | null | undefined,
+        );
+        if (computed != null) {
+          row.amount = computed;
+        }
+      }
+    }
+
     const plot = plotsSeedData.find(
-      (p) => String(p._id) === String(store[index].plot ?? ""),
+      (p) => String(p._id) === String(row.plot ?? ""),
     );
     store[index].customer = plot?.customer ?? "";
     store[index].customerName = String(plot?.customerName ?? "");
     return enrichMaterialUsageRow(store[index]);
   }
   if (collection === "operationsTrackings") {
-    const plotId = store[index].plot;
+    const row = store[index];
+    const operationChanged =
+      body.operation != null &&
+      String(body.operation) !== String(previousRow.operation ?? "");
+    const plotChanged =
+      body.plot !== undefined &&
+      String(body.plot ?? "") !== String(previousRow.plot ?? "");
+
+    if (operationChanged) {
+      const operation = operationsSeedData.find(
+        (item) => String(item._id) === String(row.operation ?? ""),
+      );
+      if (operation) {
+        row.unitCost = Number(operation.currentCost ?? 0);
+      }
+    }
+
+    if (plotChanged) {
+      const plotId = row.plot;
+      if (plotId != null && plotId !== "") {
+        const plot = plotsSeedData.find(
+          (p) => String(p._id) === String(plotId),
+        );
+        if (plot) {
+          row.dunam = Number(plot.dunam ?? 0);
+        }
+      } else {
+        row.dunam = null;
+      }
+    }
+
+    const plotId = row.plot;
     if (plotId != null && plotId !== "") {
       const plot = plotsSeedData.find(
         (p) => String(p._id) === String(plotId),
       );
-      store[index].customer = plot?.customer ?? "";
-      store[index].customerName = String(plot?.customerName ?? "");
+      row.customer = plot?.customer ?? "";
+      row.customerName = String(plot?.customerName ?? "");
     } else {
-      store[index].plot = null;
-      store[index].customer = null;
-      store[index].customerName = "";
+      row.plot = null;
+      row.customer = null;
+      row.customerName = "";
     }
-    return enrichOperationTrackingRow(store[index]);
+    return enrichOperationTrackingRow(row);
   }
   if (collection === "fuelOperationsTrackings") {
     return enrichFuelOperationTrackingRow(store[index]);
@@ -435,10 +648,89 @@ async function updateMock(
   if (collection === "transportTrackings") {
     return enrichTransportTrackingRow(store[index]);
   }
+  if (collection === "customerBillingTrackings") {
+    return enrichCustomerBillingTrackingRow(store[index]);
+  }
   return store[index];
 }
 
+function toIdArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "")).filter(Boolean);
+}
+
+function unchargeCustomerBillingLineItemsMock(billing: CollectionDocument): void {
+  const trackingCollections: Array<{
+    collection: string;
+    ids: string[];
+  }> = [
+    {
+      collection: "operationsTrackings",
+      ids: toIdArray(billing.operationsTrackingIds),
+    },
+    {
+      collection: "contractorTrackings",
+      ids: toIdArray(billing.contractorTrackingIds),
+    },
+    {
+      collection: "materialUsageTrackings",
+      ids: toIdArray(billing.materialUsageTrackingIds),
+    },
+    {
+      collection: "baleOrderTrackings",
+      ids: toIdArray(billing.baleOrderTrackingIds),
+    },
+  ];
+
+  for (const { collection, ids } of trackingCollections) {
+    if (ids.length === 0) continue;
+    const store = getMockStore(collection);
+    for (const trackingId of ids) {
+      const row = store.find((doc) => doc._id === trackingId);
+      if (row) row.wasCharged = false;
+    }
+  }
+}
+
+async function removeCustomerBillingMock(id: string): Promise<void> {
+  await delay(150);
+  const store = getMockStore("customerBillingTrackings");
+  const index = store.findIndex((d) => d._id === id);
+  if (index === -1) return;
+  const billing = store[index];
+  if (billing.paid === true) {
+    throw new Error(PAID_BILLING_DELETE_ERROR);
+  }
+  unchargeCustomerBillingLineItemsMock(billing);
+  store.splice(index, 1);
+}
+
+async function removeManyCustomerBillingMock(ids: string[]): Promise<void> {
+  await delay(200);
+  const uniqueIds = [...new Set(ids.map((id) => String(id ?? "").trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) return;
+
+  const store = getMockStore("customerBillingTrackings");
+  const billings = uniqueIds.map((id) => store.find((d) => d._id === id));
+  if (billings.some((row) => row == null)) return;
+  if (billings.some((row) => row?.paid === true)) {
+    throw new Error(PAID_BILLING_DELETE_ERROR);
+  }
+
+  for (const billing of billings) {
+    if (billing) unchargeCustomerBillingLineItemsMock(billing);
+  }
+
+  for (const id of uniqueIds) {
+    const index = store.findIndex((d) => d._id === id);
+    if (index !== -1) store.splice(index, 1);
+  }
+}
+
 async function removeMock(collection: string, id: string): Promise<void> {
+  if (collection === "customerBillingTrackings") {
+    return removeCustomerBillingMock(id);
+  }
   await delay(150);
   const store = getMockStore(collection);
   const index = store.findIndex((d) => d._id === id);
@@ -449,6 +741,9 @@ async function removeManyMock(
   collection: string,
   ids: string[],
 ): Promise<void> {
+  if (collection === "customerBillingTrackings") {
+    return removeManyCustomerBillingMock(ids);
+  }
   await delay(200);
   const store = getMockStore(collection);
   for (const id of ids) {

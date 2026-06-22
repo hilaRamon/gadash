@@ -1,18 +1,20 @@
-import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
-import { toObjectIds } from '../utils/mongoIds';
 import type { Types } from 'mongoose';
+import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
+import type { BaleOrderPricingForm } from '../models/BaleOrderTracking';
+import { toObjectIds } from '../utils/mongoIds';
 
 export type BaleOrderTrackingInput = {
   date: Date;
   bale: Types.ObjectId;
   customer: Types.ObjectId;
-  location?: string;
   quantity: number;
+  pricingForm: BaleOrderPricingForm;
   pricePerTon: number;
   pricePerUnit: number;
   weight?: number | null;
-  transport?: string;
   transportPrice?: number | null;
+  weighed?: boolean;
+  wasCharged?: boolean;
   notes?: string;
 };
 
@@ -63,5 +65,21 @@ export const baleOrderTrackingRepository = {
 
   deleteAll() {
     return BaleOrderTrackingModel.deleteMany({});
+  },
+
+  markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return BaleOrderTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: true },
+    );
+  },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return BaleOrderTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
   },
 };

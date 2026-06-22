@@ -139,6 +139,13 @@ export const contractorTrackingsSchema: CollectionSchema = {
         type: "number",
         defaultValue: null,
       },
+      {
+        key: "wasCharged",
+        label: "חויב",
+        type: "boolean",
+        hidden: true,
+        defaultValue: false,
+      },
       { key: "notes", label: "הערות", type: "textarea" },
     ],
   },

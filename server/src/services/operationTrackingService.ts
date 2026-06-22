@@ -7,10 +7,23 @@ import {
   type OperationTrackingInput,
 } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   operationTrackingToApiDocument,
   operationTrackingToApiDocuments,
 } from '../utils/operationTrackingApiMapper';
+import { monthlyReportService } from './monthlyReportService';
+
+function parseAdminOverride(body: Record<string, unknown>): boolean {
+  const value = body.adminOverride;
+  if (value === true || value === 'true') return true;
+  return false;
+}
+
+function stripAdminOverride(body: Record<string, unknown>): Record<string, unknown> {
+  const { adminOverride: _adminOverride, ...rest } = body;
+  return rest;
+}
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -49,6 +62,45 @@ function parseBillable(value: unknown): boolean {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error('לחיוב לא תקין');
+}
+
+function parseWasCharged(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('חויב לא תקין');
+}
+
+function parseDunam(value: unknown): number {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('דונם לא תקין');
+  }
+  return num;
+}
+
+function parseUnitCost(value: unknown): number {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('מחיר לדונם לא תקין');
+  }
+  return num;
+}
+
+async function resolvePlotDunam(plotId: Types.ObjectId | null): Promise<number | null> {
+  if (!plotId) return null;
+  const plot = await PlotModel.findById(plotId).select('dunam').lean();
+  if (!plot) return null;
+  return Number(plot.dunam ?? 0);
+}
+
+async function resolveOperationUnitCost(
+  operationId: Types.ObjectId,
+): Promise<number | null> {
+  const operation = await OperationModel.findById(operationId).select('currentCost').lean();
+  if (!operation) return null;
+  return Number(operation.currentCost ?? 0);
 }
 
 async function resolveOperationObjectId(operationId: unknown): Promise<Types.ObjectId> {
@@ -93,6 +145,13 @@ async function resolveEmployeeObjectId(employeeId: unknown): Promise<Types.Objec
   return employee._id as Types.ObjectId;
 }
 
+function toObjectIdRef(value: unknown): Types.ObjectId {
+  if (value && typeof value === 'object' && '_id' in value) {
+    return value._id as Types.ObjectId;
+  }
+  return value as Types.ObjectId;
+}
+
 async function buildTrackingPatch(
   body: Record<string, unknown>,
   options: { requireAll?: boolean } = {},
@@ -125,6 +184,19 @@ async function buildTrackingPatch(
   if (mustHave('billable')) {
     patch.billable = parseBillable(body.billable);
   }
+  if (mustHave('wasCharged')) {
+    patch.wasCharged = parseWasCharged(body.wasCharged);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'dunam')) {
+    patch.dunam =
+      body.dunam == null || body.dunam === '' ? null : parseDunam(body.dunam);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'unitCost')) {
+    patch.unitCost =
+      body.unitCost == null || body.unitCost === ''
+        ? null
+        : parseUnitCost(body.unitCost);
+  }
 
   const startTime = patch.startTime;
   const endTime = patch.endTime;
@@ -142,7 +214,8 @@ export const operationTrackingService = {
   },
 
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
-    const patch = await buildTrackingPatch(body, { requireAll: true });
+    const adminOverride = parseAdminOverride(body);
+    const patch = await buildTrackingPatch(stripAdminOverride(body), { requireAll: true });
     if (
       patch.date == null ||
       patch.operation == null ||
@@ -155,6 +228,12 @@ export const operationTrackingService = {
 
     assertTimeRange(patch.startTime, patch.endTime);
 
+    await monthlyReportService.assertMonthNotLocked(
+      String(patch.employee),
+      patch.date,
+      adminOverride,
+    );
+
     const input: OperationTrackingInput = {
       date: patch.date,
       operation: patch.operation,
@@ -164,9 +243,19 @@ export const operationTrackingService = {
       endTime: patch.endTime,
       notes: patch.notes ?? '',
       billable: patch.billable ?? true,
+      wasCharged: patch.wasCharged ?? false,
+      dunam:
+        patch.dunam !== undefined
+          ? patch.dunam
+          : await resolvePlotDunam(patch.plot ?? null),
+      unitCost:
+        patch.unitCost !== undefined
+          ? patch.unitCost
+          : await resolveOperationUnitCost(patch.operation),
     };
 
     const created = await operationTrackingRepository.create(input);
+    await monthlyReportService.ensureOpenReport(String(patch.employee), patch.date);
     const populated = await operationTrackingRepository.findById(String(created._id));
     return operationTrackingToApiDocument(
       (populated ?? created.toObject()) as Record<string, unknown>,
@@ -174,7 +263,8 @@ export const operationTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const patch = await buildTrackingPatch(body);
+    const adminOverride = parseAdminOverride(body);
+    const patch = await buildTrackingPatch(stripAdminOverride(body));
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
@@ -189,21 +279,84 @@ export const operationTrackingService = {
       assertTimeRange(startTime, endTime);
     }
 
+    const existing = await operationTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
+
+    const nextEmployeeId = patch.employee
+      ? String(patch.employee)
+      : String(existing.employee?._id ?? existing.employee);
+    const nextDate = patch.date ?? new Date(existing.date as Date);
+    const previousEmployeeId = String(existing.employee?._id ?? existing.employee);
+    const previousDate = new Date(existing.date as Date);
+
+    await monthlyReportService.assertMonthNotLocked(
+      previousEmployeeId,
+      previousDate,
+      adminOverride,
+    );
+    if (nextEmployeeId !== previousEmployeeId || nextDate.getTime() !== previousDate.getTime()) {
+      await monthlyReportService.assertMonthNotLocked(nextEmployeeId, nextDate, adminOverride);
+    }
+
+    const existingRecord = existing as Record<string, unknown>;
+    const existingOperationId = toObjectIdRef(existingRecord.operation);
+    const existingPlotId = existingRecord.plot ? toObjectIdRef(existingRecord.plot) : null;
+    const operationChanged =
+      patch.operation != null && String(patch.operation) !== String(existingOperationId);
+    const plotChanged =
+      patch.plot !== undefined &&
+      String(patch.plot ?? '') !== String(existingPlotId ?? '');
+
+    if (operationChanged) {
+      const unitCost = await resolveOperationUnitCost(patch.operation!);
+      if (unitCost != null) {
+        patch.unitCost = unitCost;
+      }
+    }
+
+    if (plotChanged) {
+      const dunam = await resolvePlotDunam(patch.plot ?? null);
+      if (dunam != null) {
+        patch.dunam = dunam;
+      }
+    }
+
     const updated = await operationTrackingRepository.update(id, patch);
     if (!updated) {
       throw new Error('לא נמצא');
     }
+    await monthlyReportService.ensureOpenReport(nextEmployeeId, nextDate);
     return operationTrackingToApiDocument(updated as Record<string, unknown>);
   },
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, adminOverride = false): Promise<void> {
+    const existing = await operationTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    await monthlyReportService.assertMonthNotLocked(
+      String(existing.employee?._id ?? existing.employee),
+      new Date(existing.date as Date),
+      adminOverride,
+    );
     const result = await operationTrackingRepository.delete(id);
     if (!result) {
       throw new Error('לא נמצא');
     }
   },
 
-  async removeMany(ids: string[]): Promise<void> {
+  async removeMany(ids: string[], adminOverride = false): Promise<void> {
+    const rows = await operationTrackingRepository.findByIds(ids);
+    for (const row of rows) {
+      await monthlyReportService.assertMonthNotLocked(
+        String(row.employee),
+        new Date(row.date as Date),
+        adminOverride,
+      );
+    }
     await operationTrackingRepository.deleteMany(ids);
   },
 };

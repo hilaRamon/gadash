@@ -1,9 +1,5 @@
 import type { ApiDocument } from '../types/apiDocument';
-import {
-  calcBaleOrderFinalPrice,
-  calcBaleOrderTotalWithTransport,
-  resolveBaleOrderPrices,
-} from './baleOrderPricing';
+import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from './baleOrderPricing';
 import { toApiDocument } from './toApiDocument';
 
 type PopulatedRef = {
@@ -48,11 +44,9 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     weight: doc.weight,
     pricePerTon,
     pricePerUnit,
+    pricingForm: doc.pricingForm,
+    transportPrice: doc.transportPrice,
   });
-  const totalWithTransport = calcBaleOrderTotalWithTransport(
-    finalPrice,
-    doc.transportPrice,
-  );
 
   return {
     ...base,
@@ -63,10 +57,13 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     baleName: bale.name,
     customer: customer.id,
     customerName: customer.name,
+    pricingForm: doc.pricingForm,
     pricePerTon,
     pricePerUnit,
+    transportPrice: doc.transportPrice,
     finalPrice,
-    totalWithTransport,
+    weighed: doc.weighed === true,
+    wasCharged: doc.wasCharged === true,
   };
 }
 

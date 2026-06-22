@@ -60,4 +60,8 @@ export type CollectionSchema<T extends DocumentBase = CollectionDocument> = {
   columns: ColumnDef<T>[]
   defaultSort?: { field: keyof T & string; direction: 'asc' | 'desc' }
   form: FormSchema<T>
+  /** Row action button in the table. Defaults to edit. */
+  rowAction?: 'edit' | 'view'
+  /** When true, the add button is shown but does nothing until wired up. */
+  disableAdd?: boolean
 }

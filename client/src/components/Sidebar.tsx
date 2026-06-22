@@ -20,12 +20,14 @@ function NavLinkWithActiveClass({
 }
 import {
   baleTrackingCollections,
+  customerBillingTrackingCollections,
   contractorTrackingCollections,
   transportTrackingCollections,
   dataCollections,
   fuelTrackingCollections,
   materialTrackingCollections,
   operationsTrackingCollections,
+  reportCollections,
   sidebarSections,
 } from '../config/navigation'
 
@@ -141,6 +143,13 @@ export function Sidebar() {
                 </SidebarLink>
               </li>
             ))}
+            {customerBillingTrackingCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
           </SidebarList>
         </SidebarSection>
 
@@ -151,6 +160,15 @@ export function Sidebar() {
           >
             {sidebarSections[2].title}
           </SidebarSectionTitleLink>
+          <SidebarList>
+            {reportCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+          </SidebarList>
         </SidebarSection>
       </SidebarNav>
     </SidebarContainer>

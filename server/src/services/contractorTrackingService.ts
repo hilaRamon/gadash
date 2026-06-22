@@ -11,6 +11,7 @@ import {
   type ContractorTrackingInput,
 } from '../repositories/contractorTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 import {
   contractorTrackingToApiDocument,
   contractorTrackingToApiDocuments,
@@ -61,6 +62,14 @@ function parseTime(value: unknown, label: string): string | null {
 
 function parseNotes(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function parseWasCharged(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('חויב לא תקין');
 }
 
 async function resolveContractorObjectId(contractorId: unknown): Promise<Types.ObjectId> {
@@ -140,6 +149,9 @@ async function buildTrackingPatch(
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
   }
+  if (mustHave('wasCharged')) {
+    patch.wasCharged = parseWasCharged(body.wasCharged);
+  }
 
   if (patch.pricingForm != null) {
     patch.unitAmount = resolveUnitAmount(patch.pricingForm, {
@@ -196,6 +208,7 @@ export const contractorTrackingService = {
       finalPrice: calcFinalPrice(patch.unitPrice, unitAmount),
       customerPrice: patch.customerPrice ?? null,
       notes: patch.notes ?? '',
+      wasCharged: patch.wasCharged ?? false,
     };
 
     const created = await contractorTrackingRepository.create(input);
@@ -210,6 +223,7 @@ export const contractorTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {

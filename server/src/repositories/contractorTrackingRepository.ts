@@ -16,10 +16,15 @@ export type ContractorTrackingInput = {
   finalPrice: number;
   customerPrice: number | null;
   notes?: string;
+  wasCharged?: boolean;
 };
 
 const contractorPopulate = { path: 'contractor', select: '_id name' };
-const plotPopulate = { path: 'plot', select: '_id name customer dunam' };
+const plotPopulate = {
+  path: 'plot',
+  select: '_id name customer dunam',
+  populate: { path: 'customer', select: '_id name' },
+};
 const operationPopulate = { path: 'operation', select: '_id name' };
 
 export const contractorTrackingRepository = {
@@ -61,5 +66,21 @@ export const contractorTrackingRepository = {
 
   deleteMany(ids: string[]) {
     return ContractorTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
+  },
+
+  markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return ContractorTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: true },
+    );
+  },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return ContractorTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
   },
 };

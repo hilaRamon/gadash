@@ -118,6 +118,7 @@ export function FormFieldControl({
     <Input
       id={`field-${field.key}`}
       type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+      dir={field.type === 'number' ? 'ltr' : undefined}
       value={value}
       disabled={disabled}
       onChange={(e) => setFieldValue(field.key, e.target.value)}

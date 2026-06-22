@@ -37,6 +37,15 @@ function parseCurrentQuantity(value: unknown): number {
   return num;
 }
 
+function parseAmountPerDunam(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('כמות לדונם לא תקינה');
+  }
+  return num;
+}
+
 function parseSalePercent(value: unknown): number {
   if (value == null || value === '') {
     return DEFAULT_SALE_PERCENT;
@@ -90,6 +99,9 @@ function buildMetadataPatch(
   }
   if (mustHave('currentQuantity')) {
     patch.currentQuantity = parseCurrentQuantity(body.currentQuantity);
+  }
+  if (mustHave('amountPerDunam') || Object.prototype.hasOwnProperty.call(body, 'amountPerDunam')) {
+    patch.amountPerDunam = parseAmountPerDunam(body.amountPerDunam);
   }
 
   if (requireAll) {

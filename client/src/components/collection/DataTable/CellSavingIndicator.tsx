@@ -7,7 +7,17 @@ const cellSavingSpin = keyframes`
   }
 `
 
-const SavingIndicator = styled.span`
+const SavingSpinner = styled.span`
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ${cellSavingSpin} 0.65s linear infinite;
+`
+
+const SavingIndicatorOverlay = styled.span`
   position: absolute;
   inset: 0;
   display: flex;
@@ -16,24 +26,28 @@ const SavingIndicator = styled.span`
   pointer-events: none;
 `
 
-const SavingSpinner = styled.span`
-  width: 0.9rem;
-  height: 0.9rem;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: ${cellSavingSpin} 0.65s linear infinite;
+const SavingIndicatorInline = styled.span`
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  pointer-events: none;
 `
 
 const ScreenReaderText = styled.span`
   ${visuallyHidden};
 `
 
-export function CellSavingIndicator() {
+type CellSavingIndicatorProps = {
+  variant?: 'overlay' | 'inline'
+}
+
+export function CellSavingIndicator({ variant = 'overlay' }: CellSavingIndicatorProps) {
+  const Indicator = variant === 'inline' ? SavingIndicatorInline : SavingIndicatorOverlay
+
   return (
-    <SavingIndicator role="status">
+    <Indicator role="status">
       <SavingSpinner aria-hidden="true" />
       <ScreenReaderText>שומר...</ScreenReaderText>
-    </SavingIndicator>
+    </Indicator>
   )
 }
