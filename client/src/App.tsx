@@ -3,6 +3,12 @@ import { AppLayout } from './components/AppLayout'
 import { dataCollections, trackingCollections } from './config/navigation'
 import { CollectionPage } from './pages/CollectionPage'
 import { CreateCustomerBillingPage } from './pages/CreateCustomerBillingPage'
+import { EmployeeAdminPage } from './pages/employee/EmployeeAdminPage'
+import { EmployeeFieldWorkPage } from './pages/employee/EmployeeFieldWorkPage'
+import { EmployeeFuelPage } from './pages/employee/EmployeeFuelPage'
+import { EmployeeHomePage } from './pages/employee/EmployeeHomePage'
+import { EmployeeLayout } from './pages/employee/EmployeeLayout'
+import { EmployeeMaterialPage } from './pages/employee/EmployeeMaterialPage'
 import { EmployeeMonthlyReportPage } from './pages/EmployeeMonthlyReportPage'
 import { HomePage } from './pages/HomePage'
 import { MonthlySummaryPage } from './pages/MonthlySummaryPage'
@@ -13,6 +19,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="employee" element={<EmployeeLayout />}>
+          <Route index element={<EmployeeHomePage />} />
+          <Route path="field-work" element={<EmployeeFieldWorkPage />} />
+          <Route path="admin" element={<EmployeeAdminPage />} />
+          <Route path="material" element={<EmployeeMaterialPage />} />
+          <Route path="fuel" element={<EmployeeFuelPage />} />
+        </Route>
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           {dataCollections.map((item) => (
