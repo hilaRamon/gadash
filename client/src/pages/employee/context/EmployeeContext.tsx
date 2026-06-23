@@ -2,15 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
-import { useCollectionList } from '../../../hooks/collections/useCollectionList'
+import { useAuth } from '../../../context/AuthContext'
 import { todayIso } from '../lib/formDefaults'
-
-const STORAGE_KEY = 'gadash.employeeId'
 
 type EmployeeContextValue = {
   employeeId: string | null
@@ -19,59 +16,24 @@ type EmployeeContextValue = {
   isCustomDate: boolean
   setTrackingDate: (date: string) => void
   resetTrackingDate: () => void
-  setEmployee: (id: string, name: string) => void
-  clearEmployee: () => void
   isReady: boolean
 }
 
 const EmployeeContext = createContext<EmployeeContextValue | null>(null)
 
 export function EmployeeProvider({ children }: { children: ReactNode }) {
-  const [employeeId, setEmployeeId] = useState<string | null>(null)
-  const [employeeName, setEmployeeName] = useState<string | null>(null)
+  const { user, isAuthenticated, isReady: authReady } = useAuth()
   const [trackingDate, setTrackingDateState] = useState(todayIso)
-  const [isReady, setIsReady] = useState(false)
-  const { data: employees = [] } = useCollectionList('employees')
 
+  const employeeId = isAuthenticated ? (user?._id ?? null) : null
+  const employeeName = isAuthenticated ? (user?.name ?? null) : null
   const isCustomDate = trackingDate !== todayIso()
-
-  useEffect(() => {
-    const storedId = localStorage.getItem(STORAGE_KEY)
-    if (storedId) {
-      setEmployeeId(storedId)
-    }
-    setIsReady(true)
-  }, [])
-
-  useEffect(() => {
-    if (!employeeId) {
-      setEmployeeName(null)
-      return
-    }
-    const match = employees.find((row) => String(row._id) === employeeId)
-    if (match?.name) {
-      setEmployeeName(String(match.name))
-    }
-  }, [employeeId, employees])
 
   const setTrackingDate = useCallback((date: string) => {
     setTrackingDateState(date)
   }, [])
 
   const resetTrackingDate = useCallback(() => {
-    setTrackingDateState(todayIso())
-  }, [])
-
-  const setEmployee = useCallback((id: string, name: string) => {
-    localStorage.setItem(STORAGE_KEY, id)
-    setEmployeeId(id)
-    setEmployeeName(name)
-  }, [])
-
-  const clearEmployee = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
-    setEmployeeId(null)
-    setEmployeeName(null)
     setTrackingDateState(todayIso())
   }, [])
 
@@ -83,9 +45,7 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
       isCustomDate,
       setTrackingDate,
       resetTrackingDate,
-      setEmployee,
-      clearEmployee,
-      isReady,
+      isReady: authReady,
     }),
     [
       employeeId,
@@ -94,9 +54,7 @@ export function EmployeeProvider({ children }: { children: ReactNode }) {
       isCustomDate,
       setTrackingDate,
       resetTrackingDate,
-      setEmployee,
-      clearEmployee,
-      isReady,
+      authReady,
     ],
   )
 

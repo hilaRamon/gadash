@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { materialUsageTrackingService } from '../services/materialUsageTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { prepareEmployeeTrackingBody } from '../utils/employeeAuth';
 
 export const materialUsageTrackingController = {
   list: asyncHandler(async (_req: Request, res: Response) => {
@@ -9,7 +10,8 @@ export const materialUsageTrackingController = {
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {
-    const data = await materialUsageTrackingService.create(req.body);
+    const body = prepareEmployeeTrackingBody(req.auth, req.body);
+    const data = await materialUsageTrackingService.create(body);
     res.status(201).json(data);
   }),
 

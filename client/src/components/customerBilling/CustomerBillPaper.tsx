@@ -37,12 +37,7 @@ export function CustomerBillPaper({
   const request = buildCustomerBillRequest(customerId, preview, includedIds);
   const hasItems = hasIncludedBillItems(request);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useCustomerBillPreview({
+  const { data, isLoading, isError, error } = useCustomerBillPreview({
     customerId,
     customerName,
     preview,
@@ -69,9 +64,7 @@ export function CustomerBillPaper({
       });
       navigate("/trackings/customer-billing");
     } catch (err) {
-      setCreateError(
-        err instanceof Error ? err.message : "שגיאה ביצירת החיוב",
-      );
+      setCreateError(err instanceof Error ? err.message : "שגיאה ביצירת החיוב");
     } finally {
       setIsCreating(false);
     }
@@ -118,13 +111,9 @@ export function CustomerBillPaper({
           </DownloadButton>
         </ToolbarActions>
       </BillToolbar>
-      {useMock && (
-        <MockNote>הורדת PDF זמינה רק עם שרת</MockNote>
-      )}
+      {useMock && <MockNote>הורדת PDF זמינה רק עם שרת</MockNote>}
       {createError && <ErrorText role="alert">{createError}</ErrorText>}
-      {downloadError && (
-        <ErrorText role="alert">{downloadError}</ErrorText>
-      )}
+      {downloadError && <ErrorText role="alert">{downloadError}</ErrorText>}
       {isLoading ? (
         <StatusText>טוען חשבונית...</StatusText>
       ) : isError ? (

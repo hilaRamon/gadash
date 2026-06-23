@@ -48,6 +48,9 @@ export const TextButton = styled.button`
   padding: 0.5rem;
   cursor: pointer;
   min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 
   &:disabled {
     opacity: 0.5;

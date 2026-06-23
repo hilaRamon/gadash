@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { NavLink, type NavLinkProps, useLocation } from 'react-router-dom'
+import { NavLink, type NavLinkProps, useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { useAuth } from '../context/AuthContext'
+import { LogoutIcon } from './collection/Icons'
 
 /** Merges styled-components className with NavLink active state. */
 function NavLinkWithActiveClass({
@@ -33,6 +35,8 @@ import {
 
 export function Sidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
   const hasActiveMaterialTracking = materialTrackingCollections.some((item) =>
     location.pathname.startsWith(item.path),
   )
@@ -58,6 +62,7 @@ export function Sidebar() {
     <SidebarContainer aria-label="ניווט ראשי">
       <SidebarBrand>
         <SidebarBrandTitle>Gadash</SidebarBrandTitle>
+        {user ? <SidebarUser>{user.name}</SidebarUser> : null}
       </SidebarBrand>
 
       <SidebarNav>
@@ -171,6 +176,19 @@ export function Sidebar() {
           </SidebarList>
         </SidebarSection>
       </SidebarNav>
+
+      <SidebarFooter>
+        <SidebarLogoutButton
+          type="button"
+          onClick={() => {
+            logout()
+            navigate('/login', { replace: true })
+          }}
+        >
+          <LogoutIcon size={18} />
+          התנתק
+        </SidebarLogoutButton>
+      </SidebarFooter>
     </SidebarContainer>
   )
 }
@@ -198,6 +216,38 @@ const SidebarBrandTitle = styled.span`
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--accent);
+`
+
+const SidebarUser = styled.div`
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+`
+
+const SidebarFooter = styled.div`
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+`
+
+const SidebarLogoutButton = styled.button`
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
 `
 
 const SidebarNav = styled.nav`

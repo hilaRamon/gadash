@@ -47,13 +47,13 @@ function operationLine(row: ApiDocument): CustomerBillLine {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
     plotName: String(row.plotName ?? ""),
-    pricingForm: String(row.pricingForm ?? ''),
+    pricingForm: String(row.pricingForm ?? ""),
     amount:
       Number.isFinite(amountValue) && amountValue !== 0
         ? formatNumber(amountValue)
-        : '',
+        : "",
     unitPrice:
-      Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : '',
+      Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatNumber(row.finalPrice ?? 0),
   };
@@ -107,14 +107,14 @@ function baleLine(row: ApiDocument): CustomerBillLine {
 
   if (byWeight) {
     if (Number.isFinite(weight) && weight > 0) {
-      amount = `${formatNumber(weight)} טון`;
+      amount = `טון ${formatNumber(weight)} `;
     }
     if (Number.isFinite(pricePerTon) && pricePerTon > 0) {
       unitPrice = formatNumber(pricePerTon);
     }
   } else {
     if (Number.isFinite(quantity) && quantity > 0) {
-      amount = `${formatNumber(quantity)} יח׳`;
+      amount = `יחידות ${formatNumber(quantity)}`;
     }
     if (Number.isFinite(pricePerUnit) && pricePerUnit > 0) {
       unitPrice = formatNumber(pricePerUnit);

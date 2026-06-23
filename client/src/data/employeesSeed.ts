@@ -7,6 +7,7 @@ type EmployeeSeed = {
   mobile?: string
   notes?: string
   formOfPayment?: 'שעתי' | 'גלובלי'
+  role?: 'employee' | 'admin'
 }
 
 const employees: EmployeeSeed[] = [
@@ -27,7 +28,7 @@ const employees: EmployeeSeed[] = [
   { name: 'הילה' },
   { name: 'יוליוס', mobile: '0546522906' },
   { name: 'אורי נעם', mobile: '0507405556' },
-  { name: 'אבי סיטון', formOfPayment: 'גלובלי' },
+  { name: 'אבי סיטון', formOfPayment: 'גלובלי', role: 'admin' },
   { name: 'יצחק סקלי', mobile: '0526071701' },
   { name: 'עובד חיצוני' },
   { name: 'פנחס' },
@@ -44,4 +45,5 @@ export const employeesSeedData: CollectionDocument[] = employees.map((row, index
   mobile: row.mobile ?? '',
   notes: row.notes ?? '',
   formOfPayment: row.formOfPayment ?? 'שעתי',
+  role: row.role ?? 'employee',
 }))

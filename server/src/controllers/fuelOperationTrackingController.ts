@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { fuelOperationTrackingService } from '../services/fuelOperationTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { prepareEmployeeTrackingBody } from '../utils/employeeAuth';
 
 export const fuelOperationTrackingController = {
   list: asyncHandler(async (_req: Request, res: Response) => {
@@ -9,7 +10,8 @@ export const fuelOperationTrackingController = {
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {
-    const data = await fuelOperationTrackingService.create(req.body);
+    const body = prepareEmployeeTrackingBody(req.auth, req.body);
+    const data = await fuelOperationTrackingService.create(body);
     res.status(201).json(data);
   }),
 

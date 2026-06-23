@@ -30,6 +30,7 @@
     "migrate:customer-billing-statuses": "tsx scripts/migrate-customer-billing-statuses.ts",
     "migrate:material-amount-per-dunam": "tsx scripts/migrate-material-amount-per-dunam.ts",
     "migrate:employee-form-of-payment": "tsx scripts/migrate-employee-form-of-payment.ts",
+    "migrate:employee-role": "tsx scripts/migrate-employee-role.ts",
     "seed:customer-billing-example": "tsx scripts/seed-customer-billing-example.ts",
     "puppeteer:install": "puppeteer browsers install chrome"
   },
@@ -38,12 +39,14 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
     "puppeteer": "^24.43.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.10.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

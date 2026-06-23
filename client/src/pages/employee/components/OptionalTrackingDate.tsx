@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LogoutIcon } from '../../../components/collection/Icons'
 import { useEmployee } from '../context/EmployeeContext'
 import {
   EmployeeActionsRow,
@@ -9,10 +10,10 @@ import {
 } from '../employeeStyles'
 
 type OptionalTrackingDateProps = {
-  onClearEmployee: () => void
+  onLogout: () => void
 }
 
-export function OptionalTrackingDate({ onClearEmployee }: OptionalTrackingDateProps) {
+export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
   const { trackingDate, isCustomDate, setTrackingDate } = useEmployee()
   const [showPicker, setShowPicker] = useState(false)
 
@@ -45,8 +46,9 @@ export function OptionalTrackingDate({ onClearEmployee }: OptionalTrackingDatePr
             {isCustomDate ? 'שנה תאריך' : 'דווח לתאריך אחר'}
           </TextButton>
         )}
-        <TextButton type="button" onClick={onClearEmployee}>
-          החלף עובד
+        <TextButton type="button" onClick={onLogout}>
+          <LogoutIcon size={18} />
+          התנתק
         </TextButton>
       </EmployeeActionsRow>
     </>
