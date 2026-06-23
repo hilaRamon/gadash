@@ -6,10 +6,11 @@
  * 2. useUnbilledPreview(customerId) → server (or mock) returns four row arrays
  * 3. CreateCustomerBillingSections receives preview and renders the selection tables + bill
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { CreateCustomerBillingSections } from "../components/customerBilling/CreateCustomerBillingSections";
+import { SearchableSelect } from "../components/ui/SearchableSelect";
 import { useCustomersWithUnbilled } from "../hooks/customerBilling/useCustomersWithUnbilled";
 import { useUnbilledPreview } from "../hooks/customerBilling/useUnbilledPreview";
 import "./Page.css";
@@ -23,6 +24,15 @@ export function CreateCustomerBillingPage() {
     isError: customersError,
     error: customersErrorObj,
   } = useCustomersWithUnbilled();
+
+  const customerOptions = useMemo(
+    () =>
+      (customersData ?? []).map((customer) => ({
+        value: customer._id,
+        label: customer.name,
+      })),
+    [customersData],
+  );
 
   const customers = customersData ?? [];
 
@@ -61,18 +71,13 @@ export function CreateCustomerBillingPage() {
           ) : customers.length === 0 ? (
             <StatusText>אין לקוחות עם פריטים לחיוב</StatusText>
           ) : (
-            <CustomerSelect
+            <SearchableSelect
               id="customer-select"
               value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-            >
-              <option value="">בחר לקוח...</option>
-              {customers.map((customer) => (
-                <option key={customer._id} value={customer._id}>
-                  {customer.name}
-                </option>
-              ))}
-            </CustomerSelect>
+              options={customerOptions}
+              placeholder="בחר לקוח..."
+              onChange={setSelectedCustomerId}
+            />
           )}
         </CustomerStep>
 
@@ -126,16 +131,6 @@ const StepLabel = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
-`;
-
-const CustomerSelect = styled.select`
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.9375rem;
 `;
 
 const StatusText = styled.p<{ $error?: boolean }>`

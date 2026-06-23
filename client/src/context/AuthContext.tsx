@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(readStoredUser)
-  const [isReady, setIsReady] = useState(true)
+  const [isReady] = useState(true)
 
   const logout = useCallback(() => {
     clearAuthToken()

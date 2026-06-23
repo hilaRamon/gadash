@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { PhoneField } from '../components/collection/PhoneField'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { useAuth } from '../context/AuthContext'
 import { fetchLoginOptions } from '../lib/auth'
 import { getApiErrorMessage } from '../lib/apiErrorMessage'
@@ -103,24 +104,6 @@ const LoginLabel = styled.label`
   color: var(--text-secondary);
 `
 
-const LoginSelect = styled.select`
-  width: 100%;
-  min-height: 48px;
-  padding: 0.65rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--page-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 16px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-`
-
 const LoginPhoneWrap = styled.div`
   input {
     width: 100%;
@@ -211,6 +194,15 @@ export function LoginPage() {
     }
   }, [])
 
+  const employeeOptions = useMemo(
+    () =>
+      employees.map((employee) => ({
+        value: employee._id,
+        label: employee.name,
+      })),
+    [employees],
+  )
+
   const handleEmployeeChange = (nextEmployeeId: string) => {
     setEmployeeId(nextEmployeeId)
     setError(null)
@@ -269,18 +261,15 @@ export function LoginPage() {
           <LoginForm onSubmit={(event) => void handleSubmit(event)}>
             <LoginField>
               <LoginLabel htmlFor="login-employee">שם העובד</LoginLabel>
-              <LoginSelect
+              <SearchableSelect
                 id="login-employee"
                 value={employeeId}
-                onChange={(event) => handleEmployeeChange(event.target.value)}
-              >
-                <option value="">{isLoading ? 'טוען...' : 'בחר...'}</option>
-                {employees.map((employee) => (
-                  <option key={employee._id} value={employee._id}>
-                    {employee.name}
-                  </option>
-                ))}
-              </LoginSelect>
+                options={employeeOptions}
+                isLoading={isLoading}
+                required
+                size="large"
+                onChange={handleEmployeeChange}
+              />
             </LoginField>
 
             <LoginField>
