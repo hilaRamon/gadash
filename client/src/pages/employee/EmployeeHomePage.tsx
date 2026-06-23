@@ -1,10 +1,8 @@
-import { useNavigate } from 'react-router-dom'
 import { useCollectionList } from '../../hooks/collections/useCollectionList'
+import { EmployeeActionMenu } from './components/EmployeeActionMenu'
 import { OptionalTrackingDate } from './components/OptionalTrackingDate'
 import { useEmployee } from './context/EmployeeContext'
 import {
-  ActionCard,
-  ActionCardList,
   EmployeeContent,
   EmployeeHeader,
   EmployeePickerButton,
@@ -13,15 +11,7 @@ import {
   EmployeeTitle,
 } from './employeeStyles'
 
-const ACTIONS = [
-  { path: '/employee/field-work', label: 'משימת עיבוד' },
-  { path: '/employee/admin', label: 'משימת מנהלה' },
-  { path: '/employee/material', label: 'שימוש בחומר' },
-  { path: '/employee/fuel', label: 'פעולת דלק' },
-] as const
-
 export function EmployeeHomePage() {
-  const navigate = useNavigate()
   const { employeeId, employeeName, isCustomDate, trackingDate, setEmployee, clearEmployee, isReady } =
     useEmployee()
   const { data: employees = [], isLoading } = useCollectionList('employees')
@@ -73,22 +63,12 @@ export function EmployeeHomePage() {
           <EmployeeSubtitle>
             {isCustomDate
               ? `תאריך: ${new Date(`${trackingDate}T00:00:00`).toLocaleDateString('he-IL')}`
-              : 'תאריך: היום'}
+              : 'תאריך: היום · מה תרצו לדווח?'}
           </EmployeeSubtitle>
         </div>
       </EmployeeHeader>
 
-      <ActionCardList>
-        {ACTIONS.map((action) => (
-          <ActionCard
-            key={action.path}
-            type="button"
-            onClick={() => navigate(action.path)}
-          >
-            {action.label}
-          </ActionCard>
-        ))}
-      </ActionCardList>
+      <EmployeeActionMenu />
 
       <OptionalTrackingDate onClearEmployee={clearEmployee} />
     </EmployeeContent>

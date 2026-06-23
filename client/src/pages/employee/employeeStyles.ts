@@ -60,46 +60,11 @@ export const BackButton = styled(TextButton)`
   min-height: auto;
 `
 
-export const ActionCardList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-`
-
 export const EmployeeActionsRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-`
-
-export const ActionCard = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 64px;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  box-sizing: border-box;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: var(--hover-bg);
-  }
-
-  &:active {
-    background: var(--active-bg);
-  }
 `
 
 export const EmployeePickerList = styled.div`
