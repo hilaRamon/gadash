@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { MaterialPurchaseTrackingModel } from '../models/MaterialPurchaseTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type MaterialPurchaseTrackingInput = {
   date: Date;
@@ -16,8 +17,9 @@ const materialPopulate = { path: 'material', select: '_id name' };
 const supplierPopulate = { path: 'supplier', select: '_id name' };
 
 export const materialPurchaseTrackingRepository = {
-  findAll() {
-    return MaterialPurchaseTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return MaterialPurchaseTrackingModel.find(filter)
       .populate(materialPopulate)
       .populate(supplierPopulate)
       .sort({ date: -1 })

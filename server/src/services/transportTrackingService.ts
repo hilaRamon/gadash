@@ -101,8 +101,8 @@ async function buildTrackingPatch(
 }
 
 export const transportTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await transportTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await transportTrackingRepository.findAll(seasonYear);
     return transportTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, type NavLinkProps, useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { useAuth } from '../context/AuthContext'
+import { SeasonSelect } from './collection/SeasonSelect'
 import { LogoutIcon } from './collection/Icons'
 
 /** Merges styled-components className with NavLink active state. */
@@ -63,6 +64,7 @@ export function Sidebar() {
       <SidebarBrand>
         <SidebarBrandTitle>Gadash</SidebarBrandTitle>
         {user ? <SidebarUser>{user.name}</SidebarUser> : null}
+        <SeasonSelect />
       </SidebarBrand>
 
       <SidebarNav>

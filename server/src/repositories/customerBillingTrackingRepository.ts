@@ -4,6 +4,7 @@ import {
   type CustomerBillingStatus,
 } from '../models/CustomerBillingTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type CustomerBillingTrackingInput = {
   date: Date;
@@ -21,8 +22,9 @@ export type CustomerBillingTrackingInput = {
 const customerPopulate = { path: 'customer', select: '_id name' };
 
 export const customerBillingTrackingRepository = {
-  findAll() {
-    return CustomerBillingTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return CustomerBillingTrackingModel.find(filter)
       .populate(customerPopulate)
       .sort({ date: -1 })
       .lean();

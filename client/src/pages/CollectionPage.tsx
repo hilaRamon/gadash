@@ -8,6 +8,7 @@ import { getDocumentLabel } from '../lib/documentLabel'
 import { exportCollectionToExcel } from '../lib/exportCollectionExcel'
 import { useTableQueryState } from '../hooks/useTableQueryState'
 import { useCollectionList } from '../hooks/collections/useCollectionList'
+import { useSeason } from '../context/SeasonContext'
 import {
   useCreateDocument,
   useUpdateDocument,
@@ -89,6 +90,7 @@ function CollectionPageContent({
   collectionId: string
 }) {
   const navigate = useNavigate()
+  const { selectedSeasonYear } = useSeason()
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -101,6 +103,7 @@ function CollectionPageContent({
 
   const { data: rows = [], isLoading, isError, error } = useCollectionList(
     schema.collection,
+    { season: selectedSeasonYear },
   )
 
   const createMutation = useCreateDocument(schema.collection)

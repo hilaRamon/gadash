@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { TransportTrackingModel } from '../models/TransportTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type TransportTrackingInput = {
   date: Date;
@@ -16,8 +17,9 @@ export type TransportTrackingInput = {
 const moverPopulate = { path: 'mover', select: '_id name' };
 
 export const transportTrackingRepository = {
-  findAll() {
-    return TransportTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return TransportTrackingModel.find(filter)
       .populate(moverPopulate)
       .sort({ date: -1 })
       .lean();

@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { FuelOperationTrackingModel } from '../models/FuelOperationTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type FuelOperationTrackingInput = {
   date: Date;
@@ -21,8 +22,9 @@ const employeePopulate = { path: 'employee', select: '_id name' };
 const tractorPopulate = { path: 'tractor', select: '_id name' };
 
 export const fuelOperationTrackingRepository = {
-  findAll() {
-    return FuelOperationTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return FuelOperationTrackingModel.find(filter)
       .populate(operationPopulate)
       .populate(fuelTankPopulate)
       .populate(employeePopulate)

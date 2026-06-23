@@ -2,6 +2,7 @@ import type { Types } from 'mongoose';
 import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
 import type { BaleOrderPricingForm } from '../models/BaleOrderTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type BaleOrderTrackingInput = {
   date: Date;
@@ -22,8 +23,9 @@ const balePopulate = { path: 'bale', select: '_id name pricePerTon pricePerUnit'
 const customerPopulate = { path: 'customer', select: '_id name' };
 
 export const baleOrderTrackingRepository = {
-  findAll() {
-    return BaleOrderTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return BaleOrderTrackingModel.find(filter)
       .populate(balePopulate)
       .populate(customerPopulate)
       .sort({ date: -1 })

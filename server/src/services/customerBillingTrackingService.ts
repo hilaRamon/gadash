@@ -139,8 +139,8 @@ async function buildTrackingPatch(
 }
 
 export const customerBillingTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await customerBillingTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await customerBillingTrackingRepository.findAll(seasonYear);
     return customerBillingTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
