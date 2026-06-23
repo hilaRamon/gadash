@@ -4,7 +4,8 @@ import { EmployeeActionMenu } from './components/EmployeeActionMenu'
 import { OptionalTrackingDate } from './components/OptionalTrackingDate'
 import { useEmployee } from './context/EmployeeContext'
 import {
-  EmployeeContent,
+  EmployeeCenteredContent,
+  EmployeeCenteredShell,
   EmployeeHeader,
   EmployeeSubtitle,
   EmployeeTitle,
@@ -22,28 +23,32 @@ export function EmployeeHomePage() {
 
   if (!isReady) {
     return (
-      <EmployeeContent>
-        <EmployeeTitle>טוען...</EmployeeTitle>
-      </EmployeeContent>
+      <EmployeeCenteredShell>
+        <EmployeeCenteredContent>
+          <EmployeeTitle>טוען...</EmployeeTitle>
+        </EmployeeCenteredContent>
+      </EmployeeCenteredShell>
     )
   }
 
   return (
-    <EmployeeContent>
-      <EmployeeHeader>
-        <div>
-          <EmployeeTitle>שלום, {employeeName ?? 'עובד'}</EmployeeTitle>
-          <EmployeeSubtitle>
-            {isCustomDate
-              ? `תאריך: ${new Date(`${trackingDate}T00:00:00`).toLocaleDateString('he-IL')}`
-              : 'תאריך: היום · מה תרצו לדווח?'}
-          </EmployeeSubtitle>
-        </div>
-      </EmployeeHeader>
+    <EmployeeCenteredShell>
+      <EmployeeCenteredContent>
+        <EmployeeHeader>
+          <div>
+            <EmployeeTitle>שלום, {employeeName ?? 'עובד'}</EmployeeTitle>
+            <EmployeeSubtitle>
+              {isCustomDate
+                ? `תאריך: ${new Date(`${trackingDate}T00:00:00`).toLocaleDateString('he-IL')}`
+                : 'תאריך: היום · מה תרצו לדווח?'}
+            </EmployeeSubtitle>
+          </div>
+        </EmployeeHeader>
 
-      <EmployeeActionMenu />
+        <EmployeeActionMenu />
 
-      <OptionalTrackingDate onLogout={handleLogout} />
-    </EmployeeContent>
+        <OptionalTrackingDate onLogout={handleLogout} />
+      </EmployeeCenteredContent>
+    </EmployeeCenteredShell>
   )
 }

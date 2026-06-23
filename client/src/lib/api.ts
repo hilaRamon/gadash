@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { clearAuthToken, getAuthToken } from './auth';
+import { notifyUnauthorized } from './authSession';
+import { clearAuthToken, getAuthToken } from './tokenStorage';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3001',
@@ -19,9 +20,7 @@ api.interceptors.response.use(
     const hadToken = Boolean(error.config?.headers?.Authorization);
     if (error.response?.status === 401 && hadToken) {
       clearAuthToken();
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login');
-      }
+      notifyUnauthorized();
     }
     return Promise.reject(error);
   },

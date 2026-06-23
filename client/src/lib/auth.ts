@@ -1,4 +1,5 @@
 import api from './api'
+import { clearAuthToken, getAuthToken, setAuthToken } from './tokenStorage'
 
 export type AuthRole = 'employee' | 'admin'
 
@@ -20,19 +21,7 @@ type LoginOption = {
   name: string
 }
 
-const TOKEN_STORAGE_KEY = 'gadash.authToken'
-
-export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_STORAGE_KEY)
-}
-
-export function setAuthToken(token: string): void {
-  localStorage.setItem(TOKEN_STORAGE_KEY, token)
-}
-
-export function clearAuthToken(): void {
-  localStorage.removeItem(TOKEN_STORAGE_KEY)
-}
+export { clearAuthToken, getAuthToken, setAuthToken }
 
 function parseJwtPayload(token: string): JwtPayload | null {
   try {
@@ -60,6 +49,20 @@ export function getUserFromToken(token: string): AuthUser | null {
     _id: payload.sub,
     name: payload.name,
     role: payload.role,
+  }
+}
+
+export function readStoredUser(): AuthUser | null {
+  try {
+    const token = getAuthToken()
+    if (!token || isAuthTokenExpired(token)) {
+      clearAuthToken()
+      return null
+    }
+    return getUserFromToken(token)
+  } catch {
+    clearAuthToken()
+    return null
   }
 }
 

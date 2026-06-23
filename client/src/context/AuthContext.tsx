@@ -10,13 +10,12 @@ import {
 import {
   clearAuthToken,
   fetchCurrentUser,
-  getAuthToken,
-  getUserFromToken,
-  isAuthTokenExpired,
   loginRequest,
+  readStoredUser,
   setAuthToken,
   type AuthUser,
 } from '../lib/auth'
+import { registerUnauthorizedHandler } from '../lib/authSession'
 
 type AuthContextValue = {
   user: AuthUser | null
@@ -29,27 +28,31 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isReady, setIsReady] = useState(false)
+  const [user, setUser] = useState<AuthUser | null>(readStoredUser)
+  const [isReady, setIsReady] = useState(true)
+
+  const logout = useCallback(() => {
+    clearAuthToken()
+    setUser(null)
+  }, [])
+
+  useEffect(() => {
+    return registerUnauthorizedHandler(() => {
+      setUser(null)
+    })
+  }, [])
 
   useEffect(() => {
     let cancelled = false
 
-    async function restoreSession() {
-      const token = getAuthToken()
-      if (!token || isAuthTokenExpired(token)) {
-        clearAuthToken()
-        if (!cancelled) {
-          setUser(null)
-          setIsReady(true)
-        }
+    async function validateSession() {
+      const storedUser = readStoredUser()
+      if (!storedUser) {
+        if (!cancelled) setUser(null)
         return
       }
 
-      const cachedUser = getUserFromToken(token)
-      if (cachedUser) {
-        if (!cancelled) setUser(cachedUser)
-      }
+      if (!cancelled) setUser(storedUser)
 
       try {
         const currentUser = await fetchCurrentUser()
@@ -57,12 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         clearAuthToken()
         if (!cancelled) setUser(null)
-      } finally {
-        if (!cancelled) setIsReady(true)
       }
     }
 
-    void restoreSession()
+    void validateSession()
 
     return () => {
       cancelled = true
@@ -74,11 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthToken(token)
     setUser(employee)
     return employee
-  }, [])
-
-  const logout = useCallback(() => {
-    clearAuthToken()
-    setUser(null)
   }, [])
 
   const value = useMemo(

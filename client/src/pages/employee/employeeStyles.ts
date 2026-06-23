@@ -19,6 +19,21 @@ export const EmployeeContent = styled.div`
   box-sizing: border-box;
 `
 
+export const EmployeeCenteredShell = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+`
+
+export const EmployeeCenteredContent = styled(EmployeeContent)`
+  flex: 0 1 auto;
+  padding: 1rem;
+`
+
 export const EmployeeHeader = styled.header`
   display: flex;
   align-items: center;
