@@ -212,3 +212,9 @@ export const sidebarSections = [
   { id: "reports", title: "דוחות", path: "/reports" },
   { id: "summaries", title: "סיכומים", path: "/summaries" },
 ] as const;
+
+export const employeeAppNav = {
+  id: "employee-app",
+  label: "לאפליקצית העובדים",
+  path: "/employee",
+} as const;

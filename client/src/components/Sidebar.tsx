@@ -33,6 +33,7 @@ import {
   reportCollections,
   sidebarSections,
   summaryCollections,
+  employeeAppNav,
 } from '../config/navigation'
 
 export function Sidebar() {
@@ -199,6 +200,12 @@ export function Sidebar() {
       </SidebarNav>
 
       <SidebarFooter>
+        <SidebarAppLink
+          to={employeeAppNav.path}
+          activeClassName="sidebar-link--active"
+        >
+          {employeeAppNav.label}
+        </SidebarAppLink>
         <SidebarLogoutButton
           type="button"
           onClick={() => {
@@ -248,6 +255,32 @@ const SidebarUser = styled.div`
 const SidebarFooter = styled.div`
   padding: 1rem 1.5rem 1.5rem;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`
+
+const SidebarAppLink = styled(NavLinkWithActiveClass)`
+  display: block;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.sidebar-link--active {
+    background: var(--active-bg);
+    color: var(--accent);
+  }
 `
 
 const SidebarLogoutButton = styled.button`
