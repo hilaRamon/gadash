@@ -23,6 +23,7 @@ import { transportTrackingRouter } from "./transportTrackingRouter";
 import { transportChargeStateRouter } from "./transportChargeStateRouter";
 import { customerBillingTrackingRouter } from "./customerBillingTrackingRouter";
 import { monthlyReportRouter } from "./monthlyReportRouter";
+import { summariesRouter } from "./summariesRouter";
 
 export const apiRouter = Router();
 
@@ -61,3 +62,4 @@ apiRouter.use("/customerBillingTrackings", requireAdmin, customerBillingTracking
 apiRouter.use("/customer-billing-trackings", requireAdmin, customerBillingTrackingRouter);
 apiRouter.use("/monthly-report", requireAdmin, monthlyReportRouter);
 apiRouter.use("/monthly-reports", requireAdmin, monthlyReportRouter);
+apiRouter.use("/summaries", requireAdmin, summariesRouter);

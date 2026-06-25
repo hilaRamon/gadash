@@ -14,6 +14,7 @@ import { EmployeeMonthlyReportPage } from './pages/EmployeeMonthlyReportPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MonthlySummaryPage } from './pages/MonthlySummaryPage'
+import { OperationsSummaryPage } from './pages/summaries/OperationsSummaryPage'
 import { SectionPage } from './pages/SectionPage'
 import './App.css'
 
@@ -64,8 +65,13 @@ function App() {
               path="reports/monthly-summary"
               element={<MonthlySummaryPage />}
             />
+            <Route
+              path="summaries/operations"
+              element={<OperationsSummaryPage />}
+            />
             <Route path="trackings" element={<SectionPage title="מעקבים" />} />
             <Route path="reports" element={<SectionPage title="דוחות" />} />
+            <Route path="summaries" element={<SectionPage title="סיכומים" />} />
           </Route>
         </Route>
 

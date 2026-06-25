@@ -32,6 +32,7 @@ import {
   operationsTrackingCollections,
   reportCollections,
   sidebarSections,
+  summaryCollections,
 } from '../config/navigation'
 
 export function Sidebar() {
@@ -169,6 +170,24 @@ export function Sidebar() {
           </SidebarSectionTitleLink>
           <SidebarList>
             {reportCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+          </SidebarList>
+        </SidebarSection>
+
+        <SidebarSection>
+          <SidebarSectionTitleLink
+            to={sidebarSections[3].path}
+            activeClassName="sidebar-section-title-link--active"
+          >
+            {sidebarSections[3].title}
+          </SidebarSectionTitleLink>
+          <SidebarList>
+            {summaryCollections.map((item) => (
               <li key={item.id}>
                 <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}
