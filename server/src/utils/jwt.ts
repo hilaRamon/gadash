@@ -1,21 +1,21 @@
-import jwt, { type SignOptions } from 'jsonwebtoken';
-import { EMPLOYEE_ROLE_ADMIN } from '../models/Employee';
-import type { AuthUser, JwtPayload } from '../types/auth';
-import { HttpError } from './httpError';
+import jwt, { type SignOptions } from "jsonwebtoken";
+import { EMPLOYEE_ROLE_ADMIN } from "../models/Employee";
+import type { AuthUser, JwtPayload } from "../types/auth";
+import { HttpError } from "./httpError";
 
-const ADMIN_TOKEN_EXPIRY = '24h';
-const EMPLOYEE_TOKEN_EXPIRY = '8h';
+const ADMIN_TOKEN_EXPIRY = "7d";
+const EMPLOYEE_TOKEN_EXPIRY = "8h";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
-    throw new Error('JWT_SECRET is not set');
+    throw new Error("JWT_SECRET is not set");
   }
   return secret;
 }
 
 export function signAuthToken(user: AuthUser): string {
-  const expiresIn: SignOptions['expiresIn'] =
+  const expiresIn: SignOptions["expiresIn"] =
     user.role === EMPLOYEE_ROLE_ADMIN
       ? ADMIN_TOKEN_EXPIRY
       : EMPLOYEE_TOKEN_EXPIRY;
@@ -40,6 +40,6 @@ export function verifyAuthToken(token: string): AuthUser {
       role: payload.role,
     };
   } catch {
-    throw new HttpError(401, 'פג תוקף ההתחברות');
+    throw new HttpError(401, "פג תוקף ההתחברות");
   }
 }
