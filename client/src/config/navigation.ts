@@ -182,6 +182,20 @@ export const reportCollections: ReportCollection[] = [
   },
 ];
 
+export type SummaryCollection = {
+  id: string;
+  label: string;
+  path: string;
+};
+
+export const summaryCollections: SummaryCollection[] = [
+  {
+    id: "operations-summary",
+    label: "סיכום משימות",
+    path: "/summaries/operations",
+  },
+];
+
 export const trackingCollections: TrackingCollection[] = [
   ...materialTrackingCollections,
   ...operationsTrackingCollections,
@@ -196,4 +210,11 @@ export const sidebarSections = [
   { id: "data", title: "נתונים", items: dataCollections },
   { id: "trackings", title: "מעקבים", items: trackingCollections },
   { id: "reports", title: "דוחות", path: "/reports" },
+  { id: "summaries", title: "סיכומים", path: "/summaries" },
 ] as const;
+
+export const employeeAppNav = {
+  id: "employee-app",
+  label: "לאפליקצית העובדים",
+  path: "/employee",
+} as const;

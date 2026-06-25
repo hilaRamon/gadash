@@ -171,8 +171,8 @@ async function buildTrackingPatch(
 }
 
 export const fuelOperationTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await fuelOperationTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await fuelOperationTrackingRepository.findAll(seasonYear);
     return fuelOperationTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

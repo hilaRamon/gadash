@@ -1,15 +1,19 @@
 import type { Request, Response } from 'express';
 import { materialUsageTrackingService } from '../services/materialUsageTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { prepareEmployeeTrackingBody } from '../utils/employeeAuth';
+import { parseSeasonQuery } from '../utils/seasonRange';
 
 export const materialUsageTrackingController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await materialUsageTrackingService.list();
+  list: asyncHandler(async (req: Request, res: Response) => {
+    const seasonYear = parseSeasonQuery(req.query);
+    const data = await materialUsageTrackingService.list(seasonYear);
     res.json(data);
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {
-    const data = await materialUsageTrackingService.create(req.body);
+    const body = prepareEmployeeTrackingBody(req.auth, req.body);
+    const data = await materialUsageTrackingService.create(body);
     res.status(201).json(data);
   }),
 

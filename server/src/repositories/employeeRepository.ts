@@ -1,4 +1,8 @@
-import { EmployeeModel, type EmployeeFormOfPayment } from '../models/Employee';
+import {
+  EmployeeModel,
+  type EmployeeFormOfPayment,
+  type EmployeeRole,
+} from '../models/Employee';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type EmployeeInput = {
@@ -7,6 +11,7 @@ export type EmployeeInput = {
   mobile?: string;
   notes?: string;
   formOfPayment?: EmployeeFormOfPayment;
+  role?: EmployeeRole;
 };
 
 export const employeeRepository = {

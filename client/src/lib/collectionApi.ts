@@ -15,7 +15,11 @@ import { materialPurchaseTrackingsSeedData } from "../data/materialPurchaseTrack
 import { materialUsageTrackingsSeedData } from "../data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "../schema/types";
 import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "./baleOrderPricing";
-import type { TableQueryParams } from "../schema/tableQuery";
+import type { ListCollectionParams } from "./listCollectionParams";
+import {
+  collectionHasDateField,
+  isDateInSeason,
+} from "./seasonRange";
 import {
   calcFinalPrice,
   resolveUnitAmount,
@@ -430,9 +434,25 @@ function applyFuelTankDeltaForMockCreate(row: CollectionDocument) {
   fuelTank.currentAmount = next < 0 ? 0 : next;
 }
 
-async function listMock(collection: string): Promise<CollectionDocument[]> {
+function filterRowsBySeason(
+  collection: string,
+  rows: CollectionDocument[],
+  seasonYear?: number,
+): CollectionDocument[] {
+  if (seasonYear == null || !collectionHasDateField(collection)) return rows;
+  return rows.filter((row) => isDateInSeason(row.date, seasonYear));
+}
+
+async function listMock(
+  collection: string,
+  seasonYear?: number,
+): Promise<CollectionDocument[]> {
   await delay(200);
-  const rows = [...getMockStore(collection)];
+  const rows = filterRowsBySeason(
+    collection,
+    [...getMockStore(collection)],
+    seasonYear,
+  );
   if (collection === "materialUsageTrackings") {
     return rows.map(enrichMaterialUsageRow);
   }
@@ -778,11 +798,11 @@ function delay(ms: number) {
 
 export async function listCollection(
   collection: string,
-  params?: TableQueryParams,
+  params?: ListCollectionParams,
 ): Promise<CollectionDocument[]> {
-  void params;
-  if (useMock) return listMock(collection);
-  const { data } = await api.get<CollectionDocument[]>(`/api/${collection}`);
+  if (useMock) return listMock(collection, params?.season);
+  const query = params?.season != null ? `?season=${params.season}` : "";
+  const { data } = await api.get<CollectionDocument[]>(`/api/${collection}${query}`);
   return data;
 }
 

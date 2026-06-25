@@ -171,8 +171,8 @@ async function buildTrackingPatch(
 }
 
 export const contractorTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await contractorTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await contractorTrackingRepository.findAll(seasonYear);
     return contractorTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

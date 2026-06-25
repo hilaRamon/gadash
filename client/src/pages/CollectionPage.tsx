@@ -8,6 +8,7 @@ import { getDocumentLabel } from '../lib/documentLabel'
 import { exportCollectionToExcel } from '../lib/exportCollectionExcel'
 import { useTableQueryState } from '../hooks/useTableQueryState'
 import { useCollectionList } from '../hooks/collections/useCollectionList'
+import { useSeason } from '../context/SeasonContext'
 import {
   useCreateDocument,
   useUpdateDocument,
@@ -15,6 +16,11 @@ import {
   useBulkDeleteDocuments,
 } from '../hooks/collections/useCollectionMutations'
 import { CollectionToolbar } from '../components/collection/CollectionToolbar'
+import {
+  PageHeader,
+  PageHeaderTop,
+  PageTitle,
+} from '../components/page/PageHeaderLayout'
 import { DataTable } from '../components/collection/DataTable'
 import { CollectionFormModal } from '../components/collection/CollectionFormModal'
 import { ConfirmDialog } from '../components/collection/ConfirmDialog'
@@ -89,6 +95,7 @@ function CollectionPageContent({
   collectionId: string
 }) {
   const navigate = useNavigate()
+  const { selectedSeasonYear } = useSeason()
   const tableQuery = useTableQueryState(schema)
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -101,6 +108,7 @@ function CollectionPageContent({
 
   const { data: rows = [], isLoading, isError, error } = useCollectionList(
     schema.collection,
+    { season: selectedSeasonYear },
   )
 
   const createMutation = useCreateDocument(schema.collection)
@@ -363,33 +371,6 @@ function CollectionPageContent({
     </div>
   )
 }
-
-const PageHeader = styled.header<{ $stacked?: boolean }>`
-  display: flex;
-  flex-direction: ${({ $stacked }) => ($stacked ? 'column' : 'row')};
-  flex-wrap: wrap;
-  align-items: ${({ $stacked }) => ($stacked ? 'stretch' : 'center')};
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`
-
-const PageHeaderTop = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: 100%;
-`
-
-const PageTitle = styled.h1`
-  margin: 0;
-  flex-shrink: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-`
 
 const DeleteDialogList = styled.ul`
   margin: 0.5rem 0;

@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { OperationTrackingModel } from '../models/OperationTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type OperationTrackingInput = {
   date: Date;
@@ -28,8 +29,9 @@ const plotPopulate = {
 const employeePopulate = { path: 'employee', select: '_id name' };
 
 export const operationTrackingRepository = {
-  findAll() {
-    return OperationTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return OperationTrackingModel.find(filter)
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)

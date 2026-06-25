@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express';
 import { materialPurchaseTrackingService } from '../services/materialPurchaseTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { parseSeasonQuery } from '../utils/seasonRange';
 
 export const materialPurchaseTrackingController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await materialPurchaseTrackingService.list();
+  list: asyncHandler(async (req: Request, res: Response) => {
+    const seasonYear = parseSeasonQuery(req.query);
+    const data = await materialPurchaseTrackingService.list(seasonYear);
     res.json(data);
   }),
 

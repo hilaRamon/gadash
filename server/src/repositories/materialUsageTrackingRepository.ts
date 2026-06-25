@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type MaterialUsageTrackingInput = {
   date: Date;
@@ -26,8 +27,9 @@ const plotPopulate = {
 const employeePopulate = { path: 'employee', select: '_id name' };
 
 export const materialUsageTrackingRepository = {
-  findAll() {
-    return MaterialUsageTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return MaterialUsageTrackingModel.find(filter)
       .populate(materialPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)

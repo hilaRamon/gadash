@@ -228,8 +228,8 @@ async function buildTrackingPatch(
 }
 
 export const materialUsageTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await materialUsageTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await materialUsageTrackingRepository.findAll(seasonYear);
     return materialUsageTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

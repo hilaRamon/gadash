@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
-import { NavLink, type NavLinkProps, useLocation } from 'react-router-dom'
+import { NavLink, type NavLinkProps, useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { useAuth } from '../context/AuthContext'
+import { SeasonSelect } from './collection/SeasonSelect'
+import { LogoutIcon } from './collection/Icons'
 
 /** Merges styled-components className with NavLink active state. */
 function NavLinkWithActiveClass({
@@ -29,10 +32,14 @@ import {
   operationsTrackingCollections,
   reportCollections,
   sidebarSections,
+  summaryCollections,
+  employeeAppNav,
 } from '../config/navigation'
 
 export function Sidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
   const hasActiveMaterialTracking = materialTrackingCollections.some((item) =>
     location.pathname.startsWith(item.path),
   )
@@ -58,6 +65,8 @@ export function Sidebar() {
     <SidebarContainer aria-label="ניווט ראשי">
       <SidebarBrand>
         <SidebarBrandTitle>Gadash</SidebarBrandTitle>
+        {user ? <SidebarUser>{user.name}</SidebarUser> : null}
+        <SeasonSelect />
       </SidebarBrand>
 
       <SidebarNav>
@@ -170,7 +179,44 @@ export function Sidebar() {
             ))}
           </SidebarList>
         </SidebarSection>
+
+        <SidebarSection>
+          <SidebarSectionTitleLink
+            to={sidebarSections[3].path}
+            activeClassName="sidebar-section-title-link--active"
+          >
+            {sidebarSections[3].title}
+          </SidebarSectionTitleLink>
+          <SidebarList>
+            {summaryCollections.map((item) => (
+              <li key={item.id}>
+                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
+                  {item.label}
+                </SidebarLink>
+              </li>
+            ))}
+          </SidebarList>
+        </SidebarSection>
       </SidebarNav>
+
+      <SidebarFooter>
+        <SidebarAppLink
+          to={employeeAppNav.path}
+          activeClassName="sidebar-link--active"
+        >
+          {employeeAppNav.label}
+        </SidebarAppLink>
+        <SidebarLogoutButton
+          type="button"
+          onClick={() => {
+            logout()
+            navigate('/login', { replace: true })
+          }}
+        >
+          <LogoutIcon size={18} />
+          התנתק
+        </SidebarLogoutButton>
+      </SidebarFooter>
     </SidebarContainer>
   )
 }
@@ -198,6 +244,64 @@ const SidebarBrandTitle = styled.span`
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--accent);
+`
+
+const SidebarUser = styled.div`
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+`
+
+const SidebarFooter = styled.div`
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`
+
+const SidebarAppLink = styled(NavLinkWithActiveClass)`
+  display: block;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
+
+  &.sidebar-link--active {
+    background: var(--active-bg);
+    color: var(--accent);
+  }
+`
+
+const SidebarLogoutButton = styled.button`
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+  }
 `
 
 const SidebarNav = styled.nav`

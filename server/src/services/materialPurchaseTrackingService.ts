@@ -201,8 +201,8 @@ async function buildTrackingPatch(
 }
 
 export const materialPurchaseTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await materialPurchaseTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await materialPurchaseTrackingRepository.findAll(seasonYear);
     return materialPurchaseTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

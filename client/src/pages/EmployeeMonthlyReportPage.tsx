@@ -7,6 +7,7 @@ import {
   useUpdateMonthlyAbsence,
 } from "../hooks/monthlyReport/useMonthlyReport";
 import { NumericMonthPicker } from "../components/reports/NumericMonthPicker";
+import { SearchableSelect } from "../components/ui/SearchableSelect";
 import { exportEmployeeMonthlyReportExcel } from "../lib/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
@@ -90,6 +91,15 @@ export function EmployeeMonthlyReportPage() {
     );
   }, [report, isClosed]);
 
+  const employeeOptions = useMemo(
+    () =>
+      workedEmployees.map((employee) => ({
+        value: employee.employeeId,
+        label: employee.employeeName,
+      })),
+    [workedEmployees],
+  );
+
   const handleAbsenceBlur = () => {
     if (!report || isClosed) return;
     if (
@@ -117,18 +127,13 @@ export function EmployeeMonthlyReportPage() {
             ) : workedEmployees.length === 0 ? (
               <StatusText>אין עובדים שעבדו בחודש זה</StatusText>
             ) : (
-              <FilterSelect
+              <SearchableSelect
                 id="employee-select"
                 value={selectedEmployeeId}
-                onChange={(event) => setSelectedEmployeeId(event.target.value)}
-              >
-                <option value="">בחר עובד...</option>
-                {workedEmployees.map((employee) => (
-                  <option key={employee.employeeId} value={employee.employeeId}>
-                    {employee.employeeName}
-                  </option>
-                ))}
-              </FilterSelect>
+                options={employeeOptions}
+                placeholder="בחר עובד..."
+                onChange={setSelectedEmployeeId}
+              />
             )}
           </FilterField>
 
@@ -343,15 +348,6 @@ const FilterLabel = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
-`;
-
-const FilterSelect = styled.select`
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
 `;
 
 const ExportButton = styled.button`

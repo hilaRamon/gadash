@@ -251,8 +251,8 @@ async function resolveAmountForSave(options: {
 }
 
 export const operationTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await operationTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await operationTrackingRepository.findAll(seasonYear);
     return operationTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

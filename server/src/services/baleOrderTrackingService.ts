@@ -203,8 +203,8 @@ function applyPricingFormSideEffects(
 }
 
 export const baleOrderTrackingService = {
-  async list(): Promise<ApiDocument[]> {
-    const rows = await baleOrderTrackingRepository.findAll();
+  async list(seasonYear?: number): Promise<ApiDocument[]> {
+    const rows = await baleOrderTrackingRepository.findAll(seasonYear);
     return baleOrderTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 

@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { ContractorTrackingModel } from '../models/ContractorTracking';
 import type { ContractorPricingForm } from '../models/ContractorTracking';
 import { toObjectIds } from '../utils/mongoIds';
+import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type ContractorTrackingInput = {
   date: Date;
@@ -28,8 +29,9 @@ const plotPopulate = {
 const operationPopulate = { path: 'operation', select: '_id name' };
 
 export const contractorTrackingRepository = {
-  findAll() {
-    return ContractorTrackingModel.find()
+  findAll(seasonYear?: number) {
+    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+    return ContractorTrackingModel.find(filter)
       .populate(contractorPopulate)
       .populate(plotPopulate)
       .populate(operationPopulate)
