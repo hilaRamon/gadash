@@ -9,6 +9,7 @@ type MaterialSeedRow = {
   currentQuantity: number
   currentBuyingCost: number
   amountPerDunam?: number | null
+  inventoryGroup?: string | null
 }
 
 const materials: MaterialSeedRow[] = [
@@ -16,8 +17,8 @@ const materials: MaterialSeedRow[] = [
   { name: 'אורגי (עשת)', currentQuantity: 45, currentBuyingCost: 37 },
   { name: 'אוקסיגל', currentQuantity: 64.5, currentBuyingCost: 39 },
   { name: 'אור', currentQuantity: 410, currentBuyingCost: 340, amountPerDunam: 0.004 },
-  { name: 'אוראה לפני זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 3 },
-  { name: 'אוראה אחרי זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 10 },
+  { name: 'אוראה לפני זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 3, inventoryGroup: 'אוראה' },
+  { name: 'אוראה אחרי זריעה', currentQuantity: 3, currentBuyingCost: 2.7, amountPerDunam: 10, inventoryGroup: 'אוראה' },
   { name: 'אורווה', currentQuantity: 616, currentBuyingCost: 0 },
   { name: 'אורז טורבו', currentQuantity: 157, currentBuyingCost: 0 },
   { name: 'אופטוס 100', currentQuantity: 45, currentBuyingCost: 34.6, amountPerDunam: 0.08 },
@@ -73,6 +74,7 @@ export const materialsSeedData: CollectionDocument[] = materials.map((row, index
   currentBuyingCost: row.currentBuyingCost,
   currentSalePercent: DEFAULT_SALE_PERCENT,
   amountPerDunam: row.amountPerDunam ?? null,
+  inventoryGroup: row.inventoryGroup ?? null,
   customerCost: calcCustomerCost(row.currentBuyingCost, DEFAULT_SALE_PERCENT),
   pricingHistory: [
     {

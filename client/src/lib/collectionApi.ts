@@ -32,6 +32,7 @@ import {
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
+import { enrichMaterialsWithGroupQuantity } from "./materialInventoryGroup";
 import {
   calcFinalPrice as calcOperationFinalPrice,
   resolveOperationAmount,
@@ -473,6 +474,9 @@ async function listMock(
   }
   if (collection === "customerBillingTrackings") {
     return rows.map(enrichCustomerBillingTrackingRow);
+  }
+  if (collection === "materials") {
+    return enrichMaterialsWithGroupQuantity(rows);
   }
   return rows;
 }

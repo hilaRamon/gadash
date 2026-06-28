@@ -12,6 +12,7 @@ const pricingHistoryEntrySchema = new Schema(
 const materialSchema = new Schema(
   {
     name: { type: String, required: true },
+    inventoryGroup: { type: String, default: null },
     amountPerDunam: { type: Number, default: null },
     currentQuantity: { type: Number, required: true, default: 0 },
     currentBuyingCost: { type: Number, required: true },

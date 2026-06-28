@@ -1,4 +1,5 @@
 import { textColumn } from "../columnHelpers";
+import { formatNumber } from "../../lib/formatNumber";
 import type { CollectionSchema } from "../types";
 
 export const materialsSchema: CollectionSchema = {
@@ -43,6 +44,18 @@ export const materialsSchema: CollectionSchema = {
       sortable: true,
       width: "6rem",
       highlightWhenNegative: true,
+      getValue: (row) => {
+        const group = String(row.inventoryGroup ?? "").trim();
+        if (group) {
+          return row.groupQuantity ?? row.currentQuantity;
+        }
+        return row.currentQuantity;
+      },
+      format: (value, row) => {
+        const formatted = formatNumber(value);
+        const group = String(row?.inventoryGroup ?? "").trim();
+        return group ? `${formatted} (סה״כ)` : formatted;
+      },
     },
   ],
   defaultSort: { field: "name", direction: "asc" },
@@ -65,6 +78,7 @@ export const materialsSchema: CollectionSchema = {
       },
       { key: "currentSalePercent", label: "אחוז מכירה", type: "number" },
       { key: "amountPerDunam", label: "כמות לדונם", type: "number" },
+      { key: "inventoryGroup", label: "קבוצת מלאי", type: "text" },
     ],
   },
 };

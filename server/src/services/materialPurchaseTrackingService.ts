@@ -10,6 +10,7 @@ import {
   materialPurchaseTrackingToApiDocument,
   materialPurchaseTrackingToApiDocuments,
 } from '../utils/materialPurchaseTrackingApiMapper';
+import { syncInventoryGroupPricingFromMaterial } from '../utils/materialInventoryGroup';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -165,6 +166,31 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
   await MaterialModel.findByIdAndUpdate(material._id, update, {
     runValidators: true,
   });
+
+  if (shouldUpdateCost) {
+    const historyEntry = {
+      cost: input.unitPrice,
+      percent: Number(material.currentSalePercent ?? 15),
+      effectiveFrom: input.date,
+    };
+    await syncInventoryGroupPricingFromMaterial(
+      {
+        _id: material._id,
+        inventoryGroup: material.inventoryGroup,
+        currentBuyingCost: input.unitPrice,
+        currentSalePercent: Number(material.currentSalePercent ?? 15),
+        pricingHistory: [
+          ...((material.pricingHistory ?? []) as {
+            cost: number;
+            percent: number;
+            effectiveFrom: Date;
+          }[]),
+          historyEntry,
+        ],
+      },
+      historyEntry,
+    );
+  }
 }
 
 async function buildTrackingPatch(

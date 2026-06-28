@@ -9,6 +9,10 @@ import {
   deriveCurrentPricing,
 } from '../utils/materialPricing';
 import { toApiDocument } from '../utils/toApiDocument';
+import {
+  enrichMaterialsWithGroupQuantity,
+  syncInventoryGroupPricingFromMaterial,
+} from '../utils/materialInventoryGroup';
 
 const DEFAULT_EFFECTIVE_FROM = new Date('2025-01-01T00:00:00.000Z');
 const DEFAULT_SALE_PERCENT = 15;
@@ -35,6 +39,12 @@ function parseCurrentQuantity(value: unknown): number {
     throw new Error('כמות נוכחית לא תקינה');
   }
   return num;
+}
+
+function parseInventoryGroup(value: unknown): string | null {
+  if (value == null || value === '') return null;
+  const group = String(value).trim();
+  return group || null;
 }
 
 function parseAmountPerDunam(value: unknown): number | null {
@@ -103,6 +113,12 @@ function buildMetadataPatch(
   if (mustHave('amountPerDunam') || Object.prototype.hasOwnProperty.call(body, 'amountPerDunam')) {
     patch.amountPerDunam = parseAmountPerDunam(body.amountPerDunam);
   }
+  if (
+    mustHave('inventoryGroup') ||
+    Object.prototype.hasOwnProperty.call(body, 'inventoryGroup')
+  ) {
+    patch.inventoryGroup = parseInventoryGroup(body.inventoryGroup);
+  }
 
   if (requireAll) {
     if (
@@ -123,6 +139,14 @@ function hasPricingField(body: Record<string, unknown>): boolean {
     Object.prototype.hasOwnProperty.call(body, 'percent')
   );
 }
+
+type MaterialPricingRow = {
+  _id?: unknown;
+  inventoryGroup?: unknown;
+  currentBuyingCost?: unknown;
+  currentSalePercent?: unknown;
+  pricingHistory?: MaterialInput['pricingHistory'];
+};
 
 async function applyPricingChange(
   id: string,
@@ -166,18 +190,28 @@ async function applyPricingChange(
   ];
   const current = deriveCurrentPricing(nextHistory);
 
-  return materialRepository.appendPricingChange(
+  const updated = await materialRepository.appendPricingChange(
     id,
     { cost: nextCost, percent: nextPercent, effectiveFrom },
     current.cost,
     current.percent,
   );
+  if (!updated) return null;
+
+  await syncInventoryGroupPricingFromMaterial(
+    updated as MaterialPricingRow,
+    { cost: nextCost, percent: nextPercent, effectiveFrom },
+  );
+  return updated;
 }
 
 export const materialService = {
   async list(): Promise<ApiDocument[]> {
     const rows = await materialRepository.findAll();
-    return (rows as Record<string, unknown>[]).map(withCustomerCost);
+    const enriched = enrichMaterialsWithGroupQuantity(
+      rows as Record<string, unknown>[],
+    );
+    return enriched.map(withCustomerCost);
   },
 
   async create(body: Record<string, unknown>): Promise<ApiDocument> {

@@ -61,6 +61,7 @@ async function migrateMaterialAmountPerDunam() {
       $set: {
         name: 'אוראה לפני זריעה',
         amountPerDunam: 3,
+        inventoryGroup: 'אוראה',
       },
     });
     console.log('Renamed אוראה -> אוראה לפני זריעה');
@@ -72,6 +73,7 @@ async function migrateMaterialAmountPerDunam() {
       await MaterialModel.create({
         name: 'אוראה אחרי זריעה',
         amountPerDunam: 10,
+        inventoryGroup: 'אוראה',
         currentQuantity: urea.currentQuantity ?? 0,
         currentBuyingCost: urea.currentBuyingCost ?? 0,
         currentSalePercent: urea.currentSalePercent ?? 15,
@@ -80,6 +82,17 @@ async function migrateMaterialAmountPerDunam() {
       console.log('Created material: אוראה אחרי זריעה');
       updatedCount += 2;
     }
+  }
+
+  const ureaGroupResult = await MaterialModel.updateMany(
+    { name: { $in: ['אוראה לפני זריעה', 'אוראה אחרי זריעה'] } },
+    { $set: { inventoryGroup: 'אוראה' } },
+  );
+  if (ureaGroupResult.modifiedCount > 0) {
+    console.log(
+      `Set inventoryGroup=אוראה on ${ureaGroupResult.modifiedCount} urea materials`,
+    );
+    updatedCount += ureaGroupResult.modifiedCount;
   }
 
   console.log(`Migration complete (${updatedCount} material records changed/created)`);
