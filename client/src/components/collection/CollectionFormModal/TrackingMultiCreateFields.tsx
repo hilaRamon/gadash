@@ -162,7 +162,7 @@ export function TrackingMultiCreateFields({
                   id={`line-amount-${entry.itemId}`}
                   type="number"
                   dir="ltr"
-                  value={entry.amount}
+                  value={entry.amount !== "0" ? entry.amount : ""}
                   disabled={amountDisabled}
                   onChange={(e) =>
                     onUpdateLine(entry.itemId, { amount: e.target.value })
@@ -171,7 +171,9 @@ export function TrackingMultiCreateFields({
                 />
               </div>
               {fieldErrors[entry.itemId] && (
-                <FieldErrorMessage>{fieldErrors[entry.itemId]}</FieldErrorMessage>
+                <FieldErrorMessage>
+                  {fieldErrors[entry.itemId]}
+                </FieldErrorMessage>
               )}
             </EntryCard>
           ))}
