@@ -114,18 +114,26 @@ export function FormFieldControl({
     );
   }
 
+  if (field.type === "number") {
+    return (
+      <Input
+        id={`field-${field.key}`}
+        type="text"
+        inputMode="decimal"
+        dir="ltr"
+        value={value}
+        disabled={disabled}
+        onChange={(e) => setFieldValue(field.key, e.target.value)}
+        required={field.required}
+      />
+    );
+  }
+
   return (
     <Input
       id={`field-${field.key}`}
-      type={
-        field.type === "number"
-          ? "number"
-          : field.type === "date"
-            ? "date"
-            : "text"
-      }
-      dir={field.type === "number" ? "ltr" : undefined}
-      value={field.type === "number" ? (value !== "0" ? value : "") : value}
+      type={field.type === "date" ? "date" : "text"}
+      value={value}
       disabled={disabled}
       onChange={(e) => setFieldValue(field.key, e.target.value)}
       required={field.required}

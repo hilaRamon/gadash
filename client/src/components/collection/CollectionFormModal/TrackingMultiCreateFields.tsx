@@ -160,9 +160,10 @@ export function TrackingMultiCreateFields({
                 </FieldLabel>
                 <AmountInput
                   id={`line-amount-${entry.itemId}`}
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   dir="ltr"
-                  value={entry.amount !== "0" ? entry.amount : ""}
+                  value={entry.amount}
                   disabled={amountDisabled}
                   onChange={(e) =>
                     onUpdateLine(entry.itemId, { amount: e.target.value })

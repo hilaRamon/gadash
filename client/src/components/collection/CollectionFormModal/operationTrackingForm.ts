@@ -1,5 +1,6 @@
 import type { CollectionDocument, FormFieldDef } from "../../../schema/types";
 import { formatNumber } from "../../../lib/formatNumber";
+import { numberToFormFieldValue } from "./helpers";
 import {
   OPERATION_PRICING_BY_DUNAM,
   OPERATION_PRICING_BY_UNIT,
@@ -63,7 +64,7 @@ export function calcOperationTrackingAmountForLine(
     plotDunam: plot ? Number(plot.dunam ?? 0) : null,
   });
 
-  return suggested == null ? "" : String(suggested);
+  return suggested == null ? "" : numberToFormFieldValue(suggested);
 }
 
 export function toggleOperationTrackingLine(
@@ -219,7 +220,7 @@ function suggestAmountValue(
     plotDunam: plot ? Number(plot.dunam ?? 0) : null,
   });
 
-  return suggested == null ? null : String(suggested);
+  return suggested == null ? null : numberToFormFieldValue(suggested);
 }
 
 export function applyOperationTrackingFieldChange(
