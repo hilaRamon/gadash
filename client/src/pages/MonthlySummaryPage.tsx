@@ -189,7 +189,7 @@ const CloseButton = styled.button`
   border: none;
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-brand);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -203,7 +203,7 @@ const CloseButton = styled.button`
 const StatusText = styled.p<{ $error?: boolean }>`
   margin: 0;
   font-size: 0.875rem;
-  color: ${({ $error }) => ($error ? "#fc8181" : "var(--text-secondary)")};
+  color: ${({ $error }) => ($error ? 'var(--color-error-text)' : 'var(--text-secondary)')};
 `;
 
 const TableWrap = styled.div`
@@ -236,8 +236,8 @@ const StatusBadge = styled.span<{ $closed: boolean }>`
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: ${({ $closed }) => ($closed ? "rgba(72, 187, 120, 0.15)" : "rgba(237, 137, 54, 0.15)")};
-  color: ${({ $closed }) => ($closed ? "#48bb78" : "#ed8936")};
+  background: ${({ $closed }) => ($closed ? 'var(--color-success-soft)' : 'var(--color-warning-soft)')};
+  color: ${({ $closed }) => ($closed ? 'var(--color-success)' : 'var(--color-warning)')};
 `;
 
 const DetailLink = styled(Link)`

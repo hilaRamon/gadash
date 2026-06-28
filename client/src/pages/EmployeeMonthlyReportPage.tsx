@@ -373,14 +373,14 @@ const StatusBadge = styled.span<{ $closed: boolean }>`
   font-size: 0.8125rem;
   font-weight: 600;
   background: ${({ $closed }) =>
-    $closed ? "rgba(72, 187, 120, 0.15)" : "rgba(237, 137, 54, 0.15)"};
-  color: ${({ $closed }) => ($closed ? "#48bb78" : "#ed8936")};
+    $closed ? 'var(--color-success-soft)' : 'var(--color-warning-soft)'};
+  color: ${({ $closed }) => ($closed ? 'var(--color-success)' : 'var(--color-warning)')};
 `;
 
 const StatusText = styled.p<{ $error?: boolean }>`
   margin: 0;
   font-size: 0.875rem;
-  color: ${({ $error }) => ($error ? "#fc8181" : "var(--text-secondary)")};
+  color: ${({ $error }) => ($error ? 'var(--color-error-text)' : 'var(--text-secondary)')};
 `;
 
 const TableWrap = styled.div`

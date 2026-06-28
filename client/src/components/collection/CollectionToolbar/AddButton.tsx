@@ -11,14 +11,14 @@ const StyledAddButton = styled.button`
   ${buttonBase};
   min-width: 9rem;
   padding: 0.5rem 1.75rem;
-  background: #16a34a;
+  background: var(--color-primary);
   border-color: transparent;
-  color: #ffffff;
+  color: var(--text-on-primary);
   font-size: 0.875rem;
   font-weight: 700;
 
   &:hover:not(:disabled) {
-    background: #15803d;
+    background: var(--color-primary-hover);
   }
 `
 

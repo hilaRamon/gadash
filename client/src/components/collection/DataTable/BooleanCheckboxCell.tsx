@@ -18,9 +18,9 @@ const BooleanCheckbox = styled.input`
   width: 1.1rem;
   height: 1.1rem;
   margin: 0;
-  border: 2px solid #f56565;
+  border: 2px solid var(--color-error-emphasis);
   border-radius: 4px;
-  background-color: #f56565;
+  background-color: var(--color-error-emphasis);
   background-image: ${uncheckedIcon};
   background-repeat: no-repeat;
   background-position: center;
@@ -31,19 +31,19 @@ const BooleanCheckbox = styled.input`
     background-color 0.15s ease;
 
   &:checked {
-    border-color: #48bb78;
-    background-color: #48bb78;
+    border-color: var(--color-success);
+    background-color: var(--color-success);
     background-image: ${checkedIcon};
   }
 
   &:hover:not(:disabled):not(:checked) {
-    border-color: #fc8181;
-    background-color: #fc8181;
+    border-color: var(--color-error-text);
+    background-color: var(--color-error-text);
   }
 
   &:hover:not(:disabled):checked {
-    border-color: #38a169;
-    background-color: #38a169;
+    border-color: var(--color-success-hover);
+    background-color: var(--color-success-hover);
   }
 
   &:focus,
@@ -53,12 +53,12 @@ const BooleanCheckbox = styled.input`
 
   &:focus:not(:checked),
   &:focus-visible:not(:checked) {
-    box-shadow: 0 0 0 2px rgba(245, 101, 101, 0.35);
+    box-shadow: 0 0 0 2px var(--color-error-focus-ring);
   }
 
   &:focus:checked,
   &:focus-visible:checked {
-    box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.35);
+    box-shadow: 0 0 0 2px var(--color-success-focus-ring);
   }
 
   &:disabled {

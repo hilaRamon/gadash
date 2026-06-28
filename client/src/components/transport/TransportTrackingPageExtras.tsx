@@ -21,7 +21,7 @@ const buttonBase = css`
   border: 1px solid var(--border-color);
   background: var(--accent);
   border-color: transparent;
-  color: #0d1114;
+  color: var(--text-on-primary);
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;

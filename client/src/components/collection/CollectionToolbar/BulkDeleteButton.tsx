@@ -11,12 +11,12 @@ const StyledBulkDeleteButton = styled.button`
   ${buttonBase};
   flex-shrink: 0;
   white-space: nowrap;
-  background: #c53030;
+  background: var(--color-error);
   border-color: transparent;
-  color: #fff;
+  color: var(--text-on-error);
 
   &:hover:not(:disabled) {
-    filter: brightness(1.08);
+    background: var(--color-error-hover);
   }
 `
 

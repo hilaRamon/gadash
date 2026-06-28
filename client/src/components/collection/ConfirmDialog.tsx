@@ -73,7 +73,7 @@ const Message = styled.div`
 const ErrorText = styled.p`
   margin: 0 0 1rem;
   font-size: 0.875rem;
-  color: #fc8181;
+  color: var(--color-error-text);
 `
 
 const Actions = styled.div`
@@ -89,12 +89,12 @@ const CancelButton = styled.button`
 
 const ConfirmButton = styled.button`
   ${buttonBase};
-  background: #c53030;
+  background: var(--color-error);
   border-color: transparent;
-  color: #fff;
+  color: var(--text-on-error);
 
   &:hover:not(:disabled) {
-    filter: brightness(1.08);
+    background: var(--color-error-hover);
   }
 `
 

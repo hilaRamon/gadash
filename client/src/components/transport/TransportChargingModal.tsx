@@ -97,7 +97,7 @@ const PrimaryButton = styled.button`
   ${buttonBase};
   background: var(--accent);
   border-color: transparent;
-  color: #0d1114;
+  color: var(--text-on-primary);
   font-weight: 600;
 
   &:hover:not(:disabled) {

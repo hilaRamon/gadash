@@ -92,7 +92,7 @@ const AmountInput = styled.input`
 
 const FieldErrorMessage = styled.p`
   margin: 0.35rem 0 0;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.75rem;
 `;
 

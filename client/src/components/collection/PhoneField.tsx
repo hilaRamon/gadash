@@ -32,7 +32,7 @@ const Input = styled.input`
 
 const Error = styled.p`
   margin: 0 0 1rem;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.875rem;
 `
 

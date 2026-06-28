@@ -1,0 +1,142 @@
+/*
+ * Gadash color tokens — single source of truth for all UI colors.
+ * Components must use var(--token-name) only; no raw hex elsewhere.
+ *
+ * Dark mode values live in :root (default).
+ * Light mode overrides are in @media (prefers-color-scheme: light).
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* -------------------------------------------------------------------------
+   * Brand accent (green)
+   * Sidebar brand title, active nav links, focus rings, text links,
+   * searchable-select focus, employee form submit/success banners,
+   * collection modal primary button, transport charge confirm, login submit,
+   * monthly summary close button, cell-saving spinner, SortControl apply.
+   * ------------------------------------------------------------------------- */
+  --accent: #6ee7a0;
+  --active-bg: rgba(110, 231, 160, 0.1);
+
+  /* -------------------------------------------------------------------------
+   * Primary CTA (brighter green — Add toolbar button only)
+   * CollectionToolbar AddButton ("הוסף").
+   * ------------------------------------------------------------------------- */
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+
+  /* -------------------------------------------------------------------------
+   * Employee home action cards (each card has its own color)
+   * EmployeeActionMenu icon circles and card backgrounds.
+   * LoginPage header uses --color-employee-field-soft / --accent for icon.
+   * ------------------------------------------------------------------------- */
+  --color-employee-field: #2d8a5e;
+  --color-employee-field-soft: rgba(45, 138, 94, 0.14);
+  --color-employee-admin: #2563eb;
+  --color-employee-admin-soft: rgba(37, 99, 235, 0.14);
+  --color-employee-material: #d97706;
+  --color-employee-material-soft: rgba(217, 119, 6, 0.14);
+  --color-employee-fuel: #dc2626;
+  --color-employee-fuel-soft: rgba(220, 38, 38, 0.14);
+
+  /* -------------------------------------------------------------------------
+   * Semantic — success
+   * BooleanCheckboxCell checked state, monthly report open/closed badges
+   * (closed = success).
+   * ------------------------------------------------------------------------- */
+  --color-success: #48bb78;
+  --color-success-hover: #38a169;
+  --color-success-soft: rgba(72, 187, 120, 0.15);
+  --color-success-focus-ring: rgba(72, 187, 120, 0.35);
+
+  /* -------------------------------------------------------------------------
+   * Semantic — warning
+   * Monthly summary / employee monthly report status badges (open month).
+   * ------------------------------------------------------------------------- */
+  --color-warning: #ed8936;
+  --color-warning-soft: rgba(237, 137, 54, 0.15);
+
+  /* -------------------------------------------------------------------------
+   * Semantic — error / destructive
+   * BulkDeleteButton, ConfirmDialog confirm, validation messages,
+   * error banners, BooleanCheckboxCell unchecked state.
+   * ------------------------------------------------------------------------- */
+  --color-error: #c53030;
+  --color-error-hover: #9b2c2c;
+  --color-error-text: #fc8181;
+  --color-error-text-muted: #fca5a5;
+  --color-error-text-strong: #fca5a5;
+  --color-error-soft: rgba(248, 113, 113, 0.12);
+  --color-error-border: rgba(248, 113, 113, 0.35);
+  --color-error-emphasis: #f56565;
+  --color-error-focus-ring: rgba(245, 101, 101, 0.35);
+
+  /* -------------------------------------------------------------------------
+   * Semantic — info
+   * CollectionFormModal info messages.
+   * ------------------------------------------------------------------------- */
+  --color-info: #63b3ed;
+
+  /* -------------------------------------------------------------------------
+   * Surfaces
+   * page-bg: app shell background (body, employee pages, form inputs).
+   * sidebar-bg: admin sidebar, modal panels, tooltips.
+   * card-bg: cards, buttons, table containers, inputs.
+   * hover-bg: row/button hover states.
+   * border-color: dividers, input borders, table lines.
+   * ------------------------------------------------------------------------- */
+  --page-bg: #121416;
+  --sidebar-bg: #1a1d21;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --border-color: rgba(255, 255, 255, 0.08);
+
+  /* -------------------------------------------------------------------------
+   * Text
+   * text-primary: headings, body, input values.
+   * text-secondary: labels, subtitles, table headers, inactive nav links.
+   * text-muted: sidebar section titles, page subtitles, placeholders.
+   * text-on-primary: label on filled green buttons (accent / Add / CTA).
+   * text-on-error: label on red destructive buttons.
+   * text-on-brand: white icon/text on saturated employee card icon circles.
+   * ------------------------------------------------------------------------- */
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --text-on-primary: #0f1419;
+  --text-on-error: #ffffff;
+  --text-on-brand: #ffffff;
+
+  /* -------------------------------------------------------------------------
+   * Print / PDF bill preview (always light paper — not theme-aware)
+   * CustomerBillPaper, CustomerBillingViewModal, shared/printColors.ts.
+   * ------------------------------------------------------------------------- */
+  --print-bg: #ffffff;
+  --print-text: #1a202c;
+  --print-text-secondary: #4a5568;
+  --print-border: #e2e8f0;
+  --print-surface: #f7fafc;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --accent: #2d8a5e;
+    --active-bg: rgba(45, 138, 94, 0.1);
+
+    --color-employee-field: #2d8a5e;
+
+    --color-error-text-strong: #b91c1c;
+
+    --page-bg: #eef0f3;
+    --sidebar-bg: #f7f8fa;
+    --card-bg: #ffffff;
+    --hover-bg: rgba(0, 0, 0, 0.04);
+    --border-color: rgba(0, 0, 0, 0.08);
+
+    --text-primary: #1a1d21;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --text-on-primary: #ffffff;
+  }
+}

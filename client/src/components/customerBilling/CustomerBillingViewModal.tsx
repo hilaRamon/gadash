@@ -129,7 +129,7 @@ const PaperFrame = styled.div`
   width: 100%;
   border-radius: 10px;
   border: 1px solid var(--border-color);
-  background: #fff;
+  background: var(--print-bg);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -137,7 +137,7 @@ const PaperFrame = styled.div`
 `;
 
 const PaperContent = styled.div`
-  color: #1a202c;
+  color: var(--print-text);
   direction: rtl;
 
   .bill {
@@ -159,5 +159,5 @@ const StatusText = styled.p`
 const ErrorText = styled.p`
   margin: 0;
   font-size: 0.875rem;
-  color: #fc8181;
+  color: var(--color-error-text);
 `;

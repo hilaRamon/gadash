@@ -118,7 +118,7 @@ const PrimaryButton = styled.button`
   ${buttonBase};
   background: var(--accent);
   border-color: transparent;
-  color: #0d1114;
+  color: var(--text-on-primary);
   font-weight: 600;
 
   &:hover:not(:disabled) {
@@ -134,19 +134,19 @@ const Actions = styled.div`
 
 const ErrorMessage = styled.p`
   margin: 0 0 1rem;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.875rem;
 `;
 
 const FieldErrorMessage = styled.p`
   margin: 0.35rem 0 0;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.75rem;
 `;
 
 const InfoMessage = styled.p`
   margin: 0 0 1rem;
-  color: #63b3ed;
+  color: var(--color-info);
   font-size: 0.875rem;
 `;
 

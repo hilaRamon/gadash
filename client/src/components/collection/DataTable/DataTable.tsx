@@ -71,7 +71,7 @@ const TableBodyCell = styled.td<{
   ${({ $negativeNumber }) =>
     $negativeNumber &&
     css`
-      color: #fc8181;
+      color: var(--color-error-text);
     `}
 
   ${({ $editableNumber, $editableText }) =>
@@ -143,7 +143,7 @@ const IconButton = styled.button`
 const TableStatus = styled.p<{ $error?: boolean }>`
   padding: 2rem;
   text-align: center;
-  color: ${({ $error }) => ($error ? "#fc8181" : "var(--text-secondary)")};
+  color: ${({ $error }) => ($error ? 'var(--color-error-text)' : 'var(--text-secondary)')};
 `;
 
 const EmptyMessage = styled.p`
