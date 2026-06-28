@@ -12,6 +12,7 @@ export const fuelTanksSchema: CollectionSchema = {
       label: 'כמות נוכחית',
       type: 'number',
       sortable: true,
+      highlightWhenNegative: true,
     },
   ],
   defaultSort: { field: 'name', direction: 'asc' },

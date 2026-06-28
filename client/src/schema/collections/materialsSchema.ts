@@ -42,6 +42,7 @@ export const materialsSchema: CollectionSchema = {
       type: "number",
       sortable: true,
       width: "6rem",
+      highlightWhenNegative: true,
     },
   ],
   defaultSort: { field: "name", direction: "asc" },
