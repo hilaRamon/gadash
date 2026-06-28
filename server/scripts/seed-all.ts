@@ -133,6 +133,10 @@ async function seedAll() {
       row.amountPerDunam == null || row.amountPerDunam === ''
         ? null
         : Number(row.amountPerDunam),
+    inventoryGroup:
+      row.inventoryGroup == null || row.inventoryGroup === ''
+        ? null
+        : String(row.inventoryGroup),
     currentQuantity: row.currentQuantity as number,
     currentBuyingCost: row.currentBuyingCost as number,
     currentSalePercent: row.currentSalePercent as number,

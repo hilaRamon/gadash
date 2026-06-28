@@ -32,6 +32,7 @@ import {
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
+import { enrichMaterialsWithGroupQuantity } from "./materialInventoryGroup";
 import {
   calcFinalPrice as calcOperationFinalPrice,
   resolveOperationAmount,
@@ -431,7 +432,7 @@ function applyFuelTankDeltaForMockCreate(row: CollectionDocument) {
 
   const current = Number(fuelTank.currentAmount ?? 0);
   const next = Number((current + delta).toFixed(3));
-  fuelTank.currentAmount = next < 0 ? 0 : next;
+  fuelTank.currentAmount = next;
 }
 
 function filterRowsBySeason(
@@ -473,6 +474,9 @@ async function listMock(
   }
   if (collection === "customerBillingTrackings") {
     return rows.map(enrichCustomerBillingTrackingRow);
+  }
+  if (collection === "materials") {
+    return enrichMaterialsWithGroupQuantity(rows);
   }
   return rows;
 }

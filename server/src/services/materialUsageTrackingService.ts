@@ -162,6 +162,14 @@ async function decrementMaterialQuantity(materialId: Types.ObjectId, amount: num
   await applyMaterialQuantityDelta(materialId, -amount);
 }
 
+async function restoreMaterialQuantityAfterUsageDelete(
+  existing: Record<string, unknown>,
+): Promise<void> {
+  const materialId = toMaterialObjectId(existing.material);
+  const amount = Number(existing.amount ?? 0);
+  await applyMaterialQuantityDelta(materialId, amount);
+}
+
 async function resolveComputedUsageAmount(
   materialId: Types.ObjectId,
   plotId: Types.ObjectId,
@@ -336,13 +344,29 @@ export const materialUsageTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
-    const result = await materialUsageTrackingRepository.delete(id);
-    if (!result) {
+    const existing = await materialUsageTrackingRepository.findById(id);
+    if (!existing) {
       throw new Error('לא נמצא');
     }
+
+    await restoreMaterialQuantityAfterUsageDelete(existing as Record<string, unknown>);
+    await materialUsageTrackingRepository.delete(id);
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await materialUsageTrackingRepository.deleteMany(ids);
+    const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => materialUsageTrackingRepository.findById(rowId)),
+    );
+    if (rows.some((row) => row == null)) {
+      throw new Error('לא נמצא');
+    }
+
+    for (const row of rows) {
+      await restoreMaterialQuantityAfterUsageDelete(row as Record<string, unknown>);
+    }
+    await materialUsageTrackingRepository.deleteMany(uniqueIds);
   },
 };

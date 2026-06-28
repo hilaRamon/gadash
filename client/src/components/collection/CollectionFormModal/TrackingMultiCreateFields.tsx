@@ -160,7 +160,8 @@ export function TrackingMultiCreateFields({
                 </FieldLabel>
                 <AmountInput
                   id={`line-amount-${entry.itemId}`}
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   dir="ltr"
                   value={entry.amount}
                   disabled={amountDisabled}
@@ -171,7 +172,9 @@ export function TrackingMultiCreateFields({
                 />
               </div>
               {fieldErrors[entry.itemId] && (
-                <FieldErrorMessage>{fieldErrors[entry.itemId]}</FieldErrorMessage>
+                <FieldErrorMessage>
+                  {fieldErrors[entry.itemId]}
+                </FieldErrorMessage>
               )}
             </EntryCard>
           ))}

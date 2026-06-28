@@ -31,6 +31,8 @@ export type ColumnDef<T extends DocumentBase = CollectionDocument> = {
   nullable?: boolean
   /** When false, boolean cells are read-only. Defaults to editable. */
   inlineEditable?: (row: T) => boolean
+  /** When true, negative numeric values render in red. */
+  highlightWhenNegative?: boolean
 }
 
 export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {

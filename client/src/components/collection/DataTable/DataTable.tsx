@@ -6,7 +6,7 @@ import type {
   CollectionDocument,
 } from "../../../schema/types";
 import type { TableQueryState } from "../../../schema/tableQuery";
-import { formatCell, getCellValue } from "../../../lib/tableQuery";
+import { formatCell, getCellValue, isNegativeNumberValue } from "../../../lib/tableQuery";
 import { EditIcon, ViewIcon, DeleteIcon } from "../Icons";
 import { buttonIconStyles } from "./sharedStyles";
 import { ColumnFilterControl } from "./ColumnFilterControl";
@@ -66,7 +66,14 @@ const Table = styled.table<{ $previewMode?: boolean }>`
 const TableBodyCell = styled.td<{
   $editableNumber?: boolean;
   $editableText?: boolean;
+  $negativeNumber?: boolean;
 }>`
+  ${({ $negativeNumber }) =>
+    $negativeNumber &&
+    css`
+      color: #fc8181;
+    `}
+
   ${({ $editableNumber, $editableText }) =>
     ($editableNumber || $editableText) &&
     css`
@@ -355,12 +362,16 @@ export function DataTable({
                       col.type === "text" &&
                       !col.render &&
                       col.inlineEditable?.(row) === true;
+                    const isNegativeNumber =
+                      col.highlightWhenNegative === true &&
+                      isNegativeNumberValue(value);
 
                     return (
                       <TableBodyCell
                         key={col.key}
                         $editableNumber={canEditNumber}
                         $editableText={canEditText}
+                        $negativeNumber={isNegativeNumber}
                         style={{
                           textAlign: previewMode
                             ? "right"

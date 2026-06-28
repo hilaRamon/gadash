@@ -10,6 +10,7 @@ import {
   materialPurchaseTrackingToApiDocument,
   materialPurchaseTrackingToApiDocuments,
 } from '../utils/materialPurchaseTrackingApiMapper';
+import { syncInventoryGroupPricingFromMaterial } from '../utils/materialInventoryGroup';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -115,6 +116,14 @@ async function syncMaterialQuantityAfterPurchaseUpdate(
   await applyMaterialQuantityDelta(newMaterialId, newAmount);
 }
 
+async function revertMaterialQuantityAfterPurchaseDelete(
+  existing: Record<string, unknown>,
+): Promise<void> {
+  const materialId = toMaterialObjectId(existing.material);
+  const amount = Number(existing.amount ?? 0);
+  await applyMaterialQuantityDelta(materialId, -amount);
+}
+
 async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingInput) {
   const material = await MaterialModel.findById(input.material).lean();
   if (!material) {
@@ -157,6 +166,31 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
   await MaterialModel.findByIdAndUpdate(material._id, update, {
     runValidators: true,
   });
+
+  if (shouldUpdateCost) {
+    const historyEntry = {
+      cost: input.unitPrice,
+      percent: Number(material.currentSalePercent ?? 15),
+      effectiveFrom: input.date,
+    };
+    await syncInventoryGroupPricingFromMaterial(
+      {
+        _id: material._id,
+        inventoryGroup: material.inventoryGroup,
+        currentBuyingCost: input.unitPrice,
+        currentSalePercent: Number(material.currentSalePercent ?? 15),
+        pricingHistory: [
+          ...((material.pricingHistory ?? []) as {
+            cost: number;
+            percent: number;
+            effectiveFrom: Date;
+          }[]),
+          historyEntry,
+        ],
+      },
+      historyEntry,
+    );
+  }
 }
 
 async function buildTrackingPatch(
@@ -271,13 +305,29 @@ export const materialPurchaseTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
-    const result = await materialPurchaseTrackingRepository.delete(id);
-    if (!result) {
+    const existing = await materialPurchaseTrackingRepository.findById(id);
+    if (!existing) {
       throw new Error('לא נמצא');
     }
+
+    await revertMaterialQuantityAfterPurchaseDelete(existing as Record<string, unknown>);
+    await materialPurchaseTrackingRepository.delete(id);
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await materialPurchaseTrackingRepository.deleteMany(ids);
+    const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => materialPurchaseTrackingRepository.findById(rowId)),
+    );
+    if (rows.some((row) => row == null)) {
+      throw new Error('לא נמצא');
+    }
+
+    for (const row of rows) {
+      await revertMaterialQuantityAfterPurchaseDelete(row as Record<string, unknown>);
+    }
+    await materialPurchaseTrackingRepository.deleteMany(uniqueIds);
   },
 };

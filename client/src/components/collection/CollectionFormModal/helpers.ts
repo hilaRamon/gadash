@@ -11,6 +11,14 @@ export function isValidHour(value: string): boolean {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+/** Form display value for numeric fields: empty when unset or exactly zero. */
+export function numberToFormFieldValue(raw: unknown): string {
+  if (raw == null || raw === "") return "";
+  const num = Number(raw);
+  if (Number.isFinite(num) && num === 0) return "";
+  return String(raw);
+}
+
 function normalizeHourDisplay(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -83,9 +91,8 @@ export function getInitialValues(
       continue;
     }
 
-    if (field.type === "number" && field.defaultValue === null) {
-      values[field.key] =
-        raw == null || raw === "" ? "" : String(raw);
+    if (field.type === "number") {
+      values[field.key] = numberToFormFieldValue(raw);
       continue;
     }
 

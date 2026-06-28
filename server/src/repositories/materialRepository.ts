@@ -9,6 +9,7 @@ export type MaterialPricingEntryInput = {
 
 export type MaterialInput = {
   name: string;
+  inventoryGroup?: string | null;
   amountPerDunam?: number | null;
   currentQuantity: number;
   currentBuyingCost: number;
@@ -18,7 +19,7 @@ export type MaterialInput = {
 
 export type MaterialMetadataPatch = Pick<
   MaterialInput,
-  'name' | 'currentQuantity' | 'amountPerDunam'
+  'name' | 'currentQuantity' | 'amountPerDunam' | 'inventoryGroup'
 >;
 
 export const materialRepository = {

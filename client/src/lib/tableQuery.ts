@@ -268,4 +268,9 @@ export function getFilterOperators(
   }
 }
 
+export function isNegativeNumberValue(value: unknown): boolean {
+  const num = Number(value)
+  return Number.isFinite(num) && num < 0
+}
+
 export { formatCell, getCellValue }

@@ -1,6 +1,7 @@
 import type { CollectionDocument } from "../../../schema/types";
 import { calcMaterialUsageAmount } from "../../../lib/materialUsageAmount";
 import { formatNumber } from "../../../lib/formatNumber";
+import { numberToFormFieldValue } from "./helpers";
 
 export type MaterialUsageLineEntry = {
   materialId: string;
@@ -36,7 +37,7 @@ export function calcMaterialUsageAmountForPlot(
     plotDunam,
     Number.isFinite(amountPerDunam) ? amountPerDunam : null,
   );
-  return amount == null ? "" : String(amount);
+  return amount == null ? "" : numberToFormFieldValue(amount);
 }
 
 export function toggleMaterialUsageLine(
@@ -190,7 +191,7 @@ export function applyMaterialUsageFieldChange(
 
   const amount = resolveAmountFromSelections(next, context);
   if (amount != null) {
-    next.amount = String(amount);
+    next.amount = numberToFormFieldValue(amount);
   }
 
   if (context.editingRow && (plotChanged || materialChanged)) {
