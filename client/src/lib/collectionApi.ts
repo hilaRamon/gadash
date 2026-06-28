@@ -431,7 +431,7 @@ function applyFuelTankDeltaForMockCreate(row: CollectionDocument) {
 
   const current = Number(fuelTank.currentAmount ?? 0);
   const next = Number((current + delta).toFixed(3));
-  fuelTank.currentAmount = next < 0 ? 0 : next;
+  fuelTank.currentAmount = next;
 }
 
 function filterRowsBySeason(

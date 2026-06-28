@@ -52,6 +52,21 @@ function resolveFuelDirectionByOperationName(name: string): FuelDirection {
   throw new Error('פעולת דלק חייבת להיות תדלוק או מילוי מיכל');
 }
 
+function signedFuelDelta(amount: number, direction: FuelDirection): number {
+  return direction === 'decrement' ? -amount : amount;
+}
+
+function invertFuelDirection(direction: FuelDirection): FuelDirection {
+  return direction === 'decrement' ? 'increment' : 'decrement';
+}
+
+function toFuelTankObjectId(value: unknown): Types.ObjectId {
+  if (value && typeof value === 'object' && '_id' in value) {
+    return value._id as Types.ObjectId;
+  }
+  return value as Types.ObjectId;
+}
+
 async function resolveFuelOperation(operationId: unknown): Promise<{
   id: Types.ObjectId;
   direction: FuelDirection;
@@ -73,6 +88,19 @@ async function resolveFuelOperation(operationId: unknown): Promise<{
     id: operation._id as Types.ObjectId,
     direction: resolveFuelDirectionByOperationName(String(operation.name ?? '')),
   };
+}
+
+async function resolveDirectionFromExisting(
+  existing: Record<string, unknown>,
+): Promise<FuelDirection> {
+  const operation = existing.operation;
+  if (operation && typeof operation === 'object' && operation !== null && 'name' in operation) {
+    return resolveFuelDirectionByOperationName(
+      String((operation as { name?: string }).name ?? ''),
+    );
+  }
+  const resolved = await resolveFuelOperation(existing.operation);
+  return resolved.direction;
 }
 
 async function resolveFuelTankObjectId(fuelTankId: unknown): Promise<Types.ObjectId> {
@@ -107,28 +135,71 @@ async function resolveOptionalTractorObjectId(value: unknown): Promise<Types.Obj
   return tractor._id as Types.ObjectId;
 }
 
-async function applyFuelTankAmount(
+async function applyFuelTankSignedDelta(
   fuelTankId: Types.ObjectId,
-  amount: number,
-  direction: FuelDirection,
+  delta: number,
 ): Promise<void> {
+  if (delta === 0) return;
+
   const fuelTank = await FuelTankModel.findById(fuelTankId)
     .select('_id currentAmount')
     .lean();
   if (!fuelTank) {
     throw new Error('מיכל דלק לא נמצא');
   }
-  const currentAmount = Number(fuelTank.currentAmount ?? 0);
-  const delta = direction === 'decrement' ? -amount : amount;
-  const nextAmount = Number((currentAmount + delta).toFixed(3));
-  if (nextAmount < 0) {
-    throw new Error('אין מספיק דלק במיכל');
-  }
+
+  const nextAmount = Number(
+    (Number(fuelTank.currentAmount ?? 0) + delta).toFixed(3),
+  );
+
   await FuelTankModel.findByIdAndUpdate(
     fuelTank._id,
     { $set: { currentAmount: nextAmount } },
     { runValidators: true },
   );
+}
+
+async function applyFuelTankAmount(
+  fuelTankId: Types.ObjectId,
+  amount: number,
+  direction: FuelDirection,
+): Promise<void> {
+  await applyFuelTankSignedDelta(fuelTankId, signedFuelDelta(amount, direction));
+}
+
+async function revertFuelTankAfterDelete(existing: Record<string, unknown>): Promise<void> {
+  const fuelTankId = toFuelTankObjectId(existing.fuelTank);
+  const amount = Number(existing.amount ?? 0);
+  const direction = await resolveDirectionFromExisting(existing);
+  await applyFuelTankAmount(fuelTankId, amount, invertFuelDirection(direction));
+}
+
+async function syncFuelTankAfterUpdate(
+  existing: Record<string, unknown>,
+  patch: Partial<FuelOperationTrackingInput>,
+  newDirection?: FuelDirection,
+): Promise<void> {
+  const oldTankId = toFuelTankObjectId(existing.fuelTank);
+  const oldAmount = Number(existing.amount ?? 0);
+  const oldDirection = await resolveDirectionFromExisting(existing);
+
+  const newTankId = patch.fuelTank ?? oldTankId;
+  const newAmount = patch.amount ?? oldAmount;
+  const resolvedNewDirection = newDirection ?? oldDirection;
+
+  if (
+    String(oldTankId) === String(newTankId) &&
+    oldDirection === resolvedNewDirection
+  ) {
+    if (patch.amount == null) return;
+    const oldSigned = signedFuelDelta(oldAmount, oldDirection);
+    const newSigned = signedFuelDelta(newAmount, resolvedNewDirection);
+    await applyFuelTankSignedDelta(oldTankId, newSigned - oldSigned);
+    return;
+  }
+
+  await applyFuelTankAmount(oldTankId, oldAmount, invertFuelDirection(oldDirection));
+  await applyFuelTankAmount(newTankId, newAmount, resolvedNewDirection);
 }
 
 async function buildTrackingPatch(
@@ -213,10 +284,24 @@ export const fuelOperationTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const { patch } = await buildTrackingPatch(body);
+    const existing = await fuelOperationTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+
+    const { patch, fuelDirection } = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
+
+    if (patch.amount != null || patch.fuelTank != null || patch.operation != null) {
+      await syncFuelTankAfterUpdate(
+        existing as Record<string, unknown>,
+        patch,
+        fuelDirection,
+      );
+    }
+
     const updated = await fuelOperationTrackingRepository.update(id, patch);
     if (!updated) {
       throw new Error('לא נמצא');
@@ -225,13 +310,29 @@ export const fuelOperationTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
-    const result = await fuelOperationTrackingRepository.delete(id);
-    if (!result) {
+    const existing = await fuelOperationTrackingRepository.findById(id);
+    if (!existing) {
       throw new Error('לא נמצא');
     }
+
+    await revertFuelTankAfterDelete(existing as Record<string, unknown>);
+    await fuelOperationTrackingRepository.delete(id);
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await fuelOperationTrackingRepository.deleteMany(ids);
+    const uniqueIds = [...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => fuelOperationTrackingRepository.findById(rowId)),
+    );
+    if (rows.some((row) => row == null)) {
+      throw new Error('לא נמצא');
+    }
+
+    for (const row of rows) {
+      await revertFuelTankAfterDelete(row as Record<string, unknown>);
+    }
+    await fuelOperationTrackingRepository.deleteMany(uniqueIds);
   },
 };
