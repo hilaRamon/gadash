@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import styled, { css } from 'styled-components'
+import styled from 'styled-components'
+import { buttonBase, buttonError } from '../../styles/buttonStyles'
 
 type ConfirmDialogProps = {
   open: boolean
@@ -12,31 +13,6 @@ type ConfirmDialogProps = {
   onConfirm: () => void
   onCancel: () => void
 }
-
-const buttonBase = css`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover:not(:disabled) {
-    background: var(--hover-bg);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`
 
 const Overlay = styled.div`
   position: fixed;
@@ -89,13 +65,7 @@ const CancelButton = styled.button`
 
 const ConfirmButton = styled.button`
   ${buttonBase};
-  background: var(--color-error);
-  border-color: transparent;
-  color: var(--text-on-error);
-
-  &:hover:not(:disabled) {
-    background: var(--color-error-hover);
-  }
+  ${buttonError};
 `
 
 export function ConfirmDialog({

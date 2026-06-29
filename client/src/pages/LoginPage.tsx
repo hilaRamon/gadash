@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { buttonHoverLighten } from '../styles/buttonStyles'
 import { PhoneField } from '../components/collection/PhoneField'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { useAuth } from '../context/AuthContext'
@@ -151,6 +152,8 @@ const LoginSubmit = styled.button`
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+
+  ${buttonHoverLighten};
 
   &:disabled {
     opacity: 0.55;

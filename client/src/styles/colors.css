@@ -20,14 +20,20 @@
   --active-bg: rgba(110, 231, 160, 0.1);
 
   /* -------------------------------------------------------------------------
-   * Primary CTA (brighter green — Add toolbar button only)
-   * CollectionToolbar AddButton ("הוסף").
+   * Collection toolbar — search input only; buttons use accent / employee / primary.
    * ------------------------------------------------------------------------- */
+  --color-toolbar-search-bg: #ffffff;
+  --color-toolbar-search-text: #1a1d21;
+
+  /* -------------------------------------------------------------------------
+   * Primary CTA (export toolbar button — brighter green sibling of accent)
+   * ------------------------------------------------------------------------- */
+
   --color-primary: #16a34a;
-  --color-primary-hover: #15803d;
 
   /* -------------------------------------------------------------------------
    * Employee home action cards (each card has its own color)
+   * Sidebar section titles, SortControl toolbar button.
    * EmployeeActionMenu icon circles and card backgrounds.
    * LoginPage header uses --color-employee-field-soft / --accent for icon.
    * ------------------------------------------------------------------------- */
@@ -73,10 +79,25 @@
   --color-error-focus-ring: rgba(245, 101, 101, 0.35);
 
   /* -------------------------------------------------------------------------
+   * Table row action icon buttons
+   * DataTable edit/view and delete controls.
+   * ------------------------------------------------------------------------- */
+  --color-table-action-edit-bg: rgba(37, 99, 235, 0.04);
+  --color-table-action-edit-icon: #2563eb;
+  --color-table-action-delete-bg: rgba(248, 113, 113, 0.04);
+  --color-table-action-delete-icon: #f56565;
+
+  /* -------------------------------------------------------------------------
    * Semantic — info
    * CollectionFormModal info messages.
    * ------------------------------------------------------------------------- */
   --color-info: #63b3ed;
+
+  /* -------------------------------------------------------------------------
+   * Button interaction — single hover tuning knob for all buttons.
+   * White overlay at low opacity; applied via inset box-shadow in buttonStyles.
+   * ------------------------------------------------------------------------- */
+  --button-hover-lighten: rgba(255, 255, 255, 0.12);
 
   /* -------------------------------------------------------------------------
    * Surfaces

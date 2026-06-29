@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
+import { buttonBase } from "../styles/buttonStyles";
 import {
   useEmployeeMonthlyReport,
   useMonthlySummary,
@@ -351,13 +352,7 @@ const FilterLabel = styled.label`
 `;
 
 const ExportButton = styled.button`
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
+  ${buttonBase};
 
   &:disabled {
     opacity: 0.55;

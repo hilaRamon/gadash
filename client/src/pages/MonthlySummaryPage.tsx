@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
+import { ExportButton } from "../components/collection/CollectionToolbar/ExportButton";
+import { buttonBase, toolbarButtonAccent } from "../styles/buttonStyles";
 import { NumericMonthPicker } from "../components/reports/NumericMonthPicker";
 import { exportMonthlyReportExcel } from "../lib/exportMonthlyReportExcel";
 import {
@@ -49,12 +51,9 @@ export function MonthlySummaryPage() {
           </FilterField>
 
           <ExportButton
-            type="button"
             disabled={rows.length === 0 || isLoading}
             onClick={() => exportMonthlyReportExcel(rows, selectedMonth)}
-          >
-            ייצוא לאקסל
-          </ExportButton>
+          />
 
           <CloseButton
             type="button"
@@ -169,30 +168,10 @@ const FilterLabel = styled.label`
   color: var(--text-secondary);
 `;
 
-const ExportButton = styled.button`
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-`;
-
 const CloseButton = styled.button`
-  padding: 0.55rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: var(--text-on-brand);
-  font: inherit;
+  ${buttonBase};
+  ${toolbarButtonAccent};
   font-weight: 600;
-  cursor: pointer;
 
   &:disabled {
     opacity: 0.55;

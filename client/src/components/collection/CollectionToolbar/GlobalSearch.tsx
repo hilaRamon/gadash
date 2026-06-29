@@ -24,8 +24,8 @@ const SearchInput = styled.input`
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
+  background: var(--color-toolbar-search-bg);
+  color: var(--color-toolbar-search-text);
   font: inherit;
   font-size: 0.875rem;
 

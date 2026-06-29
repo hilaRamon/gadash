@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 import { DownloadIcon } from '../Icons'
-import { buttonBase } from './sharedStyles'
+import { buttonBase, toolbarButtonExport } from './sharedStyles'
 
 /* =========================================================================
  * ExportButton
@@ -10,6 +10,7 @@ import { buttonBase } from './sharedStyles'
 
 const StyledExportButton = styled.button`
   ${buttonBase};
+  ${toolbarButtonExport};
   flex-shrink: 0;
   white-space: nowrap;
 `

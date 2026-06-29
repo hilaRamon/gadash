@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import styled from "styled-components";
+import { buttonHoverLighten } from "../../styles/buttonStyles";
 import type { CollectionDocument } from "../../schema/types";
 import { useSavedBillingBillPreview } from "../../hooks/customerBilling/useSavedBillingBillPreview";
 
@@ -113,8 +114,9 @@ const CloseButton = styled.button`
   line-height: 1;
   cursor: pointer;
 
+  ${buttonHoverLighten};
+
   &:hover {
-    background: var(--hover-bg);
     color: var(--text-primary);
   }
 `;

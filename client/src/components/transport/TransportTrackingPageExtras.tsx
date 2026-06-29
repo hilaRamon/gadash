@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import type { CollectionDocument } from "../../schema/types";
 import { formatNumber } from "../../lib/formatNumber";
+import { buttonBase, toolbarButtonAccent } from "../../styles/buttonStyles";
 import {
   useTransportChargeState,
   useUpdateTransportPeriodStartDate,
@@ -11,32 +12,6 @@ import { TransportChargingModal } from "./TransportChargingModal";
 type TransportTrackingPageExtrasProps = {
   rows: CollectionDocument[];
 };
-
-const buttonBase = css`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--text-on-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: filter 0.15s;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.05);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
 
 const ExtrasRow = styled.div`
   display: flex;
@@ -75,6 +50,8 @@ const TotalDisplay = styled.span`
 
 const ChargeButton = styled.button`
   ${buttonBase};
+  ${toolbarButtonAccent};
+  font-weight: 600;
 `;
 
 export function TransportTrackingPageExtras({

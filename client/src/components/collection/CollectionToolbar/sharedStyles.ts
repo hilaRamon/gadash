@@ -1,29 +1,14 @@
+export {
+  buttonBase,
+  buttonError,
+  buttonHoverLighten,
+  buttonPrimary,
+  toolbarButtonAccent,
+  toolbarButtonExport,
+  toolbarButtonMaterial,
+} from '../../../styles/buttonStyles'
+
 import { css } from 'styled-components'
-
-export const buttonBase = css`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover:not(:disabled) {
-    background: var(--hover-bg);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`
 
 export const selectControl = css`
   padding: 0.45rem 0.65rem;

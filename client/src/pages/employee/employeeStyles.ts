@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { buttonHoverLighten } from '../../styles/buttonStyles'
 
 export const EmployeePage = styled.div`
   min-height: 100vh;
@@ -67,6 +68,8 @@ export const TextButton = styled.button`
   align-items: center;
   gap: 0.35rem;
 
+  ${buttonHoverLighten};
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -106,9 +109,7 @@ export const EmployeePickerButton = styled.button`
   cursor: pointer;
   box-sizing: border-box;
 
-  &:hover {
-    background: var(--hover-bg);
-  }
+  ${buttonHoverLighten};
 `
 
 export const FormStack = styled.form`
@@ -231,6 +232,8 @@ export const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
 
+  ${buttonHoverLighten};
+
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
@@ -267,4 +270,6 @@ export const CollapseToggle = styled.button`
   cursor: pointer;
   text-align: right;
   align-self: flex-start;
+
+  ${buttonHoverLighten};
 `
