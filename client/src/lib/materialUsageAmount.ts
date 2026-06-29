@@ -1,3 +1,5 @@
+import { roundQuantity } from './quantityPrecision';
+
 export function calcMaterialUsageAmount(
   plotDunam: number,
   amountPerDunam: number | null | undefined,
@@ -8,5 +10,5 @@ export function calcMaterialUsageAmount(
   if (!Number.isFinite(plotDunam) || plotDunam < 0) {
     return null;
   }
-  return Number((plotDunam * amountPerDunam).toFixed(3));
+  return roundQuantity(plotDunam * amountPerDunam);
 }

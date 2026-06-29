@@ -11,6 +11,7 @@ import {
   materialPurchaseTrackingToApiDocuments,
 } from '../utils/materialPurchaseTrackingApiMapper';
 import { syncInventoryGroupPricingFromMaterial } from '../utils/materialInventoryGroup';
+import { roundQuantity } from '../utils/quantityPrecision';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -79,8 +80,8 @@ async function applyMaterialQuantityDelta(materialId: Types.ObjectId, delta: num
     throw new Error('חומר לא נמצא');
   }
 
-  const nextQuantity = Number(
-    (Number(material.currentQuantity ?? 0) + delta).toFixed(3),
+  const nextQuantity = roundQuantity(
+    Number(material.currentQuantity ?? 0) + delta,
   );
 
   await MaterialModel.findByIdAndUpdate(
@@ -148,7 +149,7 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
     };
   } = {
     $set: {
-      currentQuantity: Number(nextQuantity.toFixed(3)),
+      currentQuantity: roundQuantity(nextQuantity),
     },
   };
 
@@ -218,7 +219,7 @@ async function buildTrackingPatch(
   }
 
   if (mustHave('amount')) {
-    patch.amount = parseNumber(body.amount, 'כמות');
+    patch.amount = roundQuantity(parseNumber(body.amount, 'כמות'));
   }
 
   if (mustHave('notes')) {

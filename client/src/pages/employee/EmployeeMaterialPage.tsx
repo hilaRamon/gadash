@@ -1,33 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  applyMaterialUsageFieldChange,
-  enrichMaterialUsagePayload,
-} from '../../components/collection/CollectionFormModal/materialUsageTrackingForm'
+import { enrichMaterialUsagePayload } from '../../components/collection/CollectionFormModal/materialUsageTrackingForm'
 import {
   buildPayload,
   getInitialValues,
   getRequiredFieldErrors,
+  numberToFormFieldValue,
 } from '../../components/collection/CollectionFormModal/helpers'
 import { useCollectionList } from '../../hooks/collections/useCollectionList'
 import { useCreateDocument } from '../../hooks/collections/useCollectionMutations'
 import { getApiErrorMessage } from '../../lib/apiErrorMessage'
+import { calcMaterialUsageAmount } from '../../lib/materialUsageAmount'
 import { materialUsageTrackingsSchema } from '../../schema/collections/materialUsageTrackingsSchema'
-import type { FormFieldDef } from '../../schema/types'
+import type { CollectionDocument, FormFieldDef } from '../../schema/types'
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'
 import { useEmployee } from './context/EmployeeContext'
 import { useFormSuccessRedirect } from './hooks/useFormSuccessRedirect'
 import { useRequireEmployee } from './hooks/useRequireEmployee'
-import { FormField, FormLabel, FormStack, ReadOnlyValue, FieldError } from './employeeStyles'
+import { FormStack } from './employeeStyles'
 
 const formFields = materialUsageTrackingsSchema.form.fields
-const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
+const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged', 'amount'])
+
+const dunamField: FormFieldDef = {
+  key: 'dunam',
+  label: 'דונם',
+  type: 'number',
+  required: true,
+}
 
 function getField(key: string): FormFieldDef {
   const field = formFields.find((item) => item.key === key)
   if (!field) throw new Error(`Missing form field: ${key}`)
   return field
+}
+
+function plotDunamFormValue(
+  plotId: string,
+  plots: CollectionDocument[],
+): string {
+  const plot = plots.find((row) => String(row._id) === plotId)
+  if (!plot) return ''
+  const dunam = Number(plot.dunam)
+  return Number.isFinite(dunam) ? numberToFormFieldValue(dunam) : ''
 }
 
 export function EmployeeMaterialPage() {
@@ -37,9 +53,10 @@ export function EmployeeMaterialPage() {
   const { data: plots = [] } = useCollectionList('plots')
   const createMutation = useCreateDocument('materialUsageTrackings')
 
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    getInitialValues(formFields, null),
-  )
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    ...getInitialValues(formFields, null),
+    dunam: '',
+  }))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -51,14 +68,6 @@ export function EmployeeMaterialPage() {
       setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
     }
   }, [employeeId, trackingDate])
-
-  const amountAutoCalculated = useMemo(() => {
-    if (!values.plot || !values.material) return false
-    const plot = plots.find((row) => String(row._id) === values.plot)
-    const material = materials.find((row) => String(row._id) === values.material)
-    if (!plot || !material) return false
-    return material.amountPerDunam != null && Number.isFinite(Number(material.amountPerDunam))
-  }, [values.plot, values.material, plots, materials])
 
   const visibleFields = useMemo(
     () => formFields.filter((field) => !field.hidden && !hiddenKeys.has(field.key)),
@@ -72,11 +81,10 @@ export function EmployeeMaterialPage() {
       return next
     })
     setValues((prev) => {
-      const { next } = applyMaterialUsageFieldChange(key, value, prev, {
-        materials,
-        plots,
-        editingRow: null,
-      })
+      const next = { ...prev, [key]: value }
+      if (key === 'plot') {
+        next.dunam = plotDunamFormValue(value, plots)
+      }
       return next
     })
   }
@@ -84,12 +92,38 @@ export function EmployeeMaterialPage() {
   const handleSubmit = async () => {
     setError(null)
     const requiredErrors = getRequiredFieldErrors(visibleFields, values)
-    if (Object.keys(requiredErrors).length > 0) {
-      setFieldErrors(requiredErrors)
+    const errors = { ...requiredErrors }
+
+    const dunam = Number(values.dunam)
+    if (!values.dunam.trim() || !Number.isFinite(dunam) || dunam < 0) {
+      errors.dunam = 'שדה חובה'
+    }
+
+    const material = materials.find(
+      (row) => String(row._id) === values.material,
+    )
+    const amountPerDunam = Number(material?.amountPerDunam)
+    if (!material || !Number.isFinite(amountPerDunam)) {
+      errors.material = 'לחומר שנבחר אין כמות לדונם'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
       return
     }
 
-    const payloadResult = buildPayload(formFields, values)
+    const amount = calcMaterialUsageAmount(dunam, amountPerDunam)
+    if (amount == null) {
+      setFieldErrors({ dunam: 'כמות לא תקינה' })
+      return
+    }
+
+    const submitValues = {
+      ...values,
+      amount: numberToFormFieldValue(amount),
+    }
+
+    const payloadResult = buildPayload(formFields, submitValues)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')
       return
@@ -99,7 +133,7 @@ export function EmployeeMaterialPage() {
       return
     }
 
-    const enriched = enrichMaterialUsagePayload(payloadResult, values, {
+    const enriched = enrichMaterialUsagePayload(payloadResult, submitValues, {
       materials,
       plots,
       editingRow: null,
@@ -136,24 +170,14 @@ export function EmployeeMaterialPage() {
           onChange={handleChange}
         />
 
-        {amountAutoCalculated ? (
-          <FormField>
-            <FormLabel>{getField('amount').label}</FormLabel>
-            <ReadOnlyValue>
-              {values.amount ? values.amount : 'תחושב אוטומטית'}
-            </ReadOnlyValue>
-            {fieldErrors.amount ? (
-              <FieldError>{fieldErrors.amount}</FieldError>
-            ) : null}
-          </FormField>
-        ) : (
+        {values.plot ? (
           <EmployeeFormField
-            field={getField('amount')}
-            value={values.amount}
-            error={fieldErrors.amount}
+            field={dunamField}
+            value={values.dunam}
+            error={fieldErrors.dunam}
             onChange={handleChange}
           />
-        )}
+        ) : null}
 
         <OptionalNotesField
           field={getField('notes')}

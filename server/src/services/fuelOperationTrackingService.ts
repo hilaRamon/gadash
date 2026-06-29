@@ -12,6 +12,7 @@ import {
   fuelOperationTrackingToApiDocument,
   fuelOperationTrackingToApiDocuments,
 } from '../utils/fuelOperationTrackingApiMapper';
+import { roundQuantity } from '../utils/quantityPrecision';
 
 type FuelDirection = 'decrement' | 'increment';
 
@@ -29,7 +30,7 @@ function parseAmount(value: unknown): number {
   if (!Number.isFinite(num) || num < 0) {
     throw new Error('כמות לא תקינה');
   }
-  return num;
+  return roundQuantity(num);
 }
 
 function parseNotes(value: unknown): string {
@@ -148,9 +149,7 @@ async function applyFuelTankSignedDelta(
     throw new Error('מיכל דלק לא נמצא');
   }
 
-  const nextAmount = Number(
-    (Number(fuelTank.currentAmount ?? 0) + delta).toFixed(3),
-  );
+  const nextAmount = roundQuantity(Number(fuelTank.currentAmount ?? 0) + delta);
 
   await FuelTankModel.findByIdAndUpdate(
     fuelTank._id,

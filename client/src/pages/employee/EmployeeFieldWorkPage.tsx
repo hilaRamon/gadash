@@ -11,7 +11,11 @@ import {
 import { useCollectionList } from '../../hooks/collections/useCollectionList'
 import { useCreateDocument } from '../../hooks/collections/useCollectionMutations'
 import { getApiErrorMessage } from '../../lib/apiErrorMessage'
-import { OPERATION_PRICING_BY_UNIT } from '../../lib/operationTrackingPricing'
+import {
+  OPERATION_PRICING_BY_DUNAM,
+  OPERATION_PRICING_BY_UNIT,
+  OPERATION_PRICING_HOURLY,
+} from '../../lib/operationTrackingPricing'
 import { operationsTrackingsFieldWorkSchema } from '../../schema/collections/operationsTrackingsSchema'
 import type { FormFieldDef } from '../../schema/types'
 import { EmployeeFormField } from './components/EmployeeFormField'
@@ -23,7 +27,7 @@ import { useRequireEmployee } from './hooks/useRequireEmployee'
 import {
   assertEndAfterStart,
 } from './lib/formDefaults'
-import { FormField, FormLabel, FormStack, ReadOnlyValue, FieldError } from './employeeStyles'
+import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsFieldWorkSchema.form.fields
 const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
@@ -62,8 +66,23 @@ export function EmployeeFieldWorkPage() {
     [operations, values.operation],
   )
 
-  const isUnitPricing =
-    String(selectedOperation?.pricingForm ?? '') === OPERATION_PRICING_BY_UNIT
+  const pricingForm = String(
+    selectedOperation?.pricingForm ?? OPERATION_PRICING_BY_DUNAM,
+  )
+
+  const amountField = useMemo(() => {
+    const base = getField('amount')
+    if (pricingForm === OPERATION_PRICING_BY_UNIT) {
+      return { ...base, label: 'כמות יחידות' }
+    }
+    if (pricingForm === OPERATION_PRICING_BY_DUNAM) {
+      return { ...base, label: 'דונם' }
+    }
+    return base
+  }, [pricingForm])
+
+  const showAmountField =
+    Boolean(values.operation) && pricingForm !== OPERATION_PRICING_HOURLY
 
   const visibleFields = useMemo(
     () => formFields.filter((field) => !field.hidden && !hiddenKeys.has(field.key)),
@@ -164,25 +183,13 @@ export function EmployeeFieldWorkPage() {
           onChange={handleChange}
         />
 
-        {values.operation ? (
-          isUnitPricing ? (
-            <EmployeeFormField
-              field={getField('amount')}
-              value={values.amount}
-              error={fieldErrors.amount}
-              onChange={handleChange}
-            />
-          ) : (
-            <FormField>
-              <FormLabel>{getField('amount').label}</FormLabel>
-              <ReadOnlyValue>
-                {values.amount ? values.amount : 'תחושב אוטומטית'}
-              </ReadOnlyValue>
-              {fieldErrors.amount ? (
-                <FieldError>{fieldErrors.amount}</FieldError>
-              ) : null}
-            </FormField>
-          )
+        {showAmountField ? (
+          <EmployeeFormField
+            field={amountField}
+            value={values.amount}
+            error={fieldErrors.amount}
+            onChange={handleChange}
+          />
         ) : null}
 
         <OptionalNotesField
