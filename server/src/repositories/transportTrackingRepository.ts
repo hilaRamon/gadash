@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { TransportTrackingModel } from '../models/TransportTracking';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
+import type { TransportBillingType } from '../models/TransportTracking';
 
 export type TransportTrackingInput = {
   date: Date;
@@ -11,23 +12,27 @@ export type TransportTrackingInput = {
   hourlyRate: number;
   hours: number;
   finalPrice: number;
+  billing: TransportBillingType;
+  customer?: Types.ObjectId | null;
   notes?: string;
 };
 
 const moverPopulate = { path: 'mover', select: '_id name' };
+const customerPopulate = { path: 'customer', select: '_id name' };
+const populateRefs = [moverPopulate, customerPopulate];
 
 export const transportTrackingRepository = {
   findAll(seasonYear?: number) {
     const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
     return TransportTrackingModel.find(filter)
-      .populate(moverPopulate)
+      .populate(populateRefs)
       .sort({ date: -1 })
       .lean();
   },
 
   findById(id: string) {
     return TransportTrackingModel.findById(id)
-      .populate(moverPopulate)
+      .populate(populateRefs)
       .lean();
   },
 
@@ -40,7 +45,7 @@ export const transportTrackingRepository = {
       returnDocument: 'after',
       runValidators: true,
     })
-      .populate(moverPopulate)
+      .populate(populateRefs)
       .lean();
   },
 

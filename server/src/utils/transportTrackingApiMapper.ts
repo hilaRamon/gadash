@@ -1,5 +1,6 @@
 import type { ApiDocument } from '../types/apiDocument';
 import { toApiDocument } from './toApiDocument';
+import { DEFAULT_TRANSPORT_BILLING } from '../models/TransportTracking';
 
 type PopulatedRef = {
   _id?: unknown;
@@ -23,6 +24,7 @@ function toRefParts(value: unknown): { id: string; name: string } {
 export function transportTrackingToApiDocument(doc: Record<string, unknown>): ApiDocument {
   const base = toApiDocument(doc);
   const mover = toRefParts(doc.mover);
+  const customer = toRefParts(doc.customer);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
 
   return {
@@ -32,6 +34,9 @@ export function transportTrackingToApiDocument(doc: Record<string, unknown>): Ap
       : dateValue.toISOString().slice(0, 10),
     mover: mover.id,
     moverName: mover.name,
+    billing: String(doc.billing ?? DEFAULT_TRANSPORT_BILLING),
+    customer: customer.id || null,
+    customerName: customer.name,
   };
 }
 

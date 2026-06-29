@@ -3,6 +3,11 @@ import {
   calcHoursBetween,
 } from "./contractorTrackingPricing";
 import type { CollectionDocument } from "../schema/types";
+import {
+  DEFAULT_TRANSPORT_BILLING,
+  TRANSPORT_BILLING_TYPES,
+  type TransportBillingType,
+} from "./transportBilling";
 
 export { calcFinalPrice, calcHoursBetween };
 
@@ -51,4 +56,35 @@ export function sumTransportFinalPricesInRange(
   }, 0);
 
   return Number(sum.toFixed(3));
+}
+
+export function sumTransportFinalPricesByBillingInRange(
+  rows: CollectionDocument[],
+  fromDate: string,
+  toDate: string = todayDateKey(),
+): Record<TransportBillingType, number> {
+  const from = toDateKey(fromDate);
+  const to = toDateKey(toDate);
+  const sums = Object.fromEntries(
+    TRANSPORT_BILLING_TYPES.map((billing) => [billing, 0]),
+  ) as Record<TransportBillingType, number>;
+
+  if (!from) return sums;
+
+  for (const row of rows) {
+    const dateKey = toDateKey(row.date);
+    if (!dateKey || dateKey < from || dateKey > to) continue;
+
+    const price = Number(row.finalPrice ?? 0);
+    if (!Number.isFinite(price)) continue;
+
+    const billing = String(row.billing ?? DEFAULT_TRANSPORT_BILLING) as TransportBillingType;
+    sums[billing] = (sums[billing] ?? 0) + price;
+  }
+
+  for (const billing of TRANSPORT_BILLING_TYPES) {
+    sums[billing] = Number(sums[billing].toFixed(3));
+  }
+
+  return sums;
 }

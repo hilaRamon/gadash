@@ -8,6 +8,10 @@ import {
   useUpdateTransportPeriodStartDate,
 } from "../../hooks/transport/useTransportChargeState";
 import { TransportChargingModal } from "./TransportChargingModal";
+import { TRANSPORT_BILLING_TYPES } from "../../lib/transportBilling";
+import { sumTransportFinalPricesByBillingInRange } from "../../lib/transportTrackingPricing";
+
+const GLOBAL_BILLING = "חיוב גלובלי";
 
 type TransportTrackingPageExtrasProps = {
   rows: CollectionDocument[];
@@ -42,9 +46,49 @@ const DateInput = styled.input`
   font-size: 0.875rem;
 `;
 
+const TotalsSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+`;
+
+const TotalLine = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+`;
+
 const TotalDisplay = styled.span`
   font-size: 1rem;
   font-weight: 700;
+  color: var(--text-primary);
+`;
+
+const BillingBreakdown = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+`;
+
+const BillingBreakdownItem = styled.li`
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+`;
+
+const BillingBreakdownRow = styled(BillingBreakdownItem)`
+  gap: 0.75rem;
+`;
+
+const BillingBreakdownValue = styled.span`
+  font-weight: 600;
   color: var(--text-primary);
 `;
 
@@ -52,6 +96,8 @@ const ChargeButton = styled.button`
   ${buttonBase};
   ${toolbarButtonAccent};
   font-weight: 600;
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.75rem;
 `;
 
 export function TransportTrackingPageExtras({
@@ -63,6 +109,11 @@ export function TransportTrackingPageExtras({
 
   const periodStartDate = chargeState?.periodStartDate ?? "";
   const totalSum = chargeState?.totalSum ?? 0;
+
+  const billingSums = useMemo(
+    () => sumTransportFinalPricesByBillingInRange(rows, periodStartDate),
+    [rows, periodStartDate],
+  );
 
   const rowCount = useMemo(() => {
     if (!periodStartDate) return 0;
@@ -97,19 +148,42 @@ export function TransportTrackingPageExtras({
             onChange={(e) => handleDateChange(e.target.value)}
           />
         </FieldGroup>
-        <FieldGroup as="div">
-          סה״כ עלות
-          <TotalDisplay>
-            {isLoading ? "…" : formatNumber(totalSum)}
-          </TotalDisplay>
-        </FieldGroup>
-        <ChargeButton
-          type="button"
-          disabled={isLoading}
-          onClick={() => setChargeModalOpen(true)}
-        >
-          ביצוע חיוב
-        </ChargeButton>
+        <TotalsSection>
+          <TotalLine>
+            <span>סה״כ עלות</span>
+            <TotalDisplay>
+              {isLoading ? "…" : formatNumber(totalSum)}
+            </TotalDisplay>
+          </TotalLine>
+          {!isLoading && periodStartDate ? (
+            <BillingBreakdown>
+              {TRANSPORT_BILLING_TYPES.map((billing) => {
+                const Row =
+                  billing === GLOBAL_BILLING
+                    ? BillingBreakdownRow
+                    : BillingBreakdownItem;
+
+                return (
+                  <Row key={billing}>
+                    <span>{billing}:</span>
+                    <BillingBreakdownValue>
+                      {formatNumber(billingSums[billing])}
+                    </BillingBreakdownValue>
+                    {billing === GLOBAL_BILLING ? (
+                      <ChargeButton
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => setChargeModalOpen(true)}
+                      >
+                        בצע חיוב גלובלי
+                      </ChargeButton>
+                    ) : null}
+                  </Row>
+                );
+              })}
+            </BillingBreakdown>
+          ) : null}
+        </TotalsSection>
       </ExtrasRow>
 
       <TransportChargingModal

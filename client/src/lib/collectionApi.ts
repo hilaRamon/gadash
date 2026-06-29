@@ -32,6 +32,7 @@ import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
+import { DEFAULT_TRANSPORT_BILLING } from "./transportBilling";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
 import { roundQuantity } from "./quantityPrecision";
 import { enrichMaterialsWithGroupQuantity } from "./materialInventoryGroup";
@@ -333,6 +334,9 @@ function enrichTransportTrackingRow(
   const mover = moversSeedData.find(
     (item) => String(item._id) === String(row.mover ?? ""),
   );
+  const customer = customersSeedData.find(
+    (item) => String(item._id) === String(row.customer ?? ""),
+  );
   const hours =
     calcTransportHours(
       String(row.startTime ?? ""),
@@ -344,8 +348,10 @@ function enrichTransportTrackingRow(
   return {
     ...row,
     moverName: String(mover?.name ?? ""),
+    customerName: String(customer?.name ?? ""),
     hours,
     finalPrice,
+    billing: String(row.billing ?? DEFAULT_TRANSPORT_BILLING),
   };
 }
 

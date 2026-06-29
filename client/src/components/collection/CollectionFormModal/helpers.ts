@@ -66,7 +66,12 @@ export function getInitialValues(
     }
 
     if (field.type === "enum") {
-      values[field.key] = raw == null || raw === "" ? "" : String(raw);
+      if (raw == null || raw === "") {
+        values[field.key] =
+          field.defaultValue != null ? String(field.defaultValue) : "";
+      } else {
+        values[field.key] = String(raw);
+      }
       continue;
     }
 
