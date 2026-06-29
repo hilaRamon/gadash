@@ -19,6 +19,7 @@ import { materialUsageTrackingsSchema } from "../../schema/collections/materialU
 import { baleOrderTrackingsSchema } from "../../schema/collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "../../schema/collections/contractorTrackingsSchema";
 import { countCustomerPlots, type UnbilledPreview } from "../../lib/customerBillingApi";
+import { isTransportBillingRow } from "../../lib/transportTrackingBilling";
 import {
   BALE_ORDER_BY_UNIT,
   isByWeightPricing,
@@ -240,7 +241,7 @@ const contractorPreviewSchema: CollectionSchema = {
     contractorUnitPriceColumn,
     {
       ...contractorUnitCustomerPriceColumn,
-      inlineEditable: () => true,
+      inlineEditable: (row) => !isTransportBillingRow(row),
       nullable: true,
     },
     contractorUnitAmountColumn,
@@ -444,7 +445,7 @@ export function CreateCustomerBillingSections({
 
   const handleContractorCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
-      if (key !== "unitCustomerPrice") return;
+      if (key !== "unitCustomerPrice" || isTransportBillingRow(row)) return;
       await updateContractor.mutateAsync({
         id: row._id,
         body: { unitCustomerPrice: value },

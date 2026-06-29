@@ -26,8 +26,31 @@ import {
   isBillable,
   isFuelOperation,
 } from "./unbilledTrackingFilters";
+import {
+  isTransportBillingRow,
+  isUnbilledTransportForCustomer,
+  transportTrackingToContractorBillingRow,
+} from "./transportTrackingBilling";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+
+function splitIncludedContractorRows(rows: CollectionDocument[]): {
+  contractorTrackingIds: string[];
+  transportTrackingIds: string[];
+} {
+  const contractorTrackingIds: string[] = [];
+  const transportTrackingIds: string[] = [];
+
+  for (const row of rows) {
+    if (isTransportBillingRow(row)) {
+      transportTrackingIds.push(row._id);
+    } else {
+      contractorTrackingIds.push(row._id);
+    }
+  }
+
+  return { contractorTrackingIds, transportTrackingIds };
+}
 
 export function countCustomerPlots(
   plots: CollectionDocument[],
@@ -59,12 +82,18 @@ export type UnbilledPreview = {
 async function fetchUnbilledPreviewMock(
   customerId: string,
 ): Promise<UnbilledPreview> {
-  const [operations, materialUsage, baleOrders, contractors] = await Promise.all([
+  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
+    await Promise.all([
     listCollection("operationsTrackings"),
     listCollection("materialUsageTrackings"),
     listCollection("baleOrderTrackings"),
     listCollection("contractorTrackings"),
+    listCollection("transportTrackings"),
   ]);
+
+  const transportRows = transportTrackings
+    .filter((row) => isUnbilledTransportForCustomer(row, customerId))
+    .map(transportTrackingToContractorBillingRow);
 
   return {
     operations: operations.filter((row) =>
@@ -76,19 +105,23 @@ async function fetchUnbilledPreviewMock(
     baleOrders: baleOrders.filter((row) =>
       isUnbilledBaleOrderForCustomer(row, customerId),
     ),
-    contractors: contractors.filter((row) =>
-      isUnbilledContractorForCustomer(row, customerId),
-    ),
+    contractors: [
+      ...contractors.filter((row) =>
+        isUnbilledContractorForCustomer(row, customerId),
+      ),
+      ...transportRows,
+    ],
   };
 }
 
 async function fetchCustomersWithUnbilledMock(): Promise<CustomerWithUnbilled[]> {
-  const [operations, materialUsage, baleOrders, contractors, customers] =
+  const [operations, materialUsage, baleOrders, contractors, transportTrackings, customers] =
     await Promise.all([
       listCollection("operationsTrackings"),
       listCollection("materialUsageTrackings"),
       listCollection("baleOrderTrackings"),
       listCollection("contractorTrackings"),
+      listCollection("transportTrackings"),
       listCollection("customers"),
     ]);
 
@@ -124,6 +157,15 @@ async function fetchCustomersWithUnbilledMock(): Promise<CustomerWithUnbilled[]>
     if (isUncharged(row)) {
       const id = String(row.customer ?? "");
       if (id) customerIds.add(id);
+    }
+  }
+
+  for (const row of transportTrackings) {
+    if (isUncharged(row) && row.customer) {
+      const id = String(row.customer);
+      if (isUnbilledTransportForCustomer(row, id)) {
+        customerIds.add(id);
+      }
     }
   }
 
@@ -167,20 +209,25 @@ export function buildCustomerBillRequest(
   preview: UnbilledPreview,
   includedIds: Set<string>,
 ): CustomerBillRequest {
+  const includedContractors = preview.contractors.filter((row) =>
+    includedIds.has(row._id),
+  );
+  const { contractorTrackingIds, transportTrackingIds } =
+    splitIncludedContractorRows(includedContractors);
+
   return {
     customerId,
     operationsTrackingIds: preview.operations
       .filter((row) => includedIds.has(row._id))
       .map((row) => row._id),
-    contractorTrackingIds: preview.contractors
-      .filter((row) => includedIds.has(row._id))
-      .map((row) => row._id),
+    contractorTrackingIds,
     materialUsageTrackingIds: preview.materialUsage
       .filter((row) => includedIds.has(row._id))
       .map((row) => row._id),
     baleOrderTrackingIds: preview.baleOrders
       .filter((row) => includedIds.has(row._id))
       .map((row) => row._id),
+    transportTrackingIds,
   };
 }
 
@@ -189,7 +236,8 @@ export function hasIncludedBillItems(request: CustomerBillRequest): boolean {
     request.operationsTrackingIds.length +
       request.contractorTrackingIds.length +
       request.materialUsageTrackingIds.length +
-      request.baleOrderTrackingIds.length >
+      request.baleOrderTrackingIds.length +
+      request.transportTrackingIds.length >
     0
   );
 }
@@ -209,18 +257,28 @@ async function fetchCustomerBillPreviewMock(
   customerName: string,
 ): Promise<{ html: string }> {
   const showPlots = await customerHasMultiplePlotsMock(request.customerId);
-  const [operations, materialUsage, baleOrders, contractors] = await Promise.all([
+  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
+    await Promise.all([
     listCollection("operationsTrackings"),
     listCollection("materialUsageTrackings"),
     listCollection("baleOrderTrackings"),
     listCollection("contractorTrackings"),
+    listCollection("transportTrackings"),
   ]);
+
+  const transportRows = pickRowsByIds(
+    transportTrackings,
+    request.transportTrackingIds,
+  ).map(transportTrackingToContractorBillingRow);
 
   const bill = buildCustomerBillDocumentFromRows({
     customerName,
     showPlots,
     operations: pickRowsByIds(operations, request.operationsTrackingIds),
-    contractors: pickRowsByIds(contractors, request.contractorTrackingIds),
+    contractors: [
+      ...pickRowsByIds(contractors, request.contractorTrackingIds),
+      ...transportRows,
+    ],
     materialUsage: pickRowsByIds(
       materialUsage,
       request.materialUsageTrackingIds,
@@ -247,12 +305,19 @@ async function fetchSavedBillingBillPreviewMock(
   billing: CollectionDocument,
 ): Promise<{ html: string }> {
   const customerName = String(billing.customerName ?? "").trim() || "לקוח";
-  const [operations, materialUsage, baleOrders, contractors] = await Promise.all([
+  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
+    await Promise.all([
     listCollection("operationsTrackings"),
     listCollection("materialUsageTrackings"),
     listCollection("baleOrderTrackings"),
     listCollection("contractorTrackings"),
+    listCollection("transportTrackings"),
   ]);
+
+  const transportRows = pickRowsByIds(
+    transportTrackings,
+    toIdArray(billing.transportTrackingIds),
+  ).map(transportTrackingToContractorBillingRow);
 
   const showPlots = await customerHasMultiplePlotsMock(
     String(billing.customer ?? ""),
@@ -262,7 +327,10 @@ async function fetchSavedBillingBillPreviewMock(
     billDate: formatStoredBillDate(billing.date),
     showPlots,
     operations: pickRowsByIds(operations, toIdArray(billing.operationsTrackingIds)),
-    contractors: pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
+    contractors: [
+      ...pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
+      ...transportRows,
+    ],
     materialUsage: pickRowsByIds(
       materialUsage,
       toIdArray(billing.materialUsageTrackingIds),
@@ -348,6 +416,7 @@ async function createCustomerBillingMock(
     materialUsageTrackingIds: request.materialUsageTrackingIds,
     contractorTrackingIds: request.contractorTrackingIds,
     baleOrderTrackingIds: request.baleOrderTrackingIds,
+    transportTrackingIds: request.transportTrackingIds,
   });
 
   await Promise.all([
@@ -362,6 +431,9 @@ async function createCustomerBillingMock(
     ),
     ...request.baleOrderTrackingIds.map((id) =>
       updateDocument("baleOrderTrackings", id, { wasCharged: true }),
+    ),
+    ...request.transportTrackingIds.map((id) =>
+      updateDocument("transportTrackings", id, { wasCharged: true }),
     ),
   ]);
 

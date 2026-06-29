@@ -35,4 +35,5 @@ export type CustomerBillRequest = {
   contractorTrackingIds: string[];
   materialUsageTrackingIds: string[];
   baleOrderTrackingIds: string[];
+  transportTrackingIds: string[];
 };

@@ -134,6 +134,12 @@ async function buildTrackingPatch(
       'מעקבי הזמנות חבילות',
     );
   }
+  if (mustHave('transportTrackingIds')) {
+    patch.transportTrackingIds = parseObjectIdArray(
+      body.transportTrackingIds,
+      'מעקבי הובלות',
+    );
+  }
 
   return patch;
 }
@@ -166,6 +172,7 @@ export const customerBillingTrackingService = {
       materialUsageTrackingIds: patch.materialUsageTrackingIds ?? [],
       contractorTrackingIds: patch.contractorTrackingIds ?? [],
       baleOrderTrackingIds: patch.baleOrderTrackingIds ?? [],
+      transportTrackingIds: patch.transportTrackingIds ?? [],
     };
 
     const created = await customerBillingTrackingRepository.create(input);

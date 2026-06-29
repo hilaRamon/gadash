@@ -14,6 +14,10 @@ import {
   isUnbilledMaterialUsageForCustomer,
   isUnbilledOperationForCustomer,
 } from "../unbilledTrackingFilters";
+import {
+  isTransportBillingRow,
+  isUnbilledTransportForCustomer,
+} from "../transportTrackingBilling";
 
 function formatBillDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -224,9 +228,12 @@ export function buildCustomerBillDocumentFromPreview(input: {
   const operations = input.operations.filter((row) =>
     isUnbilledOperationForCustomer(row, customerId),
   );
-  const contractors = input.contractors.filter((row) =>
-    isUnbilledContractorForCustomer(row, customerId),
-  );
+  const contractors = input.contractors.filter((row) => {
+    if (isTransportBillingRow(row)) {
+      return isUnbilledTransportForCustomer(row, customerId);
+    }
+    return isUnbilledContractorForCustomer(row, customerId);
+  });
   const materialUsage = input.materialUsage.filter((row) =>
     isUnbilledMaterialUsageForCustomer(row, customerId),
   );

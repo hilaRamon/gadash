@@ -37,6 +37,10 @@ const customerBillingTrackingSchema = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: 'BaleOrderTracking' }],
       default: [],
     },
+    transportTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'TransportTracking' }],
+      default: [],
+    },
   },
   { timestamps: true, versionKey: false },
 );

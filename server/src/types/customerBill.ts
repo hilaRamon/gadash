@@ -35,4 +35,5 @@ export type CustomerBillRequest = {
   contractorTrackingIds?: unknown;
   materialUsageTrackingIds?: unknown;
   baleOrderTrackingIds?: unknown;
+  transportTrackingIds?: unknown;
 };

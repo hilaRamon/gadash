@@ -54,6 +54,7 @@ export function customerBillingTrackingToApiDocument(
     materialUsageTrackingIds: toIdArray(doc.materialUsageTrackingIds),
     contractorTrackingIds: toIdArray(doc.contractorTrackingIds),
     baleOrderTrackingIds: toIdArray(doc.baleOrderTrackingIds),
+    transportTrackingIds: toIdArray(doc.transportTrackingIds),
   };
 }
 

@@ -125,6 +125,13 @@ export const transportTrackingsSchema: CollectionSchema = {
         referenceCollection: "customers",
         defaultValue: null,
       },
+      {
+        key: "wasCharged",
+        label: "חויב",
+        type: "boolean",
+        hidden: true,
+        defaultValue: false,
+      },
       { key: "notes", label: "הערות", type: "textarea" },
     ],
   },

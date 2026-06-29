@@ -3,6 +3,7 @@ import { baleOrderTrackingRepository } from '../repositories/baleOrderTrackingRe
 import { contractorTrackingRepository } from '../repositories/contractorTrackingRepository';
 import { materialUsageTrackingRepository } from '../repositories/materialUsageTrackingRepository';
 import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
+import { transportTrackingRepository } from '../repositories/transportTrackingRepository';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 
 function toObjectIdArray(value: unknown): Types.ObjectId[] {
@@ -30,6 +31,9 @@ export async function unchargeBillingLineItems(
     ),
     baleOrderTrackingRepository.markUncharged(
       toObjectIdArray(doc.baleOrderTrackingIds),
+    ),
+    transportTrackingRepository.markUncharged(
+      toObjectIdArray(doc.transportTrackingIds),
     ),
   ]);
 }

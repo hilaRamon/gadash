@@ -17,6 +17,7 @@ export type CustomerBillingTrackingInput = {
   materialUsageTrackingIds?: Types.ObjectId[];
   contractorTrackingIds?: Types.ObjectId[];
   baleOrderTrackingIds?: Types.ObjectId[];
+  transportTrackingIds?: Types.ObjectId[];
 };
 
 const customerPopulate = { path: 'customer', select: '_id name' };

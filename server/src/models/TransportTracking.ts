@@ -26,6 +26,7 @@ const transportTrackingSchema = new Schema(
     },
     customer: { type: Schema.Types.ObjectId, ref: 'Customer', default: null },
     notes: { type: String, default: '' },
+    wasCharged: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

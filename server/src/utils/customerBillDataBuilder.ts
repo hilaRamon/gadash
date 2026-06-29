@@ -9,6 +9,7 @@ import { formatNumber } from "./formatNumber";
 import { isByWeightPricing } from "./baleOrderPricing";
 import { resolveContractorCustomerUnitPrice } from "./contractorTrackingPricing";
 import { isFuelOperationType } from "./unbilledTrackingFilters";
+import { TRANSPORT_CUSTOMER_BILLING } from "../models/TransportTracking";
 
 function formatBillDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -240,4 +241,15 @@ export function isValidBaleOrderForBill(
   customerId: string,
 ): boolean {
   return row.wasCharged !== true && String(row.customer ?? "") === customerId;
+}
+
+export function isValidTransportForBill(
+  row: ApiDocument,
+  customerId: string,
+): boolean {
+  return (
+    row.wasCharged !== true &&
+    String(row.customer ?? "") === customerId &&
+    String(row.billing ?? "") === TRANSPORT_CUSTOMER_BILLING
+  );
 }

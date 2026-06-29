@@ -21,6 +21,7 @@ import {
   type TransportBillingType,
 } from '../models/TransportTracking';
 import { transportChargeStateService } from './transportChargeStateService';
+import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -49,6 +50,14 @@ function parseTime(value: unknown, label: string): string {
 
 function parseNotes(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+function parseWasCharged(value: unknown): boolean {
+  if (value == null || value === '') return false;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error('חויב לא תקין');
 }
 
 function parseBilling(value: unknown): TransportBillingType {
@@ -129,6 +138,9 @@ async function buildTrackingPatch(
   if (mustHave('billing')) {
     patch.billing = parseBilling(body.billing);
   }
+  if (mustHave('wasCharged')) {
+    patch.wasCharged = parseWasCharged(body.wasCharged);
+  }
 
   if (patch.startTime != null && patch.endTime != null) {
     patch.hours = resolveHours(patch.startTime, patch.endTime);
@@ -175,6 +187,7 @@ export const transportTrackingService = {
       billing,
       customer: await resolveCustomerForBilling(billing, body.customer),
       notes: patch.notes ?? '',
+      wasCharged: patch.wasCharged ?? false,
     };
 
     const created = await transportTrackingRepository.create(input);
@@ -190,6 +203,7 @@ export const transportTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
     const patch = await buildTrackingPatch(body);
     if (Object.keys(patch).length === 0) {

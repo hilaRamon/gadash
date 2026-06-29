@@ -1,4 +1,5 @@
 import type { Types } from 'mongoose';
+import { TRANSPORT_CUSTOMER_BILLING } from '../models/TransportTracking';
 
 /** Rows not yet charged to a customer billing document. */
 export const unchargedFilter = { wasCharged: { $ne: true } } as const;
@@ -30,6 +31,14 @@ export function unchargedBaleOrdersByCustomerFilter(customerId: Types.ObjectId) 
   return {
     ...unchargedFilter,
     customer: customerId,
+  };
+}
+
+export function unchargedTransportBillingsByCustomerFilter(customerId: Types.ObjectId) {
+  return {
+    ...unchargedFilter,
+    customer: customerId,
+    billing: TRANSPORT_CUSTOMER_BILLING,
   };
 }
 

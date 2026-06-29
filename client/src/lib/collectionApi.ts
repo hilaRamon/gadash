@@ -296,6 +296,7 @@ function seedCustomerBillingTrackings(): CollectionDocument[] {
       operationsTrackingIds: [],
       materialUsageTrackingIds: [],
       contractorTrackingIds: [],
+      transportTrackingIds: [],
       baleOrderTrackingIds: [],
     };
   });
@@ -321,6 +322,9 @@ function enrichCustomerBillingTrackingRow(
       : [],
     contractorTrackingIds: Array.isArray(row.contractorTrackingIds)
       ? row.contractorTrackingIds.map(String)
+      : [],
+    transportTrackingIds: Array.isArray(row.transportTrackingIds)
+      ? row.transportTrackingIds.map(String)
       : [],
     baleOrderTrackingIds: Array.isArray(row.baleOrderTrackingIds)
       ? row.baleOrderTrackingIds.map(String)
@@ -730,6 +734,10 @@ function unchargeCustomerBillingLineItemsMock(billing: CollectionDocument): void
     {
       collection: "contractorTrackings",
       ids: toIdArray(billing.contractorTrackingIds),
+    },
+    {
+      collection: "transportTrackings",
+      ids: toIdArray(billing.transportTrackingIds),
     },
     {
       collection: "materialUsageTrackings",

@@ -37,6 +37,7 @@ export function transportTrackingToApiDocument(doc: Record<string, unknown>): Ap
     billing: String(doc.billing ?? DEFAULT_TRANSPORT_BILLING),
     customer: customer.id || null,
     customerName: customer.name,
+    wasCharged: doc.wasCharged === true,
   };
 }
 

@@ -15,6 +15,7 @@ export type TransportTrackingInput = {
   billing: TransportBillingType;
   customer?: Types.ObjectId | null;
   notes?: string;
+  wasCharged?: boolean;
 };
 
 const moverPopulate = { path: 'mover', select: '_id name' };
@@ -55,5 +56,21 @@ export const transportTrackingRepository = {
 
   deleteMany(ids: string[]) {
     return TransportTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
+  },
+
+  markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return TransportTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: true },
+    );
+  },
+
+  markUncharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return Promise.resolve(null);
+    return TransportTrackingModel.updateMany(
+      { _id: { $in: ids } },
+      { wasCharged: false },
+    );
   },
 };
