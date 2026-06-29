@@ -1,4 +1,5 @@
 import { MaterialModel } from '../models/Material';
+import { roundQuantity } from './quantityPrecision';
 import type { MaterialPricingEntryInput } from '../repositories/materialRepository';
 
 type MaterialQuantityRow = {
@@ -88,7 +89,7 @@ export function buildGroupQuantityMap(
     if (!Number.isFinite(quantity)) continue;
 
     const next = (totals.get(group) ?? 0) + quantity;
-    totals.set(group, Number(next.toFixed(3)));
+    totals.set(group, roundQuantity(next));
   }
 
   return totals;

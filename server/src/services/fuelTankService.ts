@@ -4,6 +4,7 @@ import {
 } from '../repositories/fuelTankRepository';
 import type { ApiDocument } from '../types/apiDocument';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
+import { roundQuantity } from '../utils/quantityPrecision';
 
 function pickName(body: Record<string, unknown>): string {
   return String(body.name ?? '').trim();
@@ -18,7 +19,7 @@ function parseCurrentAmount(value: unknown): number {
   if (!Number.isFinite(num) || num < 0) {
     throw new Error('כמות נוכחית לא תקינה');
   }
-  return num;
+  return roundQuantity(num);
 }
 
 function toInput(name: string, currentAmountValue: unknown): FuelTankInput {

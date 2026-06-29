@@ -32,6 +32,7 @@ import {
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
+import { roundQuantity } from "./quantityPrecision";
 import { enrichMaterialsWithGroupQuantity } from "./materialInventoryGroup";
 import {
   calcFinalPrice as calcOperationFinalPrice,
@@ -431,7 +432,7 @@ function applyFuelTankDeltaForMockCreate(row: CollectionDocument) {
   if (delta === 0) return;
 
   const current = Number(fuelTank.currentAmount ?? 0);
-  const next = Number((current + delta).toFixed(3));
+  const next = roundQuantity(current + delta);
   fuelTank.currentAmount = next;
 }
 

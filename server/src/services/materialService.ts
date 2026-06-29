@@ -13,6 +13,7 @@ import {
   enrichMaterialsWithGroupQuantity,
   syncInventoryGroupPricingFromMaterial,
 } from '../utils/materialInventoryGroup';
+import { roundQuantity } from '../utils/quantityPrecision';
 
 const DEFAULT_EFFECTIVE_FROM = new Date('2025-01-01T00:00:00.000Z');
 const DEFAULT_SALE_PERCENT = 15;
@@ -38,7 +39,7 @@ function parseCurrentQuantity(value: unknown): number {
   if (!Number.isFinite(num) || num < 0) {
     throw new Error('כמות נוכחית לא תקינה');
   }
-  return num;
+  return roundQuantity(num);
 }
 
 function parseInventoryGroup(value: unknown): string | null {
@@ -53,7 +54,7 @@ function parseAmountPerDunam(value: unknown): number | null {
   if (!Number.isFinite(num) || num < 0) {
     throw new Error('כמות לדונם לא תקינה');
   }
-  return num;
+  return roundQuantity(num);
 }
 
 function parseSalePercent(value: unknown): number {
