@@ -8,7 +8,7 @@ import type {
 import type { TableQueryState } from "../../../schema/tableQuery";
 import { formatCell, getCellValue, isNegativeNumberValue } from "../../../lib/tableQuery";
 import { EditIcon, ViewIcon, DeleteIcon } from "../Icons";
-import { buttonIconStyles } from "./sharedStyles";
+import { tableActionDeleteButton, tableActionEditButton } from "./sharedStyles";
 import { ColumnFilterControl } from "./ColumnFilterControl";
 import { EditableBooleanCell } from "./EditableBooleanCell";
 import { EditableDiscreteCell } from "./EditableDiscreteCell";
@@ -71,7 +71,7 @@ const TableBodyCell = styled.td<{
   ${({ $negativeNumber }) =>
     $negativeNumber &&
     css`
-      color: #fc8181;
+      color: var(--color-error-text);
     `}
 
   ${({ $editableNumber, $editableText }) =>
@@ -136,14 +136,18 @@ const ActionsInner = styled.div`
   justify-content: center;
 `;
 
-const IconButton = styled.button`
-  ${buttonIconStyles};
+const EditActionButton = styled.button`
+  ${tableActionEditButton};
+`;
+
+const DeleteActionButton = styled.button`
+  ${tableActionDeleteButton};
 `;
 
 const TableStatus = styled.p<{ $error?: boolean }>`
   padding: 2rem;
   text-align: center;
-  color: ${({ $error }) => ($error ? "#fc8181" : "var(--text-secondary)")};
+  color: ${({ $error }) => ($error ? 'var(--color-error-text)' : 'var(--text-secondary)')};
 `;
 
 const EmptyMessage = styled.p`
@@ -434,10 +438,12 @@ export function DataTable({
                           text={
                             canEditRow != null && !canEditRow(row)
                               ? CHARGED_TRACKING_EDIT_TOOLTIP
-                              : undefined
+                              : rowAction === "view"
+                                ? "צפייה"
+                                : "עריכה"
                           }
                         >
-                          <IconButton
+                          <EditActionButton
                             type="button"
                             onClick={() => onEdit(row)}
                             disabled={canEditRow != null && !canEditRow(row)}
@@ -447,16 +453,16 @@ export function DataTable({
                             }
                           >
                             {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
-                          </IconButton>
+                          </EditActionButton>
                         </ActionTooltip>
                         <ActionTooltip
                           text={
                             canDeleteRow != null && !canDeleteRow(row)
                               ? PAID_BILLING_DELETE_TOOLTIP
-                              : undefined
+                              : "מחיקה"
                           }
                         >
-                          <IconButton
+                          <DeleteActionButton
                             type="button"
                             onClick={() => onDelete(row)}
                             disabled={
@@ -468,7 +474,7 @@ export function DataTable({
                             }
                           >
                             <DeleteIcon />
-                          </IconButton>
+                          </DeleteActionButton>
                         </ActionTooltip>
                       </ActionsInner>
                     </ActionsCell>

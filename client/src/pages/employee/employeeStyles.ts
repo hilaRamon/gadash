@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { buttonHoverLighten } from '../../styles/buttonStyles'
 
 export const EmployeePage = styled.div`
   min-height: 100vh;
@@ -67,6 +68,8 @@ export const TextButton = styled.button`
   align-items: center;
   gap: 0.35rem;
 
+  ${buttonHoverLighten};
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -106,9 +109,7 @@ export const EmployeePickerButton = styled.button`
   cursor: pointer;
   box-sizing: border-box;
 
-  &:hover {
-    background: var(--hover-bg);
-  }
+  ${buttonHoverLighten};
 `
 
 export const FormStack = styled.form`
@@ -187,7 +188,7 @@ export const FormTextarea = styled.textarea`
 
 export const FieldError = styled.span`
   font-size: 0.8rem;
-  color: #f87171;
+  color: var(--color-error-text);
 `
 
 export const ReadOnlyValue = styled.div`
@@ -225,11 +226,13 @@ export const SubmitButton = styled.button`
   border: none;
   border-radius: 10px;
   background: var(--accent);
-  color: #0f1419;
+  color: var(--text-on-primary);
   font: inherit;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+
+  ${buttonHoverLighten};
 
   &:disabled {
     opacity: 0.55;
@@ -240,9 +243,9 @@ export const SubmitButton = styled.button`
 export const ErrorBanner = styled.div`
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #fca5a5;
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-text-muted);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 `
@@ -267,4 +270,6 @@ export const CollapseToggle = styled.button`
   cursor: pointer;
   text-align: right;
   align-self: flex-start;
+
+  ${buttonHoverLighten};
 `

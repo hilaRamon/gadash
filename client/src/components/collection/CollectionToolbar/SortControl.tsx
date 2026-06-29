@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import type { CollectionSchema } from '../../../schema/types'
 import type { TableQueryState } from '../../../schema/tableQuery'
-import { buttonBase, selectControl } from './sharedStyles'
+import { buttonBase, selectControl, toolbarButtonAccent, toolbarButtonMaterial } from './sharedStyles'
 
 /* =========================================================================
  * SortControl
@@ -16,15 +16,10 @@ const SortAnchor = styled.div`
   position: relative;
 `
 
-/* --- Trigger button (gets an active style when a sort is applied) --- */
-const SortButton = styled.button<{ $active: boolean }>`
+/* --- Trigger button --- */
+const SortButton = styled.button`
   ${buttonBase};
-  ${({ $active }) =>
-    $active &&
-    `
-      border-color: var(--accent);
-      background: var(--active-bg);
-    `}
+  ${toolbarButtonMaterial};
 `
 
 /* --- Floating popover dialog --- */
@@ -72,14 +67,8 @@ const SortActions = styled.div`
 /* --- Action buttons inside the popper --- */
 const PrimaryButton = styled.button`
   ${buttonBase};
-  background: var(--accent);
-  border-color: transparent;
-  color: #0d1114;
+  ${toolbarButtonAccent};
   font-weight: 600;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.05);
-  }
 `
 
 const SecondaryButton = styled.button`
@@ -154,7 +143,6 @@ export function SortControl({
     <SortAnchor ref={sortAnchorRef}>
       <SortButton
         type="button"
-        $active={Boolean(activeSort)}
         onClick={openSortPopper}
         aria-expanded={sortOpen}
         aria-haspopup="dialog"

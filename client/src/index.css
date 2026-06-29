@@ -1,20 +1,10 @@
+@import './styles/colors.css';
+
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
-
-  --text-primary: rgba(255, 255, 255, 0.92);
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.45);
-  --accent: #6ee7a0;
-  --sidebar-bg: #1a1d21;
-  --card-bg: rgba(255, 255, 255, 0.04);
-  --hover-bg: rgba(255, 255, 255, 0.06);
-  --active-bg: rgba(110, 231, 160, 0.1);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --page-bg: #121416;
 
   color: var(--text-primary);
   background-color: var(--page-bg);
@@ -22,21 +12,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --text-primary: #1a1d21;
-    --text-secondary: #4a5568;
-    --text-muted: #718096;
-    --accent: #2d8a5e;
-    --sidebar-bg: #f7f8fa;
-    --card-bg: #ffffff;
-    --hover-bg: rgba(0, 0, 0, 0.04);
-    --active-bg: rgba(45, 138, 94, 0.1);
-    --border-color: rgba(0, 0, 0, 0.08);
-    --page-bg: #eef0f3;
-  }
 }
 
 body {

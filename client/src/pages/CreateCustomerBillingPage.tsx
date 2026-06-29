@@ -136,5 +136,5 @@ const StepLabel = styled.label`
 const StatusText = styled.p<{ $error?: boolean }>`
   margin: 0;
   font-size: 0.875rem;
-  color: ${({ $error }) => ($error ? "#fc8181" : "var(--text-secondary)")};
+  color: ${({ $error }) => ($error ? 'var(--color-error-text)' : 'var(--text-secondary)')};
 `;

@@ -6,6 +6,7 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { buttonBase, toolbarButtonAccent, toolbarButtonMaterial } from "../../styles/buttonStyles";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   buildCustomerBillRequest,
@@ -162,19 +163,9 @@ const BillHeading = styled.h2`
 `;
 
 const CreateBillingButton = styled.button`
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font: inherit;
-  font-size: 0.875rem;
+  ${buttonBase};
+  ${toolbarButtonAccent};
   font-weight: 600;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.05);
-  }
 
   &:disabled {
     opacity: 0.6;
@@ -183,18 +174,9 @@ const CreateBillingButton = styled.button`
 `;
 
 const DownloadButton = styled.button`
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: var(--hover-bg);
-  }
+  ${buttonBase};
+  ${toolbarButtonMaterial};
+  font-weight: 600;
 
   &:disabled {
     opacity: 0.55;
@@ -208,7 +190,7 @@ const PaperFrame = styled.div`
   width: 100%;
   border-radius: 10px;
   border: 1px solid var(--border-color);
-  background: #fff;
+  background: var(--print-bg);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -216,7 +198,7 @@ const PaperFrame = styled.div`
 `;
 
 const PaperContent = styled.div`
-  color: #1a202c;
+  color: var(--print-text);
   direction: rtl;
 
   .bill {
@@ -252,5 +234,5 @@ const MockNote = styled.p`
 const ErrorText = styled.p`
   margin: 0;
   font-size: 0.875rem;
-  color: #fc8181;
+  color: var(--color-error-text);
 `;

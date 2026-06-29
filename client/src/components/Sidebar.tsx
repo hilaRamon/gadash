@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, type NavLinkProps, useLocation, useNavigate } from 'react-router-dom'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
+import { buttonHoverLighten } from '../styles/buttonStyles'
 import { useAuth } from '../context/AuthContext'
 import { SeasonSelect } from './collection/SeasonSelect'
 import { LogoutIcon } from './collection/Icons'
@@ -163,12 +164,7 @@ export function Sidebar() {
         </SidebarSection>
 
         <SidebarSection>
-          <SidebarSectionTitleLink
-            to={sidebarSections[2].path}
-            activeClassName="sidebar-section-title-link--active"
-          >
-            {sidebarSections[2].title}
-          </SidebarSectionTitleLink>
+          <SidebarSectionTitle>{sidebarSections[2].title}</SidebarSectionTitle>
           <SidebarList>
             {reportCollections.map((item) => (
               <li key={item.id}>
@@ -181,12 +177,7 @@ export function Sidebar() {
         </SidebarSection>
 
         <SidebarSection>
-          <SidebarSectionTitleLink
-            to={sidebarSections[3].path}
-            activeClassName="sidebar-section-title-link--active"
-          >
-            {sidebarSections[3].title}
-          </SidebarSectionTitleLink>
+          <SidebarSectionTitle>{sidebarSections[3].title}</SidebarSectionTitle>
           <SidebarList>
             {summaryCollections.map((item) => (
               <li key={item.id}>
@@ -264,23 +255,15 @@ const SidebarAppLink = styled(NavLinkWithActiveClass)`
   display: block;
   padding: 0.65rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
+  border: none;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-primary);
   text-decoration: none;
   text-align: center;
-  transition: background 0.15s, color 0.15s;
 
-  &:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-  }
-
-  &.sidebar-link--active {
-    background: var(--active-bg);
-    color: var(--accent);
-  }
+  ${buttonHoverLighten};
 `
 
 const SidebarLogoutButton = styled.button`
@@ -291,17 +274,15 @@ const SidebarLogoutButton = styled.button`
   gap: 0.5rem;
   padding: 0.65rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: transparent;
-  color: var(--text-secondary);
+  border: none;
+  background: var(--color-employee-material);
+  color: var(--text-on-brand);
   font: inherit;
   font-size: 0.9375rem;
+  font-weight: 600;
   cursor: pointer;
 
-  &:hover {
-    background: var(--hover-bg);
-    color: var(--text-primary);
-  }
+  ${buttonHoverLighten};
 `
 
 const SidebarNav = styled.nav`
@@ -310,23 +291,29 @@ const SidebarNav = styled.nav`
 `
 
 const SidebarSection = styled.section`
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+`
+
+const sidebarSectionTitleBase = css`
+  display: block;
+  margin: 0 0 0.75rem;
+  padding: 0.875rem 1.5rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-employee-material);
+  border-bottom: 1px solid var(--color-employee-material-soft);
 `
 
 const SidebarSectionTitle = styled.h2`
-  margin: 0;
-  padding: 0.75rem 1.5rem 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  ${sidebarSectionTitleBase};
 `
 
 const SidebarList = styled.ul`
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.25rem 0 0;
 `
 
 const SidebarLink = styled(NavLinkWithActiveClass)`
@@ -385,27 +372,4 @@ const SidebarListNested = styled.ul`
 
 const SidebarNestedLink = styled(SidebarLink)`
   padding-inline-start: 2.25rem;
-`
-
-const SidebarSectionTitleLink = styled(NavLinkWithActiveClass)`
-  display: block;
-  margin: 0;
-  padding: 0.75rem 1.5rem 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  color: var(--text-muted);
-  transition: color 0.15s, background 0.15s;
-
-  &:hover {
-    color: var(--text-primary);
-    background: var(--hover-bg);
-  }
-
-  &.sidebar-section-title-link--active {
-    color: var(--accent);
-    background: var(--active-bg);
-  }
 `

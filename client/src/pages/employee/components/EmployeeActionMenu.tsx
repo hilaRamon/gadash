@@ -54,7 +54,7 @@ const IconWrap = styled.span<{ $accent: string }>`
   height: 3.25rem;
   border-radius: 14px;
   background: ${({ $accent }) => $accent};
-  color: #fff;
+  color: var(--text-on-brand);
   flex-shrink: 0;
 `
 
@@ -70,29 +70,29 @@ const ACTIONS = [
   {
     path: '/employee/field-work',
     label: 'משימת עיבוד',
-    accent: '#2d8a5e',
-    accentSoft: 'rgba(45, 138, 94, 0.14)',
+    accent: 'var(--color-employee-field)',
+    accentSoft: 'var(--color-employee-field-soft)',
     Icon: FieldWorkIcon,
   },
   {
     path: '/employee/admin',
     label: 'משימת מנהלה',
-    accent: '#2563eb',
-    accentSoft: 'rgba(37, 99, 235, 0.14)',
+    accent: 'var(--color-employee-admin)',
+    accentSoft: 'var(--color-employee-admin-soft)',
     Icon: AdminTaskIcon,
   },
   {
     path: '/employee/material',
     label: 'שימוש בחומר',
-    accent: '#d97706',
-    accentSoft: 'rgba(217, 119, 6, 0.14)',
+    accent: 'var(--color-employee-material)',
+    accentSoft: 'var(--color-employee-material-soft)',
     Icon: MaterialIcon,
   },
   {
     path: '/employee/fuel',
     label: 'פעולת דלק',
-    accent: '#dc2626',
-    accentSoft: 'rgba(220, 38, 38, 0.14)',
+    accent: 'var(--color-employee-fuel)',
+    accentSoft: 'var(--color-employee-fuel-soft)',
     Icon: FuelIcon,
   },
 ] as const

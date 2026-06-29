@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { buttonHoverLighten } from '../styles/buttonStyles'
 import { PhoneField } from '../components/collection/PhoneField'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { useAuth } from '../context/AuthContext'
@@ -14,8 +15,27 @@ type LoginOption = {
   name: string
 }
 
-const MENU_ACCENT = '#2d8a5e'
-const MENU_ACCENT_SOFT = 'rgba(45, 138, 94, 0.14)'
+const LoginHeader = styled.header`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.25rem 1.25rem;
+  background: var(--color-employee-field-soft);
+`
+
+const LoginIconWrap = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--text-on-brand);
+  flex-shrink: 0;
+`
 
 const LoginShell = styled.div`
   min-height: 100vh;
@@ -41,28 +61,6 @@ const LoginCard = styled.div`
   @media (prefers-color-scheme: light) {
     box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
   }
-`
-
-const LoginHeader = styled.header`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.75rem;
-  padding: 1.5rem 1.25rem 1.25rem;
-  background: ${MENU_ACCENT_SOFT};
-`
-
-const LoginIconWrap = styled.span`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 14px;
-  background: ${MENU_ACCENT};
-  color: #fff;
-  flex-shrink: 0;
 `
 
 const LoginTitle = styled.h1`
@@ -132,13 +130,13 @@ const LoginPhoneWrap = styled.div`
 const LoginError = styled.div`
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #fca5a5;
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-text-muted);
   font-size: 0.9rem;
 
   @media (prefers-color-scheme: light) {
-    color: #b91c1c;
+    color: var(--color-error-text-strong);
   }
 `
 
@@ -149,11 +147,13 @@ const LoginSubmit = styled.button`
   border: none;
   border-radius: 10px;
   background: var(--accent);
-  color: #0f1419;
+  color: var(--text-on-primary);
   font: inherit;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+
+  ${buttonHoverLighten};
 
   &:disabled {
     opacity: 0.55;

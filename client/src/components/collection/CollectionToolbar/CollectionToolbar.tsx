@@ -61,15 +61,15 @@ export function CollectionToolbar({
         onClick={onBulkDelete}
       />
 
+      {/* Export visible rows to Excel */}
+      <ExportButton disabled={exportDisabled} onClick={onExportExcel} />
+
       {/* Sort field / direction picker */}
       <SortControl
         schema={schema}
         queryState={queryState}
         onSortChange={onSortChange}
       />
-
-      {/* Export visible rows to Excel */}
-      <ExportButton disabled={exportDisabled} onClick={onExportExcel} />
 
       {/* Global free-text search */}
       <GlobalSearch

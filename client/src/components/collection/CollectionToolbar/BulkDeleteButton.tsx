@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { buttonBase } from './sharedStyles'
+import { buttonBase, buttonError } from './sharedStyles'
 
 /* =========================================================================
  * BulkDeleteButton
@@ -9,15 +9,9 @@ import { buttonBase } from './sharedStyles'
 
 const StyledBulkDeleteButton = styled.button`
   ${buttonBase};
+  ${buttonError};
   flex-shrink: 0;
   white-space: nowrap;
-  background: #c53030;
-  border-color: transparent;
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.08);
-  }
 `
 
 type BulkDeleteButtonProps = {

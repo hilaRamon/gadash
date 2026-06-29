@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import styled, { css } from "styled-components";
+import styled from "styled-components";
+import { buttonBase, toolbarButtonAccent } from "../../../styles/buttonStyles";
 import type {
   CollectionDocument,
   CollectionSchema,
@@ -43,31 +44,6 @@ type CollectionFormModalProps = {
   onClose: () => void;
   onSubmit: (values: Record<string, unknown> | Record<string, unknown>[]) => void;
 };
-
-const buttonBase = css`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  &:hover:not(:disabled) {
-    background: var(--hover-bg);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
 
 const Overlay = styled.div`
   position: fixed;
@@ -116,14 +92,8 @@ const SecondaryButton = styled.button`
 
 const PrimaryButton = styled.button`
   ${buttonBase};
-  background: var(--accent);
-  border-color: transparent;
-  color: #0d1114;
+  ${toolbarButtonAccent};
   font-weight: 600;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.05);
-  }
 `;
 
 const Actions = styled.div`
@@ -134,19 +104,19 @@ const Actions = styled.div`
 
 const ErrorMessage = styled.p`
   margin: 0 0 1rem;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.875rem;
 `;
 
 const FieldErrorMessage = styled.p`
   margin: 0.35rem 0 0;
-  color: #fc8181;
+  color: var(--color-error-text);
   font-size: 0.75rem;
 `;
 
 const InfoMessage = styled.p`
   margin: 0 0 1rem;
-  color: #63b3ed;
+  color: var(--color-info);
   font-size: 0.875rem;
 `;
 
