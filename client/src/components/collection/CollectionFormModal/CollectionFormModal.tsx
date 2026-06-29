@@ -211,6 +211,7 @@ export function CollectionFormModal({
     isAdminTrackingForm,
     isContractorTrackingForm,
     isTransportTrackingForm,
+    plots,
     materialUsagePlotRef,
     setValues,
     setValidationError,
@@ -271,7 +272,7 @@ export function CollectionFormModal({
         next = applyBaleOrderFieldChange(key, value, prev, bales);
       }
       if (isContractorTrackingForm) {
-        next = applyContractorTrackingFieldChange(key, value, next);
+        next = applyContractorTrackingFieldChange(key, value, next, { plots });
       }
       if (isTransportTrackingForm) {
         next = applyTransportTrackingFieldChange(key, value, next, movers);

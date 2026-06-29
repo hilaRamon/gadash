@@ -7,6 +7,7 @@ import type {
 } from "../types/customerBill";
 import { formatNumber } from "./formatNumber";
 import { isByWeightPricing } from "./baleOrderPricing";
+import { resolveContractorCustomerUnitPrice } from "./contractorTrackingPricing";
 import { isFuelOperationType } from "./unbilledTrackingFilters";
 
 function formatBillDate(value: unknown): string {
@@ -60,15 +61,25 @@ function operationLine(row: ApiDocument): CustomerBillLine {
 }
 
 function contractorLine(row: ApiDocument): CustomerBillLine {
-  const customerPrice = row.customerPrice;
-  const price =
-    customerPrice != null && customerPrice !== ""
-      ? Number(customerPrice)
-      : Number(row.finalPrice ?? 0);
+  const amountValue = Number(row.unitAmount ?? 0);
+  const unitPriceValue = resolveContractorCustomerUnitPrice({
+    unitPrice: row.unitPrice,
+    unitCustomerPrice: row.unitCustomerPrice,
+  });
+  const price = Number(row.customerFinalPrice ?? row.finalPrice ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
     plotName: String(row.plotName ?? ""),
+    pricingForm: String(row.pricingForm ?? ""),
+    amount:
+      Number.isFinite(amountValue) && amountValue !== 0
+        ? formatNumber(amountValue)
+        : "",
+    unitPrice:
+      Number.isFinite(unitPriceValue) && unitPriceValue > 0
+        ? formatNumber(unitPriceValue)
+        : "",
     price,
     priceFormatted: formatNumber(price),
   };

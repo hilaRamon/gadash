@@ -188,23 +188,64 @@ const balePreviewSchema: CollectionSchema = markBalePreviewColumnsEditable({
   ],
 });
 
-const contractorPreviewColumnKeys = [
-  "date",
-  "contractor",
-  "plot",
-  "operation",
-  "finalPrice",
-  "customerPrice",
-];
+const contractorUnitPriceColumn: ColumnDef = {
+  key: "unitPrice",
+  label: "מחיר ליחידה",
+  type: "number",
+  sortable: true,
+  getValue: (row) => Number(row.unitPrice ?? 0),
+  format: (value) => formatNumber(value),
+  width: "8rem",
+  searchable: false,
+};
+
+const contractorUnitCustomerPriceColumn: ColumnDef = {
+  key: "unitCustomerPrice",
+  label: "מחיר ללקוח ליחידה",
+  type: "number",
+  sortable: true,
+  format: (value) =>
+    value == null || value === "" ? "—" : formatNumber(value),
+  width: "8rem",
+  searchable: false,
+};
+
+const contractorUnitAmountColumn: ColumnDef = {
+  key: "unitAmount",
+  label: "כמות",
+  type: "number",
+  sortable: true,
+  getValue: (row) => Number(row.unitAmount ?? 0),
+  format: (value) => formatNumber(value),
+  width: "6rem",
+  searchable: false,
+};
 
 const contractorPreviewSchema: CollectionSchema = {
-  ...pickPreviewSchema(contractorTrackingsSchema, contractorPreviewColumnKeys),
-  columns: pickPreviewColumns(contractorTrackingsSchema, contractorPreviewColumnKeys).map(
-    (col) =>
-      col.key === "customerPrice"
-        ? { ...col, inlineEditable: () => true, nullable: true }
-        : col,
-  ),
+  ...pickPreviewSchema(contractorTrackingsSchema, [
+    "date",
+    "contractor",
+    "plot",
+    "operation",
+    "customerFinalPrice",
+  ]),
+  columns: [
+    ...pickPreviewColumns(contractorTrackingsSchema, [
+      "date",
+      "contractor",
+      "plot",
+      "operation",
+    ]),
+    ...pickPreviewColumns(contractorTrackingsSchema, ["pricingForm"]),
+    contractorUnitPriceColumn,
+    {
+      ...contractorUnitCustomerPriceColumn,
+      inlineEditable: () => true,
+      nullable: true,
+    },
+    contractorUnitAmountColumn,
+    ...pickPreviewColumns(contractorTrackingsSchema, ["customerFinalPrice"]),
+  ],
 };
 
 function withoutPlotColumn(schema: CollectionSchema): CollectionSchema {
@@ -403,10 +444,10 @@ export function CreateCustomerBillingSections({
 
   const handleContractorCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
-      if (key !== "customerPrice") return;
+      if (key !== "unitCustomerPrice") return;
       await updateContractor.mutateAsync({
         id: row._id,
-        body: { customerPrice: value },
+        body: { unitCustomerPrice: value },
       });
       await refreshBillingPreviews();
       await queryClient.invalidateQueries({

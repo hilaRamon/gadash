@@ -67,27 +67,31 @@ export function getBillStyles(): string {
       color: ${c.textSecondary};
     }
     .bill-section-operations th:nth-child(1),
-    .bill-section-operations td:nth-child(1) { width: 12%; }
+    .bill-section-operations td:nth-child(1) { width: 11%; }
     .bill-section-operations th:nth-child(2),
-    .bill-section-operations td:nth-child(2) { width: 24%; }
+    .bill-section-operations td:nth-child(2) { width: 20%; }
     .bill-section-operations th:nth-child(3),
-    .bill-section-operations td:nth-child(3) { width: 18%; }
+    .bill-section-operations td:nth-child(3) { width: 14%; }
     .bill-section-operations th:nth-child(4),
-    .bill-section-operations td:nth-child(4) { width: 16%; }
+    .bill-section-operations td:nth-child(4) { width: 12%; }
     .bill-section-operations th:nth-child(5),
-    .bill-section-operations td:nth-child(5) { width: 12%; }
+    .bill-section-operations td:nth-child(5) { width: 14%; }
     .bill-section-operations th:nth-child(6),
-    .bill-section-operations td:nth-child(6) { width: 18%; }
+    .bill-section-operations td:nth-child(6) { width: 11%; }
+    .bill-section-operations th:nth-child(7),
+    .bill-section-operations td:nth-child(7) { width: 18%; }
     .bill-section-operations-no-plot th:nth-child(1),
-    .bill-section-operations-no-plot td:nth-child(1) { width: 14%; }
+    .bill-section-operations-no-plot td:nth-child(1) { width: 12%; }
     .bill-section-operations-no-plot th:nth-child(2),
-    .bill-section-operations-no-plot td:nth-child(2) { width: 36%; }
+    .bill-section-operations-no-plot td:nth-child(2) { width: 28%; }
     .bill-section-operations-no-plot th:nth-child(3),
-    .bill-section-operations-no-plot td:nth-child(3) { width: 18%; }
+    .bill-section-operations-no-plot td:nth-child(3) { width: 14%; }
     .bill-section-operations-no-plot th:nth-child(4),
-    .bill-section-operations-no-plot td:nth-child(4) { width: 14%; }
+    .bill-section-operations-no-plot td:nth-child(4) { width: 16%; }
     .bill-section-operations-no-plot th:nth-child(5),
-    .bill-section-operations-no-plot td:nth-child(5) { width: 18%; }
+    .bill-section-operations-no-plot td:nth-child(5) { width: 12%; }
+    .bill-section-operations-no-plot th:nth-child(6),
+    .bill-section-operations-no-plot td:nth-child(6) { width: 18%; }
     .bill-section-quantity th:nth-child(1),
     .bill-section-quantity td:nth-child(1) { width: 14%; }
     .bill-section-quantity th:nth-child(2),

@@ -1,4 +1,8 @@
 import type { ApiDocument } from '../types/apiDocument';
+import {
+  calcFinalPrice,
+  resolveCustomerFinalPrice,
+} from './contractorTrackingPricing';
 import { toApiDocument } from './toApiDocument';
 
 type PopulatedRef = {
@@ -24,6 +28,17 @@ function toRefParts(value: unknown): { id: string; name: string } {
   };
 }
 
+function toUnitAmount(value: unknown): number {
+  const amount = Number(value ?? 0);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function toUnitCustomerPrice(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const price = Number(value);
+  return Number.isFinite(price) ? price : null;
+}
+
 export function contractorTrackingToApiDocument(doc: Record<string, unknown>): ApiDocument {
   const base = toApiDocument(doc);
   const contractor = toRefParts(doc.contractor);
@@ -35,6 +50,16 @@ export function contractorTrackingToApiDocument(doc: Record<string, unknown>): A
       : { id: '', name: '' };
   const operation = toRefParts(doc.operation);
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
+
+  const unitPrice = Number(doc.unitPrice ?? 0);
+  const unitAmount = toUnitAmount(doc.unitAmount);
+  const unitCustomerPrice = toUnitCustomerPrice(doc.unitCustomerPrice);
+  const finalPrice = calcFinalPrice(unitPrice, unitAmount);
+  const customerFinalPrice = resolveCustomerFinalPrice({
+    unitPrice,
+    unitAmount,
+    unitCustomerPrice,
+  });
 
   return {
     ...base,
@@ -49,7 +74,10 @@ export function contractorTrackingToApiDocument(doc: Record<string, unknown>): A
     customerName: customer.name,
     operation: operation.id,
     operationName: operation.name,
-    customerPrice: doc.customerPrice == null ? null : Number(doc.customerPrice),
+    unitAmount,
+    unitCustomerPrice,
+    finalPrice,
+    customerFinalPrice,
   };
 }
 

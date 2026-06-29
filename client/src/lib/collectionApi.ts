@@ -22,6 +22,7 @@ import {
 } from "./seasonRange";
 import {
   calcFinalPrice,
+  resolveCustomerFinalPrice,
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
 import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
@@ -368,7 +369,16 @@ function enrichContractorTrackingRow(
       unitAmount: String(row.unitAmount ?? ""),
     }) ?? Number(row.unitAmount ?? 0);
   const unitPrice = Number(row.unitPrice ?? 0);
+  const unitCustomerPrice =
+    row.unitCustomerPrice == null || row.unitCustomerPrice === ""
+      ? null
+      : Number(row.unitCustomerPrice);
   const finalPrice = calcFinalPrice(unitPrice, unitAmount);
+  const customerFinalPrice = resolveCustomerFinalPrice({
+    unitPrice,
+    unitAmount,
+    unitCustomerPrice,
+  });
 
   const customer = customersSeedData.find(
     (item) => String(item._id) === String(plot?.customer ?? ""),
@@ -382,11 +392,9 @@ function enrichContractorTrackingRow(
     customer: plot?.customer ?? null,
     customerName: String(customer?.name ?? plot?.customerName ?? ""),
     unitAmount,
+    unitCustomerPrice,
     finalPrice,
-    customerPrice:
-      row.customerPrice == null || row.customerPrice === ""
-        ? null
-        : Number(row.customerPrice),
+    customerFinalPrice,
   };
 }
 

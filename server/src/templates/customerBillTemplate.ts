@@ -20,6 +20,7 @@ function renderOperationsRow(
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>${plotCell}
+      <td>${escapeHtml(line.pricingForm ?? '')}</td>
       <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>
       <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
@@ -58,7 +59,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
         : renderQuantityWithUnitPriceRow(line, showTransport),
     )
     .join('');
-  const colspan = isOperations ? (showPlots ? 5 : 4) : showTransport ? 5 : 4;
+  const colspan = isOperations ? (showPlots ? 6 : 5) : showTransport ? 5 : 4;
 
   const plotHeader = showPlots
     ? `
@@ -73,7 +74,8 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>${plotHeader}
-            <th>מחיר לדונם/יחידה</th>
+            <th>צורת תמחור</th>
+            <th>מחיר ליחידה</th>
             <th>כמות</th>
             <th>מחיר</th>
           </tr>`
