@@ -1,10 +1,12 @@
 import { Types } from 'mongoose';
 import {
   CustomerBillingTrackingModel,
+  type CustomerBillingKind,
   type CustomerBillingStatus,
 } from '../models/CustomerBillingTracking';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
+import type { CustomerBillDocument } from '../types/customerBill';
 
 export type CustomerBillingTrackingInput = {
   date: Date;
@@ -13,6 +15,9 @@ export type CustomerBillingTrackingInput = {
   status: CustomerBillingStatus;
   paid?: boolean;
   finalPrice: number;
+  billKind?: CustomerBillingKind;
+  globalTransportChargeId?: Types.ObjectId | null;
+  storedBillDocument?: CustomerBillDocument | null;
   operationsTrackingIds?: Types.ObjectId[];
   materialUsageTrackingIds?: Types.ObjectId[];
   contractorTrackingIds?: Types.ObjectId[];

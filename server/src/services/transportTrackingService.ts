@@ -20,7 +20,6 @@ import {
   TRANSPORT_CUSTOMER_BILLING,
   type TransportBillingType,
 } from '../models/TransportTracking';
-import { transportChargeStateService } from './transportChargeStateService';
 import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
 
 function parseDate(value: unknown): Date {
@@ -191,7 +190,6 @@ export const transportTrackingService = {
     };
 
     const created = await transportTrackingRepository.create(input);
-    await transportChargeStateService.recalculateAndSave();
     const populated = await transportTrackingRepository.findById(String(created._id));
     return transportTrackingToApiDocument(
       (populated ?? created.toObject()) as Record<string, unknown>,
@@ -242,7 +240,6 @@ export const transportTrackingService = {
     if (!updated) {
       throw new Error('לא נמצא');
     }
-    await transportChargeStateService.recalculateAndSave();
     return transportTrackingToApiDocument(updated as Record<string, unknown>);
   },
 
@@ -251,11 +248,9 @@ export const transportTrackingService = {
     if (!result) {
       throw new Error('לא נמצא');
     }
-    await transportChargeStateService.recalculateAndSave();
   },
 
   async removeMany(ids: string[]): Promise<void> {
     await transportTrackingRepository.deleteMany(ids);
-    await transportChargeStateService.recalculateAndSave();
   },
 };

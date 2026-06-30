@@ -191,6 +191,13 @@ async function loadBillFromBillingTracking(
   );
   const customerName = String(billing.customerName ?? '').trim() || 'לקוח';
 
+  if (String(billingRow.billKind ?? '') === 'globalTransport') {
+    const stored = billingRow.storedBillDocument as CustomerBillDocument | null;
+    if (stored?.sections?.length) {
+      return { bill: stored, customerName };
+    }
+  }
+
   const operationIds = parseObjectIdArray(
     billing.operationsTrackingIds,
     'מעקבי פעולות',

@@ -4,10 +4,11 @@ import { buttonBase, toolbarButtonAccent } from '../../styles/buttonStyles'
 
 type TransportChargingModalProps = {
   open: boolean
-  periodStartDate: string
+  seasonYear: number
   totalSum: number
   rowCount: number
   isPending?: boolean
+  errorMessage?: string
   onConfirm: () => void
   onClose: () => void
 }
@@ -58,6 +59,12 @@ const SummaryList = styled.dl`
   }
 `
 
+const ErrorText = styled.p`
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--danger, #c0392b);
+`
+
 const Actions = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -75,18 +82,13 @@ const PrimaryButton = styled.button`
   font-weight: 600;
 `
 
-function formatDisplayDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return isoDate
-  return date.toLocaleDateString('he-IL')
-}
-
 export function TransportChargingModal({
   open,
-  periodStartDate,
+  seasonYear,
   totalSum,
   rowCount,
   isPending = false,
+  errorMessage,
   onConfirm,
   onClose,
 }: TransportChargingModalProps) {
@@ -100,21 +102,22 @@ export function TransportChargingModal({
         aria-labelledby="charge-modal-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <ModalTitle id="charge-modal-title">ביצוע חיוב</ModalTitle>
+        <ModalTitle id="charge-modal-title">ביצוע חיוב גלובלי</ModalTitle>
         <SummaryList>
-          <dt>מתאריך</dt>
-          <dd>{formatDisplayDate(periodStartDate)}</dd>
-          <dt>מספר רשומות</dt>
+          <dt>עונה</dt>
+          <dd>{seasonYear}</dd>
+          <dt>מספר רשומות לחיוב</dt>
           <dd>{rowCount}</dd>
           <dt>סה״כ לחיוב</dt>
           <dd>{formatNumber(totalSum)}</dd>
         </SummaryList>
+        {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
         <Actions>
           <SecondaryButton type="button" onClick={onClose} disabled={isPending}>
             ביטול
           </SecondaryButton>
           <PrimaryButton type="button" onClick={onConfirm} disabled={isPending}>
-            אישור
+            {isPending ? 'מבצע…' : 'אישור'}
           </PrimaryButton>
         </Actions>
       </Modal>

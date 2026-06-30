@@ -49,6 +49,7 @@ const dedicatedSchemaIds = new Set([
   "bale-order-trackings",
   "contractor-trackings",
   "transport-trackings",
+  "transport-global-charges",
   "customer-billing-trackings",
 ]);
 

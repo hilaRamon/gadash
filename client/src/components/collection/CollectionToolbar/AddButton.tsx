@@ -18,12 +18,14 @@ const StyledAddButton = styled.button`
 
 type AddButtonProps = {
   onClick: () => void
+  label?: string
+  disabled?: boolean
 }
 
-export function AddButton({ onClick }: AddButtonProps) {
+export function AddButton({ onClick, label = 'הוסף', disabled = false }: AddButtonProps) {
   return (
-    <StyledAddButton type="button" onClick={onClick}>
-      הוסף
+    <StyledAddButton type="button" onClick={onClick} disabled={disabled}>
+      {label}
     </StyledAddButton>
   )
 }

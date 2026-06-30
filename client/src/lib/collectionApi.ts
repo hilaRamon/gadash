@@ -26,7 +26,7 @@ import {
   resolveUnitAmount,
 } from "./contractorTrackingPricing";
 import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
-import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
+import { PAID_BILLING_DELETE_ERROR, GLOBAL_TRANSPORT_BILLING_DELETE_ERROR } from "./customerBillingErrors";
 import { CHARGED_TRACKING_EDIT_ERROR } from "./chargedTrackingErrors";
 import {
   calcFinalPrice as calcTransportFinalPrice,
@@ -459,7 +459,11 @@ function filterRowsBySeason(
   rows: CollectionDocument[],
   seasonYear?: number,
 ): CollectionDocument[] {
-  if (seasonYear == null || !collectionHasDateField(collection)) return rows;
+  if (seasonYear == null) return rows;
+  if (collection === "transportGlobalCharges") {
+    return rows.filter((row) => Number(row.seasonYear) === seasonYear);
+  }
+  if (!collectionHasDateField(collection)) return rows;
   return rows.filter((row) => isDateInSeason(row.date, seasonYear));
 }
 
@@ -467,6 +471,12 @@ async function listMock(
   collection: string,
   seasonYear?: number,
 ): Promise<CollectionDocument[]> {
+  if (collection === "transportGlobalCharges") {
+    const { listTransportGlobalChargesMock } = await import(
+      "./transportGlobalChargeMock"
+    );
+    return listTransportGlobalChargesMock(seasonYear);
+  }
   await delay(200);
   const rows = filterRowsBySeason(
     collection,
@@ -759,6 +769,15 @@ function unchargeCustomerBillingLineItemsMock(billing: CollectionDocument): void
   }
 }
 
+export async function deleteCustomerBillingForGlobalChargeCancelMock(
+  id: string,
+): Promise<void> {
+  await delay(150);
+  const store = getMockStore("customerBillingTrackings");
+  const index = store.findIndex((d) => d._id === id);
+  if (index !== -1) store.splice(index, 1);
+}
+
 async function removeCustomerBillingMock(id: string): Promise<void> {
   await delay(150);
   const store = getMockStore("customerBillingTrackings");
@@ -767,6 +786,9 @@ async function removeCustomerBillingMock(id: string): Promise<void> {
   const billing = store[index];
   if (billing.paid === true) {
     throw new Error(PAID_BILLING_DELETE_ERROR);
+  }
+  if (String(billing.billKind ?? "") === "globalTransport") {
+    throw new Error(GLOBAL_TRANSPORT_BILLING_DELETE_ERROR);
   }
   unchargeCustomerBillingLineItemsMock(billing);
   store.splice(index, 1);
@@ -783,6 +805,9 @@ async function removeManyCustomerBillingMock(ids: string[]): Promise<void> {
   if (billings.some((row) => row?.paid === true)) {
     throw new Error(PAID_BILLING_DELETE_ERROR);
   }
+  if (billings.some((row) => String(row?.billKind ?? "") === "globalTransport")) {
+    throw new Error(GLOBAL_TRANSPORT_BILLING_DELETE_ERROR);
+  }
 
   for (const billing of billings) {
     if (billing) unchargeCustomerBillingLineItemsMock(billing);
@@ -797,6 +822,12 @@ async function removeManyCustomerBillingMock(ids: string[]): Promise<void> {
 async function removeMock(collection: string, id: string): Promise<void> {
   if (collection === "customerBillingTrackings") {
     return removeCustomerBillingMock(id);
+  }
+  if (collection === "transportGlobalCharges") {
+    const { cancelTransportGlobalChargeMock } = await import(
+      "./transportGlobalChargeMock"
+    );
+    return cancelTransportGlobalChargeMock(id);
   }
   await delay(150);
   const store = getMockStore(collection);
@@ -828,6 +859,12 @@ export async function listCollection(
   params?: ListCollectionParams,
 ): Promise<CollectionDocument[]> {
   if (useMock) return listMock(collection, params?.season);
+  if (collection === "transportGlobalCharges") {
+    const { listTransportGlobalCharges } = await import(
+      "./transportGlobalChargeApi"
+    );
+    return listTransportGlobalCharges(params?.season) as CollectionDocument[];
+  }
   const query = params?.season != null ? `?season=${params.season}` : "";
   const { data } = await api.get<CollectionDocument[]>(`/api/${collection}${query}`);
   return data;
@@ -863,6 +900,12 @@ export async function deleteDocument(
   id: string,
 ): Promise<void> {
   if (useMock) return removeMock(collection, id);
+  if (collection === "transportGlobalCharges") {
+    const { cancelTransportGlobalCharge } = await import(
+      "./transportGlobalChargeApi"
+    );
+    return cancelTransportGlobalCharge(id);
+  }
   await api.delete(`/api/${collection}/${id}`);
 }
 

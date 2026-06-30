@@ -22,6 +22,7 @@ import {
 import { baleOrderTrackingsSchema } from "./collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "./collections/contractorTrackingsSchema";
 import { transportTrackingsSchema } from "./collections/transportTrackingsSchema";
+import { transportGlobalChargesSchema } from "./collections/transportGlobalChargesSchema";
 import { customerBillingTrackingsSchema } from "./collections/customerBillingTrackingsSchema";
 import { stubSchemas } from "./collections/stubSchema";
 
@@ -47,6 +48,7 @@ const allSchemas: CollectionSchema[] = [
   baleOrderTrackingsSchema,
   contractorTrackingsSchema,
   transportTrackingsSchema,
+  transportGlobalChargesSchema,
   customerBillingTrackingsSchema,
   ...stubSchemas,
 ];

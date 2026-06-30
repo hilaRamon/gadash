@@ -253,3 +253,39 @@ export function isValidTransportForBill(
     String(row.billing ?? "") === TRANSPORT_CUSTOMER_BILLING
   );
 }
+
+export type GlobalTransportPlotLine = {
+  plotName: string;
+  dunam: number;
+  linePrice: number;
+};
+
+export function buildGlobalTransportBillDocument(input: {
+  customerName: string;
+  billDate?: string;
+  pricePerDunam: number;
+  plotLines: GlobalTransportPlotLine[];
+}): CustomerBillDocument {
+  const lines: CustomerBillLine[] = input.plotLines.map((plot) => ({
+    date: input.billDate ?? todayBillDate(),
+    description: "הובלות",
+    plotName: plot.plotName,
+    amount: formatNumber(plot.dunam),
+    unitPrice: formatNumber(input.pricePerDunam),
+    price: plot.linePrice,
+    priceFormatted: formatNumber(plot.linePrice),
+  }));
+
+  const section = buildSection("הובלות העונה", "quantityWithUnitPrice", lines);
+  const sections = section ? [section] : [];
+  const total = sections.reduce((sum, item) => sum + item.subtotal, 0);
+
+  return {
+    customerName: input.customerName,
+    billDate: input.billDate ?? todayBillDate(),
+    showPlots: true,
+    sections,
+    total: Number(total.toFixed(2)),
+    totalFormatted: formatNumber(total),
+  };
+}

@@ -30,6 +30,8 @@ type CollectionToolbarProps = {
   selectedCount: number;
   isDeleting?: boolean;
   exportDisabled?: boolean;
+  addLabel?: string;
+  addDisabled?: boolean;
   onAdd: () => void;
   onGlobalSearchChange: (value: string) => void;
   onSortChange: (field: string, direction: "asc" | "desc") => void;
@@ -43,6 +45,8 @@ export function CollectionToolbar({
   selectedCount,
   isDeleting = false,
   exportDisabled = false,
+  addLabel,
+  addDisabled = false,
   onAdd,
   onGlobalSearchChange,
   onSortChange,
@@ -52,7 +56,7 @@ export function CollectionToolbar({
   return (
     <Toolbar>
       {/* Add new document */}
-      <AddButton onClick={onAdd} />
+      <AddButton onClick={onAdd} label={addLabel} disabled={addDisabled} />
 
       {/* Bulk delete of selected rows */}
       <BulkDeleteButton
