@@ -8,6 +8,7 @@ import {
 import { contractorTrackingRepository } from '../repositories/contractorTrackingRepository';
 import { materialUsageTrackingRepository } from '../repositories/materialUsageTrackingRepository';
 import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
+import { transportTrackingRepository } from '../repositories/transportTrackingRepository';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import { loadValidatedSelection } from './customerBillService';
 
@@ -19,6 +20,7 @@ async function markTrackingsCharged(
     contractorTrackingRepository.markCharged(selection.contractorTrackingIds),
     materialUsageTrackingRepository.markCharged(selection.materialUsageTrackingIds),
     baleOrderTrackingRepository.markCharged(selection.baleOrderTrackingIds),
+    transportTrackingRepository.markCharged(selection.transportTrackingIds),
   ]);
 }
 
@@ -37,6 +39,7 @@ export const customerBillingCreateService = {
       materialUsageTrackingIds: selection.materialUsageTrackingIds,
       contractorTrackingIds: selection.contractorTrackingIds,
       baleOrderTrackingIds: selection.baleOrderTrackingIds,
+      transportTrackingIds: selection.transportTrackingIds,
     };
 
     const created = await customerBillingTrackingRepository.create(input);

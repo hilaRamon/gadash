@@ -7,12 +7,17 @@ import type {
 } from "./types";
 import { formatNumber } from "../formatNumber";
 import { isByWeightPricing } from "../baleOrderPricing";
+import { resolveContractorCustomerUnitPrice } from "../contractorTrackingPricing";
 import {
   isUnbilledBaleOrderForCustomer,
   isUnbilledContractorForCustomer,
   isUnbilledMaterialUsageForCustomer,
   isUnbilledOperationForCustomer,
 } from "../unbilledTrackingFilters";
+import {
+  isTransportBillingRow,
+  isUnbilledTransportForCustomer,
+} from "../transportTrackingBilling";
 
 function formatBillDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -65,15 +70,25 @@ function operationLine(row: CollectionDocument): CustomerBillLine {
 }
 
 function contractorLine(row: CollectionDocument): CustomerBillLine {
-  const customerPrice = row.customerPrice;
-  const price =
-    customerPrice != null && customerPrice !== ""
-      ? Number(customerPrice)
-      : Number(row.finalPrice ?? 0);
+  const amountValue = Number(row.unitAmount ?? 0);
+  const unitPriceValue = resolveContractorCustomerUnitPrice({
+    unitPrice: row.unitPrice,
+    unitCustomerPrice: row.unitCustomerPrice,
+  });
+  const price = Number(row.customerFinalPrice ?? row.finalPrice ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
     plotName: String(row.plotName ?? ""),
+    pricingForm: String(row.pricingForm ?? ""),
+    amount:
+      Number.isFinite(amountValue) && amountValue !== 0
+        ? formatNumber(amountValue)
+        : "",
+    unitPrice:
+      Number.isFinite(unitPriceValue) && unitPriceValue > 0
+        ? formatNumber(unitPriceValue)
+        : "",
     price,
     priceFormatted: formatNumber(price),
   };
@@ -213,9 +228,12 @@ export function buildCustomerBillDocumentFromPreview(input: {
   const operations = input.operations.filter((row) =>
     isUnbilledOperationForCustomer(row, customerId),
   );
-  const contractors = input.contractors.filter((row) =>
-    isUnbilledContractorForCustomer(row, customerId),
-  );
+  const contractors = input.contractors.filter((row) => {
+    if (isTransportBillingRow(row)) {
+      return isUnbilledTransportForCustomer(row, customerId);
+    }
+    return isUnbilledContractorForCustomer(row, customerId);
+  });
   const materialUsage = input.materialUsage.filter((row) =>
     isUnbilledMaterialUsageForCustomer(row, customerId),
   );
@@ -231,4 +249,40 @@ export function buildCustomerBillDocumentFromPreview(input: {
     materialUsage,
     baleOrders,
   });
+}
+
+export type GlobalTransportPlotLine = {
+  plotName: string;
+  dunam: number;
+  linePrice: number;
+};
+
+export function buildGlobalTransportBillDocument(input: {
+  customerName: string;
+  billDate?: string;
+  pricePerDunam: number;
+  plotLines: GlobalTransportPlotLine[];
+}): CustomerBillDocument {
+  const lines: CustomerBillLine[] = input.plotLines.map((plot) => ({
+    date: input.billDate ?? todayBillDate(),
+    description: "הובלות",
+    plotName: plot.plotName,
+    amount: formatNumber(plot.dunam),
+    unitPrice: formatNumber(input.pricePerDunam),
+    price: plot.linePrice,
+    priceFormatted: formatNumber(plot.linePrice),
+  }));
+
+  const section = buildSection("הובלות העונה", "quantityWithUnitPrice", lines);
+  const sections = section ? [section] : [];
+  const total = sections.reduce((sum, item) => sum + item.subtotal, 0);
+
+  return {
+    customerName: input.customerName,
+    billDate: input.billDate ?? todayBillDate(),
+    showPlots: true,
+    sections,
+    total: Number(total.toFixed(2)),
+    totalFormatted: formatNumber(total),
+  };
 }

@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { DateField } from '../../../components/collection/CollectionFormModal/DateField'
 import { LogoutIcon } from '../../../components/collection/Icons'
+import {
+  isoToDateDisplay,
+  parseDateDisplayToIso,
+} from '../../../lib/dateFieldFormat'
 import { useEmployee } from '../context/EmployeeContext'
 import {
   EmployeeActionsRow,
   FormField,
-  FormInput,
   FormLabel,
   TextButton,
 } from '../employeeStyles'
@@ -16,10 +20,18 @@ type OptionalTrackingDateProps = {
 export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
   const { trackingDate, isCustomDate, setTrackingDate } = useEmployee()
   const [showPicker, setShowPicker] = useState(false)
+  const [dateDisplay, setDateDisplay] = useState(() =>
+    isoToDateDisplay(trackingDate),
+  )
 
   const handleDateChange = (value: string) => {
     setTrackingDate(value)
     setShowPicker(false)
+  }
+
+  const openPicker = () => {
+    setDateDisplay(isoToDateDisplay(trackingDate))
+    setShowPicker(true)
   }
 
   return (
@@ -27,11 +39,14 @@ export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
       {showPicker ? (
         <FormField>
           <FormLabel htmlFor="tracking-date">תאריך</FormLabel>
-          <FormInput
+          <DateField
             id="tracking-date"
-            type="date"
-            value={trackingDate}
-            onChange={(event) => handleDateChange(event.target.value)}
+            value={dateDisplay}
+            onChange={(display) => {
+              setDateDisplay(display)
+              const iso = parseDateDisplayToIso(display)
+              if (iso) handleDateChange(iso)
+            }}
           />
         </FormField>
       ) : null}
@@ -42,7 +57,7 @@ export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
             ביטול
           </TextButton>
         ) : (
-          <TextButton type="button" onClick={() => setShowPicker(true)}>
+          <TextButton type="button" onClick={openPicker}>
             {isCustomDate ? 'שנה תאריך' : 'דווח לתאריך אחר'}
           </TextButton>
         )}

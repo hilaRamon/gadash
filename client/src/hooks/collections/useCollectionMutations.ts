@@ -5,11 +5,7 @@ import {
   deleteDocument,
   deleteManyDocuments,
 } from '../../lib/collectionApi'
-import { collectionKeys, transportChargeStateKeys } from '../../lib/queryKeys'
-
-function invalidateTransportChargeState(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: transportChargeStateKeys.all })
-}
+import { collectionKeys, customerBillingKeys, transportGlobalChargeKeys } from '../../lib/queryKeys'
 
 export function useCreateDocument(collection: string) {
   const queryClient = useQueryClient()
@@ -25,8 +21,9 @@ function onCollectionMutationSuccess(
   collection: string,
 ) {
   queryClient.invalidateQueries({ queryKey: collectionKeys.lists() })
-  if (collection === 'transportTrackings') {
-    invalidateTransportChargeState(queryClient)
+  if (collection === 'transportGlobalCharges') {
+    queryClient.invalidateQueries({ queryKey: customerBillingKeys.all })
+    queryClient.invalidateQueries({ queryKey: transportGlobalChargeKeys.all })
   }
 }
 

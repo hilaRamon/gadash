@@ -14,8 +14,7 @@ export type ContractorTrackingInput = {
   endTime: string | null;
   unitPrice: number;
   unitAmount: number;
-  finalPrice: number;
-  customerPrice: number | null;
+  unitCustomerPrice: number | null;
   notes?: string;
   wasCharged?: boolean;
 };

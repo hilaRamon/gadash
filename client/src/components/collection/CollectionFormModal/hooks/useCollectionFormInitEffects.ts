@@ -23,6 +23,7 @@ type UseCollectionFormInitEffectsOptions = {
   isAdminTrackingForm: boolean;
   isContractorTrackingForm: boolean;
   isTransportTrackingForm: boolean;
+  plots: CollectionDocument[];
   materialUsagePlotRef: MutableRefObject<string>;
   setValues: Dispatch<SetStateAction<Record<string, string>>>;
   setValidationError: Dispatch<SetStateAction<string | null>>;
@@ -43,6 +44,7 @@ export function useCollectionFormInitEffects({
   isAdminTrackingForm,
   isContractorTrackingForm,
   isTransportTrackingForm,
+  plots,
   materialUsagePlotRef,
   setValues,
   setValidationError,
@@ -107,9 +109,12 @@ export function useCollectionFormInitEffects({
   useEffect(() => {
     if (!open || !isContractorTrackingForm) return;
     setValues((prev) =>
-      applyContractorTrackingFieldChange("pricingForm", prev.pricingForm ?? "", prev),
+      applyContractorTrackingFieldChange("pricingForm", prev.pricingForm ?? "", prev, {
+        plots,
+        onlyIfEmptyUnitAmount: editingRow != null,
+      }),
     );
-  }, [open, isContractorTrackingForm, setValues]);
+  }, [open, isContractorTrackingForm, editingRow, plots, setValues]);
 
   useEffect(() => {
     if (!open || !isTransportTrackingForm) return;

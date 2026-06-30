@@ -1,5 +1,6 @@
 import { PhoneField } from "../PhoneField";
 import { ReferenceFieldSelect } from "../ReferenceFieldSelect";
+import { DateField } from "./DateField";
 import { HourField } from "./HourField";
 import type { FormFieldDef } from "../../../schema/types";
 import styled from "styled-components";
@@ -114,6 +115,18 @@ export function FormFieldControl({
     );
   }
 
+  if (field.type === "date") {
+    return (
+      <DateField
+        id={`field-${field.key}`}
+        value={value}
+        disabled={disabled}
+        required={field.required}
+        onChange={(nextValue) => setFieldValue(field.key, nextValue)}
+      />
+    );
+  }
+
   if (field.type === "number") {
     return (
       <Input
@@ -132,7 +145,7 @@ export function FormFieldControl({
   return (
     <Input
       id={`field-${field.key}`}
-      type={field.type === "date" ? "date" : "text"}
+      type="text"
       value={value}
       disabled={disabled}
       onChange={(e) => setFieldValue(field.key, e.target.value)}

@@ -12,6 +12,7 @@ import { CustomerModel } from '../models/Customer';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { OperationTrackingModel } from '../models/OperationTracking';
 import { PlotModel } from '../models/Plot';
+import { TransportTrackingModel, TRANSPORT_CUSTOMER_BILLING } from '../models/TransportTracking';
 import type { ApiDocument } from '../types/apiDocument';
 import { baleOrderTrackingToApiDocuments } from '../utils/baleOrderTrackingApiMapper';
 import { contractorTrackingToApiDocuments } from '../utils/contractorTrackingApiMapper';
@@ -24,7 +25,9 @@ import {
   unchargedBillableOperationsByPlotIdsFilter,
   unchargedByPlotIdsFilter,
   unchargedFilter,
+  unchargedTransportBillingsByCustomerFilter,
 } from '../utils/unbilledTrackingFilters';
+import { transportTrackingToContractorBillingDocuments } from '../utils/transportTrackingBillingMapper';
 
 const operationPopulate = {
   path: 'operation',
@@ -44,6 +47,8 @@ const contractorPopulate = { path: 'contractor', select: '_id name' };
 const contractorOperationPopulate = { path: 'operation', select: '_id name' };
 const balePopulate = { path: 'bale', select: '_id name pricePerTon pricePerUnit' };
 const baleCustomerPopulate = { path: 'customer', select: '_id name' };
+const transportMoverPopulate = { path: 'mover', select: '_id name' };
+const transportCustomerPopulate = { path: 'customer', select: '_id name' };
 
 async function resolveCustomerId(customerId: string): Promise<Types.ObjectId> {
   const id = String(customerId ?? '').trim();
@@ -82,7 +87,7 @@ async function distinctPlotIdsFromUnbilledOperations(): Promise<Types.ObjectId[]
 }
 
 async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
-  const [baleCustomerIds, operationPlotIds, materialPlotIds, contractorPlotIds] =
+  const [baleCustomerIds, operationPlotIds, materialPlotIds, contractorPlotIds, transportCustomerIds] =
     await Promise.all([
       BaleOrderTrackingModel.distinct('customer', unchargedFilter),
       distinctPlotIdsFromUnbilledOperations(),
@@ -91,6 +96,10 @@ async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
         billable: true,
       }),
       ContractorTrackingModel.distinct('plot', unchargedFilter),
+      TransportTrackingModel.distinct('customer', {
+        ...unchargedFilter,
+        billing: TRANSPORT_CUSTOMER_BILLING,
+      }),
     ]);
 
   const plotIdSet = new Set<string>([
@@ -110,6 +119,7 @@ async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
   const allIds = new Set<string>([
     ...baleCustomerIds.map(String),
     ...plotCustomerIds.map(String),
+    ...transportCustomerIds.map(String),
   ]);
 
   return [...allIds]
@@ -149,7 +159,7 @@ export const customerBillingUnbilledService = {
     const customerObjectId = await resolveCustomerId(customerId);
     const plotIds = await loadPlotIdsForCustomer(customerObjectId);
 
-    const [operationRows, materialRows, contractorRows, baleRows] = await Promise.all([
+    const [operationRows, materialRows, contractorRows, baleRows, transportRows] = await Promise.all([
       plotIds.length > 0
         ? OperationTrackingModel.find(
             unchargedBillableOperationsByPlotIdsFilter(plotIds),
@@ -181,6 +191,13 @@ export const customerBillingUnbilledService = {
         .populate(baleCustomerPopulate)
         .sort({ date: -1 })
         .lean(),
+      TransportTrackingModel.find(
+        unchargedTransportBillingsByCustomerFilter(customerObjectId),
+      )
+        .populate(transportMoverPopulate)
+        .populate(transportCustomerPopulate)
+        .sort({ date: -1 })
+        .lean(),
     ]);
 
     const operations = operationTrackingToApiDocuments(
@@ -196,9 +213,14 @@ export const customerBillingUnbilledService = {
         materialRows as Record<string, unknown>[],
       ),
       baleOrders: baleOrderTrackingToApiDocuments(baleRows as Record<string, unknown>[]),
-      contractors: contractorTrackingToApiDocuments(
-        contractorRows as Record<string, unknown>[],
-      ),
+      contractors: [
+        ...contractorTrackingToApiDocuments(
+          contractorRows as Record<string, unknown>[],
+        ),
+        ...transportTrackingToContractorBillingDocuments(
+          transportRows as Record<string, unknown>[],
+        ),
+      ],
     };
   },
 };

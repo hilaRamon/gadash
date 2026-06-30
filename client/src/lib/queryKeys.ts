@@ -9,9 +9,15 @@ export const collectionKeys = {
     [...collectionKeys.all, 'detail', collection, id] as const,
 }
 
-export const transportChargeStateKeys = {
-  all: ['transportChargeState'] as const,
-  detail: () => [...transportChargeStateKeys.all, 'detail'] as const,
+export const transportGlobalChargeKeys = {
+  all: ['transportGlobalCharges'] as const,
+  lists: () => [...transportGlobalChargeKeys.all, 'list'] as const,
+  list: (season?: number) =>
+    [...transportGlobalChargeKeys.lists(), season ?? 'all'] as const,
+  detail: (id: string) =>
+    [...transportGlobalChargeKeys.all, 'detail', id] as const,
+  preview: (season: number) =>
+    [...transportGlobalChargeKeys.all, 'preview', season] as const,
 }
 
 export const customerBillingKeys = {

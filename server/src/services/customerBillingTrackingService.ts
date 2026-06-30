@@ -9,7 +9,7 @@ import {
   type CustomerBillingTrackingInput,
 } from '../repositories/customerBillingTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
-import { PAID_BILLING_DELETE_ERROR } from '../lib/customerBillingErrors';
+import { PAID_BILLING_DELETE_ERROR, GLOBAL_TRANSPORT_BILLING_DELETE_ERROR } from '../lib/customerBillingErrors';
 import {
   customerBillingTrackingToApiDocument,
   customerBillingTrackingToApiDocuments,
@@ -134,6 +134,12 @@ async function buildTrackingPatch(
       'מעקבי הזמנות חבילות',
     );
   }
+  if (mustHave('transportTrackingIds')) {
+    patch.transportTrackingIds = parseObjectIdArray(
+      body.transportTrackingIds,
+      'מעקבי הובלות',
+    );
+  }
 
   return patch;
 }
@@ -166,6 +172,7 @@ export const customerBillingTrackingService = {
       materialUsageTrackingIds: patch.materialUsageTrackingIds ?? [],
       contractorTrackingIds: patch.contractorTrackingIds ?? [],
       baleOrderTrackingIds: patch.baleOrderTrackingIds ?? [],
+      transportTrackingIds: patch.transportTrackingIds ?? [],
     };
 
     const created = await customerBillingTrackingRepository.create(input);
@@ -201,6 +208,9 @@ export const customerBillingTrackingService = {
     if (existing.paid === true) {
       throw new Error(PAID_BILLING_DELETE_ERROR);
     }
+    if (String(existing.billKind ?? '') === 'globalTransport') {
+      throw new Error(GLOBAL_TRANSPORT_BILLING_DELETE_ERROR);
+    }
 
     await unchargeBillingLineItems(existing as Record<string, unknown>);
     await customerBillingTrackingRepository.delete(id);
@@ -216,6 +226,9 @@ export const customerBillingTrackingService = {
     }
     if (rows.some((row) => row.paid === true)) {
       throw new Error(PAID_BILLING_DELETE_ERROR);
+    }
+    if (rows.some((row) => String(row.billKind ?? '') === 'globalTransport')) {
+      throw new Error(GLOBAL_TRANSPORT_BILLING_DELETE_ERROR);
     }
 
     await Promise.all(

@@ -7,7 +7,9 @@ import type {
 } from "../types/customerBill";
 import { formatNumber } from "./formatNumber";
 import { isByWeightPricing } from "./baleOrderPricing";
+import { resolveContractorCustomerUnitPrice } from "./contractorTrackingPricing";
 import { isFuelOperationType } from "./unbilledTrackingFilters";
+import { TRANSPORT_CUSTOMER_BILLING } from "../models/TransportTracking";
 
 function formatBillDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -60,15 +62,25 @@ function operationLine(row: ApiDocument): CustomerBillLine {
 }
 
 function contractorLine(row: ApiDocument): CustomerBillLine {
-  const customerPrice = row.customerPrice;
-  const price =
-    customerPrice != null && customerPrice !== ""
-      ? Number(customerPrice)
-      : Number(row.finalPrice ?? 0);
+  const amountValue = Number(row.unitAmount ?? 0);
+  const unitPriceValue = resolveContractorCustomerUnitPrice({
+    unitPrice: row.unitPrice,
+    unitCustomerPrice: row.unitCustomerPrice,
+  });
+  const price = Number(row.customerFinalPrice ?? row.finalPrice ?? 0);
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
     plotName: String(row.plotName ?? ""),
+    pricingForm: String(row.pricingForm ?? ""),
+    amount:
+      Number.isFinite(amountValue) && amountValue !== 0
+        ? formatNumber(amountValue)
+        : "",
+    unitPrice:
+      Number.isFinite(unitPriceValue) && unitPriceValue > 0
+        ? formatNumber(unitPriceValue)
+        : "",
     price,
     priceFormatted: formatNumber(price),
   };
@@ -229,4 +241,51 @@ export function isValidBaleOrderForBill(
   customerId: string,
 ): boolean {
   return row.wasCharged !== true && String(row.customer ?? "") === customerId;
+}
+
+export function isValidTransportForBill(
+  row: ApiDocument,
+  customerId: string,
+): boolean {
+  return (
+    row.wasCharged !== true &&
+    String(row.customer ?? "") === customerId &&
+    String(row.billing ?? "") === TRANSPORT_CUSTOMER_BILLING
+  );
+}
+
+export type GlobalTransportPlotLine = {
+  plotName: string;
+  dunam: number;
+  linePrice: number;
+};
+
+export function buildGlobalTransportBillDocument(input: {
+  customerName: string;
+  billDate?: string;
+  pricePerDunam: number;
+  plotLines: GlobalTransportPlotLine[];
+}): CustomerBillDocument {
+  const lines: CustomerBillLine[] = input.plotLines.map((plot) => ({
+    date: input.billDate ?? todayBillDate(),
+    description: "הובלות",
+    plotName: plot.plotName,
+    amount: formatNumber(plot.dunam),
+    unitPrice: formatNumber(input.pricePerDunam),
+    price: plot.linePrice,
+    priceFormatted: formatNumber(plot.linePrice),
+  }));
+
+  const section = buildSection("הובלות העונה", "quantityWithUnitPrice", lines);
+  const sections = section ? [section] : [];
+  const total = sections.reduce((sum, item) => sum + item.subtotal, 0);
+
+  return {
+    customerName: input.customerName,
+    billDate: input.billDate ?? todayBillDate(),
+    showPlots: true,
+    sections,
+    total: Number(total.toFixed(2)),
+    totalFormatted: formatNumber(total),
+  };
 }

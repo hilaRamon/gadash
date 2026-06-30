@@ -47,8 +47,12 @@ export function Sidebar() {
   const hasActiveOperationsTracking = operationsTrackingCollections.some((item) =>
     location.pathname.startsWith(item.path),
   )
+  const hasActiveTransportTracking = transportTrackingCollections.some((item) =>
+    location.pathname.startsWith(item.path),
+  )
   const [isMaterialsOpen, setIsMaterialsOpen] = useState(hasActiveMaterialTracking)
   const [isOperationsOpen, setIsOperationsOpen] = useState(hasActiveOperationsTracking)
+  const [isTransportOpen, setIsTransportOpen] = useState(hasActiveTransportTracking)
 
   useEffect(() => {
     if (hasActiveMaterialTracking) {
@@ -61,6 +65,12 @@ export function Sidebar() {
       setIsOperationsOpen(true)
     }
   }, [hasActiveOperationsTracking])
+
+  useEffect(() => {
+    if (hasActiveTransportTracking) {
+      setIsTransportOpen(true)
+    }
+  }, [hasActiveTransportTracking])
 
   return (
     <SidebarContainer aria-label="ניווט ראשי">
@@ -124,15 +134,27 @@ export function Sidebar() {
             </SidebarListNested>
           </SidebarGroup>
 
+          <SidebarGroup
+            open={isTransportOpen}
+            onToggle={(event) => setIsTransportOpen(event.currentTarget.open)}
+          >
+            <SidebarGroupSummary>הובלות</SidebarGroupSummary>
+            <SidebarListNested>
+              {transportTrackingCollections.map((item) => (
+                <li key={item.id}>
+                  <SidebarNestedLink
+                    to={item.path}
+                    activeClassName="sidebar-link--active"
+                  >
+                    {item.label}
+                  </SidebarNestedLink>
+                </li>
+              ))}
+            </SidebarListNested>
+          </SidebarGroup>
+
           <SidebarList>
             {contractorTrackingCollections.map((item) => (
-              <li key={item.id}>
-                <SidebarLink to={item.path} activeClassName="sidebar-link--active">
-                  {item.label}
-                </SidebarLink>
-              </li>
-            ))}
-            {transportTrackingCollections.map((item) => (
               <li key={item.id}>
                 <SidebarLink to={item.path} activeClassName="sidebar-link--active">
                   {item.label}

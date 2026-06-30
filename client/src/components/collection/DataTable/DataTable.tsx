@@ -174,6 +174,7 @@ export type DataTableProps = {
   onEdit: (row: CollectionDocument) => void;
   onDelete: (row: CollectionDocument) => void;
   canDeleteRow?: (row: CollectionDocument) => boolean;
+  deleteDisabledTooltip?: (row: CollectionDocument) => string | undefined;
   canEditRow?: (row: CollectionDocument) => boolean;
   rowAction?: "edit" | "view";
   /** Hides row actions and column filter row. */
@@ -200,6 +201,7 @@ export function DataTable({
   onEdit,
   onDelete,
   canDeleteRow,
+  deleteDisabledTooltip,
   canEditRow,
   rowAction = "edit",
   previewMode = false,
@@ -458,7 +460,8 @@ export function DataTable({
                         <ActionTooltip
                           text={
                             canDeleteRow != null && !canDeleteRow(row)
-                              ? PAID_BILLING_DELETE_TOOLTIP
+                              ? (deleteDisabledTooltip?.(row) ??
+                                PAID_BILLING_DELETE_TOOLTIP)
                               : "מחיקה"
                           }
                         >

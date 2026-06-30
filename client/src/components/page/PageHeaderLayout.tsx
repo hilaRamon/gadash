@@ -1,13 +1,13 @@
-import type { ReactNode } from 'react';
-import styled from 'styled-components';
-import { ExportButton } from '../collection/CollectionToolbar/ExportButton';
-import { GlobalSearch } from '../collection/CollectionToolbar/GlobalSearch';
+import type { ReactNode } from "react";
+import styled from "styled-components";
+import { ExportButton } from "../collection/CollectionToolbar/ExportButton";
+import { GlobalSearch } from "../collection/CollectionToolbar/GlobalSearch";
 
 export const PageHeader = styled.header<{ $stacked?: boolean }>`
   display: flex;
-  flex-direction: ${({ $stacked }) => ($stacked ? 'column' : 'row')};
+  flex-direction: row;
   flex-wrap: wrap;
-  align-items: ${({ $stacked }) => ($stacked ? 'stretch' : 'center')};
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;

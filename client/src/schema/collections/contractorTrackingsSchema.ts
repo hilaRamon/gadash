@@ -76,16 +76,17 @@ export const contractorTrackingsSchema: CollectionSchema = {
       label: "מחיר סופי",
       type: "number",
       sortable: true,
+      getValue: (row) => Number(row.finalPrice ?? 0),
       format: (value) => formatNumber(value),
       width: "8rem",
     },
     {
-      key: "customerPrice",
-      label: "מחיר ללקוח",
+      key: "customerFinalPrice",
+      label: "מחיר סופי ללקוח",
       type: "number",
       sortable: true,
-      format: (value) =>
-        value == null || value === "" ? "—" : formatNumber(value),
+      getValue: (row) => Number(row.customerFinalPrice ?? 0),
+      format: (value) => formatNumber(value),
       width: "8rem",
     },
     {
@@ -134,8 +135,8 @@ export const contractorTrackingsSchema: CollectionSchema = {
       { key: "unitPrice", label: "מחיר ליחידה", type: "number", required: true },
       { key: "unitAmount", label: "כמות יחידות", type: "number" },
       {
-        key: "customerPrice",
-        label: "מחיר ללקוח",
+        key: "unitCustomerPrice",
+        label: "מחיר ליחידה ללקוח",
         type: "number",
         defaultValue: null,
       },

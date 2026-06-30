@@ -1,5 +1,11 @@
 import type { CollectionSchema } from "../types";
 import { formatNumber } from "../../lib/formatNumber";
+import { TRANSPORT_BILLING_TYPES } from "../../lib/transportBilling";
+
+const billingOptions = TRANSPORT_BILLING_TYPES.map((value) => ({
+  value,
+  label: value,
+}));
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -64,6 +70,22 @@ export const transportTrackingsSchema: CollectionSchema = {
       width: "8rem",
     },
     {
+      key: "billing",
+      label: "חיוב",
+      type: "enum",
+      enumOptions: billingOptions,
+      filterable: true,
+      width: "9rem",
+    },
+    {
+      key: "customer",
+      label: "לקוח",
+      type: "reference",
+      searchable: true,
+      getValue: (row) => row.customerName ?? row.customer,
+      width: "8rem",
+    },
+    {
       key: "notes",
       label: "הערות",
       type: "text",
@@ -88,6 +110,28 @@ export const transportTrackingsSchema: CollectionSchema = {
       { key: "hourlyRate", label: "מחיר לשעה", type: "number", required: true },
       { key: "hours", label: "כמות שעות", type: "number" },
       { key: "finalPrice", label: "מחיר סופי", type: "number" },
+      {
+        key: "billing",
+        label: "חיוב",
+        type: "enum",
+        required: true,
+        enumOptions: billingOptions,
+        defaultValue: "חיוב גלובלי",
+      },
+      {
+        key: "customer",
+        label: "לקוח",
+        type: "reference",
+        referenceCollection: "customers",
+        defaultValue: null,
+      },
+      {
+        key: "wasCharged",
+        label: "חויב",
+        type: "boolean",
+        hidden: true,
+        defaultValue: false,
+      },
       { key: "notes", label: "הערות", type: "textarea" },
     ],
   },

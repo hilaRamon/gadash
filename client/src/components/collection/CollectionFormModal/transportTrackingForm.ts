@@ -4,7 +4,21 @@ import {
   calcFinalPrice,
   calcHoursBetween,
 } from "../../../lib/transportTrackingPricing";
+import { TRANSPORT_CUSTOMER_BILLING } from "../../../lib/transportBilling";
 import { HOUR_INVALID_ERROR, isValidHour } from "./helpers";
+
+export function getTransportTrackingVisibleFields(
+  fields: FormFieldDef[],
+  values: Record<string, string>,
+): FormFieldDef[] {
+  const showCustomer = values.billing === TRANSPORT_CUSTOMER_BILLING;
+
+  return fields
+    .filter((field) => field.key !== "customer" || showCustomer)
+    .map((field) =>
+      field.key === "customer" ? { ...field, required: true } : field,
+    );
+}
 
 export function applyTransportTrackingFieldChange(
   key: string,
@@ -13,6 +27,10 @@ export function applyTransportTrackingFieldChange(
   movers: CollectionDocument[],
 ): Record<string, string> {
   const next = { ...prev, [key]: value };
+
+  if (key === "billing" && value !== TRANSPORT_CUSTOMER_BILLING) {
+    next.customer = "";
+  }
 
   if (key === "mover" && value) {
     const mover = movers.find((m) => String(m._id) === value);
@@ -76,6 +94,13 @@ export function getTransportTrackingRequiredErrors(
     errors.hourlyRate = "שדה חובה";
   }
 
+  if (
+    values.billing === TRANSPORT_CUSTOMER_BILLING &&
+    !String(values.customer ?? "").trim()
+  ) {
+    errors.customer = "שדה חובה";
+  }
+
   return errors;
 }
 
@@ -86,10 +111,12 @@ export function enrichTransportTrackingPayload(
   const hours =
     calcHoursBetween(values.startTime ?? "", values.endTime ?? "") ?? 0;
   const hourlyRate = Number(payload.hourlyRate);
+  const customerBilling = values.billing === TRANSPORT_CUSTOMER_BILLING;
 
   return {
     ...payload,
     hours,
     finalPrice: calcFinalPrice(hourlyRate, hours),
+    customer: customerBilling ? payload.customer : null,
   };
 }

@@ -139,9 +139,15 @@ export const contractorTrackingCollections: TrackingCollection[] = [
 export const transportTrackingCollections: TrackingCollection[] = [
   {
     id: "transport-trackings",
-    label: "הובלות",
+    label: "מעקב הובלות",
     path: "/trackings/transport",
     collection: "transportTrackings",
+  },
+  {
+    id: "transport-global-charges",
+    label: "מעקב חיובים גלובליים",
+    path: "/trackings/transport-global-charges",
+    collection: "transportGlobalCharges",
   },
 ];
 

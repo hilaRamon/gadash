@@ -26,6 +26,7 @@ import {
 } from "./operationTrackingForm";
 import {
   applyTransportTrackingFieldChange,
+  getTransportTrackingVisibleFields,
 } from "./transportTrackingForm";
 import { FormFieldControl } from "./FormFieldControl";
 import {
@@ -193,6 +194,9 @@ export function CollectionFormModal({
     if (isBaleOrderForm) {
       return getBaleOrderVisibleFields(base, values);
     }
+    if (isTransportTrackingForm) {
+      return getTransportTrackingVisibleFields(base, values);
+    }
     if (isMaterialUsageMultiCreate) {
       return base.filter((field) => field.key !== "material" && field.key !== "amount");
     }
@@ -211,6 +215,7 @@ export function CollectionFormModal({
     isAdminTrackingForm,
     isContractorTrackingForm,
     isTransportTrackingForm,
+    plots,
     materialUsagePlotRef,
     setValues,
     setValidationError,
@@ -271,7 +276,7 @@ export function CollectionFormModal({
         next = applyBaleOrderFieldChange(key, value, prev, bales);
       }
       if (isContractorTrackingForm) {
-        next = applyContractorTrackingFieldChange(key, value, next);
+        next = applyContractorTrackingFieldChange(key, value, next, { plots });
       }
       if (isTransportTrackingForm) {
         next = applyTransportTrackingFieldChange(key, value, next, movers);

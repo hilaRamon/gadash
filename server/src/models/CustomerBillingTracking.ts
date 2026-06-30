@@ -8,10 +8,24 @@ export const CUSTOMER_BILLING_STATUSES = [
 
 export type CustomerBillingStatus = (typeof CUSTOMER_BILLING_STATUSES)[number];
 
+export const CUSTOMER_BILLING_KINDS = ['selection', 'globalTransport'] as const;
+export type CustomerBillingKind = (typeof CUSTOMER_BILLING_KINDS)[number];
+
 const customerBillingTrackingSchema = new Schema(
   {
     date: { type: Date, required: true, default: Date.now },
     customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+    billKind: {
+      type: String,
+      enum: CUSTOMER_BILLING_KINDS,
+      default: 'selection',
+    },
+    globalTransportChargeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'TransportGlobalCharge',
+      default: null,
+    },
+    storedBillDocument: { type: Schema.Types.Mixed, default: null },
     notes: { type: String, default: '' },
     status: {
       type: String,
@@ -35,6 +49,10 @@ const customerBillingTrackingSchema = new Schema(
     },
     baleOrderTrackingIds: {
       type: [{ type: Schema.Types.ObjectId, ref: 'BaleOrderTracking' }],
+      default: [],
+    },
+    transportTrackingIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'TransportTracking' }],
       default: [],
     },
   },

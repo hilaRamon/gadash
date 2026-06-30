@@ -16,10 +16,7 @@ import {
   contractorTrackingToApiDocument,
   contractorTrackingToApiDocuments,
 } from '../utils/contractorTrackingApiMapper';
-import {
-  calcFinalPrice,
-  resolveUnitAmount,
-} from '../utils/contractorTrackingPricing';
+import { resolveUnitAmount } from '../utils/contractorTrackingPricing';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -143,8 +140,11 @@ async function buildTrackingPatch(
   if (mustHave('unitAmount')) {
     patch.unitAmount = parsePositiveNumber(body.unitAmount, 'כמות יחידות');
   }
-  if (mustHave('customerPrice')) {
-    patch.customerPrice = parseOptionalPositiveNumber(body.customerPrice, 'מחיר ללקוח');
+  if (mustHave('unitCustomerPrice')) {
+    patch.unitCustomerPrice = parseOptionalPositiveNumber(
+      body.unitCustomerPrice,
+      'מחיר ליחידה ללקוח',
+    );
   }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
@@ -159,12 +159,6 @@ async function buildTrackingPatch(
       endTime: patch.endTime,
       unitAmount: patch.unitAmount,
     });
-  }
-
-  const unitPrice = patch.unitPrice;
-  const unitAmount = patch.unitAmount;
-  if (unitPrice != null && unitAmount != null) {
-    patch.finalPrice = calcFinalPrice(unitPrice, unitAmount);
   }
 
   return patch;
@@ -205,8 +199,7 @@ export const contractorTrackingService = {
       endTime: patch.pricingForm === 'שעתי' ? patch.endTime ?? null : null,
       unitPrice: patch.unitPrice,
       unitAmount,
-      finalPrice: calcFinalPrice(patch.unitPrice, unitAmount),
-      customerPrice: patch.customerPrice ?? null,
+      unitCustomerPrice: patch.unitCustomerPrice ?? null,
       notes: patch.notes ?? '',
       wasCharged: patch.wasCharged ?? false,
     };
@@ -238,7 +231,6 @@ export const contractorTrackingService = {
         : null;
     const endTime =
       pricingForm === 'שעתי' ? (patch.endTime ?? String(existing.endTime ?? '')) : null;
-    const unitPrice = patch.unitPrice ?? Number(existing.unitPrice ?? 0);
 
     patch.pricingForm = pricingForm;
     patch.startTime = startTime;
@@ -248,8 +240,7 @@ export const contractorTrackingService = {
       endTime,
       unitAmount: patch.unitAmount ?? Number(existing.unitAmount ?? 0),
     });
-    patch.finalPrice = calcFinalPrice(unitPrice, patch.unitAmount);
-    patch.unitPrice = unitPrice;
+    patch.unitPrice = patch.unitPrice ?? Number(existing.unitPrice ?? 0);
 
     if (pricingForm !== 'שעתי') {
       patch.startTime = null;

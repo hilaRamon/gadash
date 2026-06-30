@@ -18,6 +18,39 @@ export function calcFinalPrice(unitPrice: number, unitAmount: number): number {
   return Number((unitPrice * unitAmount).toFixed(3));
 }
 
+export function calcCustomerFinalPrice(
+  unitCustomerPrice: number,
+  unitAmount: number,
+): number {
+  return Number((unitCustomerPrice * unitAmount).toFixed(3));
+}
+
+export function resolveCustomerFinalPrice(options: {
+  unitPrice: number;
+  unitAmount: number;
+  unitCustomerPrice: number | null;
+}): number {
+  const { unitPrice, unitAmount, unitCustomerPrice } = options;
+  const contractorFinal = calcFinalPrice(unitPrice, unitAmount);
+  if (unitCustomerPrice == null) {
+    return contractorFinal;
+  }
+  return calcCustomerFinalPrice(unitCustomerPrice, unitAmount);
+}
+
+export function resolveContractorCustomerUnitPrice(options: {
+  unitPrice: unknown;
+  unitCustomerPrice: unknown;
+}): number {
+  const unitCustomerPrice = options.unitCustomerPrice;
+  if (unitCustomerPrice != null && unitCustomerPrice !== '') {
+    const customerUnit = Number(unitCustomerPrice);
+    if (Number.isFinite(customerUnit)) return customerUnit;
+  }
+  const unitPrice = Number(options.unitPrice ?? 0);
+  return Number.isFinite(unitPrice) ? unitPrice : 0;
+}
+
 export function resolveUnitAmount(
   pricingForm: ContractorPricingForm,
   options: {
@@ -33,6 +66,10 @@ export function resolveUnitAmount(
       throw new Error('שעות התחלה וסיום נדרשות לתמחור שעתי');
     }
     return calcHoursBetween(startTime, endTime);
+  }
+
+  if (pricingForm === 'יומי') {
+    return 1;
   }
 
   const amount = Number(options.unitAmount);
