@@ -863,7 +863,9 @@ export async function listCollection(
     const { listTransportGlobalCharges } = await import(
       "./transportGlobalChargeApi"
     );
-    return listTransportGlobalCharges(params?.season) as CollectionDocument[];
+    return (await listTransportGlobalCharges(
+      params?.season,
+    )) as CollectionDocument[];
   }
   const query = params?.season != null ? `?season=${params.season}` : "";
   const { data } = await api.get<CollectionDocument[]>(`/api/${collection}${query}`);
