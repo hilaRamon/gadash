@@ -178,12 +178,11 @@ export async function fetchTransportGlobalChargeDetailMock(
     .map((billingId) => billings.find((row) => row._id === billingId))
     .filter((row): row is CollectionDocument => row != null)
     .map((billing) => ({
-      _id: String(billing._id),
+      ...billing,
       customerName: String(billing.customerName ?? ""),
       finalPrice: Number(billing.finalPrice ?? 0),
       status: String(billing.status ?? ""),
       paid: billing.paid === true,
-      ...billing,
     }));
 
   const listRow = batchToListRow(batch);
