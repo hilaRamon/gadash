@@ -1,5 +1,5 @@
-import { mockObjectId } from '../lib/mockObjectId'
-import type { CollectionDocument } from '../schema/types'
+import { mockObjectId } from "@/lib/mockObjectId"
+import type { CollectionDocument } from "@/schema/types"
 
 type ContractorSeed = {
   name: string

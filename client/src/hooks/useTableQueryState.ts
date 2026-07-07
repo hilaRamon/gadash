@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
-import type { CollectionSchema } from '../schema/types'
+import type { CollectionSchema } from "@/schema/types"
 import {
   createInitialTableQueryState,
   type SortDirection,
   type TableQueryState,
-} from '../schema/tableQuery'
+} from "@/schema/tableQuery"
 
 export function useTableQueryState(schema: CollectionSchema) {
   const [state, setState] = useState<TableQueryState>(() =>

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
-import { buttonHoverLighten } from '../styles/buttonStyles'
-import { PhoneField } from '../components/collection/PhoneField'
-import { SearchableSelect } from '../components/ui/SearchableSelect'
-import { useAuth } from '../context/AuthContext'
-import { fetchLoginOptions } from '../lib/auth'
-import { getApiErrorMessage } from '../lib/apiErrorMessage'
-import { normalizeMobile } from '../lib/mobileFormat'
+import { buttonHoverLighten } from "@/styles/buttonStyles"
+import { PhoneField } from "@/components/collection/PhoneField"
+import { SearchableSelect } from "@/components/ui/SearchableSelect"
+import { useAuth } from "@/context/AuthContext"
+import { fetchLoginOptions } from "@/lib/auth"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { normalizeMobile } from "@/lib/mobileFormat"
 import { FieldWorkIcon } from './employee/components/EmployeeMenuIcons'
 
 type LoginOption = {

@@ -1,5 +1,5 @@
-import type { CollectionDocument } from "../schema/types";
-import { plotsSeedData } from "../data/plotsSeed";
+import type { CollectionDocument } from "@/schema/types";
+import { plotsSeedData } from "@/data/plotsSeed";
 
 export function isUncharged(row: CollectionDocument): boolean {
   return row.wasCharged !== true;

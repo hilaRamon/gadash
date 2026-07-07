@@ -3,16 +3,16 @@ import {
   applyOperationTrackingFieldChange,
   enrichOperationTrackingPayload,
   getOperationTrackingRequiredErrors,
-} from '../../components/collection/CollectionFormModal/operationTrackingForm'
+} from "@/components/collection/CollectionFormModal/operationTrackingForm"
 import {
   buildPayload,
   getInitialValues,
-} from '../../components/collection/CollectionFormModal/helpers'
-import { useCollectionList } from '../../hooks/collections/useCollectionList'
-import { useCreateDocument } from '../../hooks/collections/useCollectionMutations'
-import { getApiErrorMessage } from '../../lib/apiErrorMessage'
-import { operationsTrackingsAdminSchema } from '../../schema/collections/operationsTrackingsSchema'
-import type { FormFieldDef } from '../../schema/types'
+} from "@/components/collection/CollectionFormModal/helpers"
+import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { operationsTrackingsAdminSchema } from "@/schema/collections/operationsTrackingsSchema"
+import type { FormFieldDef } from "@/schema/types"
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'

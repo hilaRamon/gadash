@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
-import { TRANSPORT_BILLING_TYPES } from "../../lib/transportBilling";
+import { formatNumber } from "@/lib/formatNumber";
+import { TRANSPORT_BILLING_TYPES } from "@/lib/transportBilling";
 
 const billingOptions = TRANSPORT_BILLING_TYPES.map((value) => ({
   value,

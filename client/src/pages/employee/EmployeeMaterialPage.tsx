@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { enrichMaterialUsagePayload } from '../../components/collection/CollectionFormModal/materialUsageTrackingForm'
+import { enrichMaterialUsagePayload } from "@/components/collection/CollectionFormModal/materialUsageTrackingForm"
 import {
   buildPayload,
   getInitialValues,
   getRequiredFieldErrors,
   numberToFormFieldValue,
-} from '../../components/collection/CollectionFormModal/helpers'
-import { useCollectionList } from '../../hooks/collections/useCollectionList'
-import { useCreateDocument } from '../../hooks/collections/useCollectionMutations'
-import { getApiErrorMessage } from '../../lib/apiErrorMessage'
-import { calcMaterialUsageAmount } from '../../lib/materialUsageAmount'
-import { materialUsageTrackingsSchema } from '../../schema/collections/materialUsageTrackingsSchema'
-import type { CollectionDocument, FormFieldDef } from '../../schema/types'
+} from "@/components/collection/CollectionFormModal/helpers"
+import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { calcMaterialUsageAmount } from "@/lib/materialUsageAmount"
+import { materialUsageTrackingsSchema } from "@/schema/collections/materialUsageTrackingsSchema"
+import type { CollectionDocument, FormFieldDef } from "@/schema/types"
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'

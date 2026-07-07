@@ -1,5 +1,5 @@
-import type { CollectionDocument, FormFieldDef } from "../../../schema/types";
-import { formatNumber } from "../../../lib/formatNumber";
+import type { CollectionDocument, FormFieldDef } from "@/schema/types";
+import { formatNumber } from "@/lib/formatNumber";
 import { numberToFormFieldValue } from "./helpers";
 import {
   OPERATION_PRICING_BY_DUNAM,
@@ -8,7 +8,7 @@ import {
   calcFinalPrice,
   resolveOperationAmount,
   suggestOperationAmount,
-} from "../../../lib/operationTrackingPricing";
+} from "@/lib/operationTrackingPricing";
 
 export type OperationTrackingLineEntry = {
   operationId: string;

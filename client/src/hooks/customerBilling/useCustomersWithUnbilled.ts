@@ -3,8 +3,8 @@
  * Fetches GET /api/customerBillingTrackings/customers-with-unbilled (or mock equivalent).
  */
 import { useQuery } from "@tanstack/react-query";
-import { fetchCustomersWithUnbilled } from "../../lib/customerBillingApi";
-import { customerBillingKeys } from "../../lib/queryKeys";
+import { fetchCustomersWithUnbilled } from "@/lib/customerBillingApi";
+import { customerBillingKeys } from "@/lib/queryKeys";
 
 export function useCustomersWithUnbilled() {
   return useQuery({

@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
-import { ExportButton } from "../components/collection/CollectionToolbar/ExportButton";
-import { buttonBase, toolbarButtonAccent } from "../styles/buttonStyles";
-import { NumericMonthPicker } from "../components/reports/NumericMonthPicker";
-import { exportMonthlyReportExcel } from "../lib/exportMonthlyReportExcel";
+import { ExportButton } from "@/components/collection/CollectionToolbar/ExportButton";
+import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles";
+import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
+import { exportMonthlyReportExcel } from "@/lib/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
   formatHours,
   statusLabel,
-} from "../lib/monthlyReportApi";
-import { useMonthlySummary, useCloseAllEmployeeMonths } from "../hooks/monthlyReport/useMonthlyReport";
+} from "@/lib/monthlyReportApi";
+import { useMonthlySummary, useCloseAllEmployeeMonths } from "@/hooks/monthlyReport/useMonthlyReport";
 import "./Page.css";
 
 export function MonthlySummaryPage() {

@@ -4,13 +4,13 @@ import type {
   CollectionDocument,
   ColumnDef,
   FormSchema,
-} from '../../../schema/types'
+} from "@/schema/types"
 import {
   ENUM_NULL_FILTER,
   getCellValue,
   getDiscreteColumnOptions,
   parseEnumSelectValue,
-} from '../../../lib/tableQuery'
+} from "@/lib/tableQuery"
 import { CellSavingIndicator } from './CellSavingIndicator'
 
 const CellEditableWrap = styled.span`

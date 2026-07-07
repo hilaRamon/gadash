@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from "@/context/AuthContext"
 import { EmployeeActionMenu } from './components/EmployeeActionMenu'
 import { OptionalTrackingDate } from './components/OptionalTrackingDate'
 import { useEmployee } from './context/EmployeeContext'

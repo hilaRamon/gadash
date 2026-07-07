@@ -1,6 +1,6 @@
 import styled from 'styled-components'
-import { formatNumber } from '../../lib/formatNumber'
-import { buttonBase, toolbarButtonAccent } from '../../styles/buttonStyles'
+import { formatNumber } from "@/lib/formatNumber"
+import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles"
 
 type TransportChargingModalProps = {
   open: boolean

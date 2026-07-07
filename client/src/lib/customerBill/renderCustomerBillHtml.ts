@@ -1,5 +1,5 @@
 import type { CustomerBillDocument, CustomerBillSection } from "./types";
-import { getBillStyles } from "../../../../shared/printColors.ts";
+import { getBillStyles } from "@shared/printColors";
 
 function escapeHtml(value: string): string {
   return value

@@ -1,5 +1,5 @@
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import type { CollectionDocument } from "../../../../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import {
   recalcMaterialUsageLineAmounts,
   type MaterialUsageLineEntry,

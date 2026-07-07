@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FormFieldDef } from '../../../schema/types'
+import type { FormFieldDef } from "@/schema/types"
 import { CollapseToggle } from '../employeeStyles'
 import { EmployeeFormField } from './EmployeeFormField'
 

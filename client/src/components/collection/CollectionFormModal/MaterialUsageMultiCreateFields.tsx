@@ -1,4 +1,4 @@
-import type { CollectionDocument } from "../../../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import type { MaterialUsageLineEntry } from "./materialUsageTrackingForm";
 import { TrackingMultiCreateFields } from "./TrackingMultiCreateFields";
 

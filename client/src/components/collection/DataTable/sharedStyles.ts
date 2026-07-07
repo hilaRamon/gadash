@@ -1,7 +1,7 @@
 import { css } from 'styled-components'
-import { buttonBase } from '../../../styles/buttonStyles'
+import { buttonBase } from "@/styles/buttonStyles"
 
-export { buttonBase } from '../../../styles/buttonStyles'
+export { buttonBase } from "@/styles/buttonStyles"
 
 export const focusRing = css`
   &:focus {

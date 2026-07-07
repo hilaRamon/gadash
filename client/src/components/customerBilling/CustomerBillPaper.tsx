@@ -6,7 +6,7 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { buttonBase, toolbarButtonAccent, toolbarButtonMaterial } from "../../styles/buttonStyles";
+import { buttonBase, toolbarButtonAccent, toolbarButtonMaterial } from "@/styles/buttonStyles";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   buildCustomerBillRequest,
@@ -14,9 +14,9 @@ import {
   downloadCustomerBillPdf,
   hasIncludedBillItems,
   type UnbilledPreview,
-} from "../../lib/customerBillingApi";
-import { useCustomerBillPreview } from "../../hooks/customerBilling/useCustomerBillPreview";
-import { collectionKeys, customerBillingKeys } from "../../lib/queryKeys";
+} from "@/lib/customerBillingApi";
+import { useCustomerBillPreview } from "@/hooks/customerBilling/useCustomerBillPreview";
+import { collectionKeys, customerBillingKeys } from "@/lib/queryKeys";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 

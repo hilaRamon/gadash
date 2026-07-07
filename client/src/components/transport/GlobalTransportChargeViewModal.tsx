@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useQuery } from "@tanstack/react-query";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber } from "@/lib/formatNumber";
 import {
   fetchTransportGlobalChargeDetail,
   type GlobalTransportChargeDetail,
-} from "../../lib/transportGlobalChargeApi";
-import { transportGlobalChargeKeys } from "../../lib/queryKeys";
-import type { CollectionDocument } from "../../schema/types";
-import { CustomerBillingViewModal } from "../customerBilling/CustomerBillingViewModal";
-import { buttonBase, buttonHoverLighten } from "../../styles/buttonStyles";
+} from "@/lib/transportGlobalChargeApi";
+import { transportGlobalChargeKeys } from "@/lib/queryKeys";
+import type { CollectionDocument } from "@/schema/types";
+import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
+import { buttonBase, buttonHoverLighten } from "@/styles/buttonStyles";
 
 type GlobalTransportChargeViewModalProps = {
   open: boolean;

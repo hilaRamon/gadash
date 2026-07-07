@@ -1,10 +1,10 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from "@/context/AuthContext"
 import {
   EmployeeContent,
   EmployeePage,
   EmployeeTitle,
-} from '../pages/employee/employeeStyles'
+} from "@/pages/employee/employeeStyles"
 
 type ProtectedRouteProps = {
   role?: 'admin' | 'employee'

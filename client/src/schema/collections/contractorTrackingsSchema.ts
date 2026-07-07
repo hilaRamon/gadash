@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
-import { CONTRACTOR_PRICING_FORMS } from "../../lib/contractorTrackingPricing";
+import { formatNumber } from "@/lib/formatNumber";
+import { CONTRACTOR_PRICING_FORMS } from "@/lib/contractorTrackingPricing";
 
 const pricingFormOptions = CONTRACTOR_PRICING_FORMS.map((value) => ({
   value,

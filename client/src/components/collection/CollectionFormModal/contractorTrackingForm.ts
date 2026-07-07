@@ -1,4 +1,4 @@
-import type { CollectionDocument, FormFieldDef } from "../../../schema/types";
+import type { CollectionDocument, FormFieldDef } from "@/schema/types";
 import {
   calcHoursBetween,
   getContractorUnitAmountLabel,
@@ -8,10 +8,10 @@ import {
   isDunamPricing,
   isHourlyPricing,
   resolveUnitAmount,
-} from "../../../lib/contractorTrackingPricing";
+} from "@/lib/contractorTrackingPricing";
 import { HOUR_INVALID_ERROR, isValidHour, numberToFormFieldValue } from "./helpers";
 
-export { isHourlyPricing } from "../../../lib/contractorTrackingPricing";
+export { isHourlyPricing } from "@/lib/contractorTrackingPricing";
 
 type ContractorTrackingFieldChangeContext = {
   plots: CollectionDocument[];

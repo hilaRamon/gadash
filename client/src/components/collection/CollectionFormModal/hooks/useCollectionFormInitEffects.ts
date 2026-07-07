@@ -3,14 +3,14 @@ import type {
   CollectionDocument,
   CollectionSchema,
   FormFieldDef,
-} from "../../../../schema/types";
+} from "@/schema/types";
 import { getInitialValues } from "../helpers";
 import { inferBaleOrderPricingForm } from "../baleOrderForm";
 import { applyContractorTrackingFieldChange } from "../contractorTrackingForm";
 import {
   calcFinalPrice,
   calcHoursBetween,
-} from "../../../../lib/transportTrackingPricing";
+} from "@/lib/transportTrackingPricing";
 import type { MaterialUsageLineEntry } from "../materialUsageTrackingForm";
 import type { OperationTrackingLineEntry } from "../operationTrackingForm";
 

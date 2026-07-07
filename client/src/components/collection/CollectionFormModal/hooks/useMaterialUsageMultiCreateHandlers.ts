@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { CollectionDocument } from "../../../../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import {
   toggleMaterialUsageLine,
   updateMaterialUsageLine,

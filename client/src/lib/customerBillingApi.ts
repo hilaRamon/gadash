@@ -16,7 +16,7 @@ import {
 import { buildCustomerBillDownloadFilename } from "./customerBill/downloadFilename";
 import { renderCustomerBillPreviewHtml } from "./customerBill/renderCustomerBillHtml";
 import type { CustomerBillRequest } from "./customerBill/types";
-import type { CollectionDocument } from "../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import {
   isUnbilledBaleOrderForCustomer,
   isUnbilledContractorForCustomer,

@@ -1,10 +1,10 @@
-import type { FormFieldDef } from "../../../schema/types";
-import type { CollectionDocument } from "../../../schema/types";
+import type { FormFieldDef } from "@/schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import {
   calcFinalPrice,
   calcHoursBetween,
-} from "../../../lib/transportTrackingPricing";
-import { TRANSPORT_CUSTOMER_BILLING } from "../../../lib/transportBilling";
+} from "@/lib/transportTrackingPricing";
+import { TRANSPORT_CUSTOMER_BILLING } from "@/lib/transportBilling";
 import { HOUR_INVALID_ERROR, isValidHour } from "./helpers";
 
 export function getTransportTrackingVisibleFields(

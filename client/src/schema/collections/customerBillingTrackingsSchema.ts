@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
-import { customerBillingStatusOptions } from "../../lib/customerBillingStatuses";
-import { formatNumber } from "../../lib/formatNumber";
+import { customerBillingStatusOptions } from "@/lib/customerBillingStatuses";
+import { formatNumber } from "@/lib/formatNumber";
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ""));

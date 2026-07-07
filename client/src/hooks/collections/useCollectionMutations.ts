@@ -4,8 +4,8 @@ import {
   updateDocument,
   deleteDocument,
   deleteManyDocuments,
-} from '../../lib/collectionApi'
-import { collectionKeys, customerBillingKeys, transportGlobalChargeKeys } from '../../lib/queryKeys'
+} from "@/lib/collectionApi"
+import { collectionKeys, customerBillingKeys, transportGlobalChargeKeys } from "@/lib/queryKeys"
 
 export function useCreateDocument(collection: string) {
   const queryClient = useQueryClient()

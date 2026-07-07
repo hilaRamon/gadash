@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useEmployee } from '../context/EmployeeContext'
+import { useEmployee } from "@/pages/employee/context/EmployeeContext"
 
 export function useRequireEmployee() {
   const navigate = useNavigate()

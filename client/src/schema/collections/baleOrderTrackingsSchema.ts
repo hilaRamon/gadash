@@ -1,10 +1,10 @@
 import type { CollectionDocument, CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber } from "@/lib/formatNumber";
 import {
   BALE_ORDER_BY_UNIT,
   BALE_ORDER_PRICING_FORMS,
   isByWeightPricing,
-} from "../../lib/baleOrderPricing";
+} from "@/lib/baleOrderPricing";
 
 const pricingFormOptions = BALE_ORDER_PRICING_FORMS.map((value) => ({
   value,

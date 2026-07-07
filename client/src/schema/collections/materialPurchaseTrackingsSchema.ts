@@ -1,5 +1,5 @@
 import type { CollectionSchema } from '../types'
-import { formatNumber } from '../../lib/formatNumber'
+import { formatNumber } from "@/lib/formatNumber"
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))

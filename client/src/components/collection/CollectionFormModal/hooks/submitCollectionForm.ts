@@ -3,7 +3,7 @@ import type {
   CollectionDocument,
   CollectionSchema,
   FormFieldDef,
-} from "../../../../schema/types";
+} from "@/schema/types";
 import { buildPayload, getRequiredFieldErrors } from "../helpers";
 import {
   enrichBaleOrderPayload,

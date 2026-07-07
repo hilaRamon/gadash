@@ -3,12 +3,12 @@ import {
   buildPayload,
   getInitialValues,
   getRequiredFieldErrors,
-} from '../../components/collection/CollectionFormModal/helpers'
-import { useCollectionList } from '../../hooks/collections/useCollectionList'
-import { useCreateDocument } from '../../hooks/collections/useCollectionMutations'
-import { getApiErrorMessage } from '../../lib/apiErrorMessage'
-import { fuelOperationsTrackingsSchema } from '../../schema/collections/fuelOperationsTrackingsSchema'
-import type { FormFieldDef } from '../../schema/types'
+} from "@/components/collection/CollectionFormModal/helpers"
+import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { fuelOperationsTrackingsSchema } from "@/schema/collections/fuelOperationsTrackingsSchema"
+import type { FormFieldDef } from "@/schema/types"
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'

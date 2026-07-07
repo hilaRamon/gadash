@@ -2,7 +2,7 @@ import { PhoneField } from "../PhoneField";
 import { ReferenceFieldSelect } from "../ReferenceFieldSelect";
 import { DateField } from "./DateField";
 import { HourField } from "./HourField";
-import type { FormFieldDef } from "../../../schema/types";
+import type { FormFieldDef } from "@/schema/types";
 import styled from "styled-components";
 import { fieldControlStyles } from "./sharedStyles";
 

@@ -1,6 +1,6 @@
 import styled from "styled-components";
-import type { CollectionSchema } from "../../../schema/types";
-import type { TableQueryState } from "../../../schema/tableQuery";
+import type { CollectionSchema } from "@/schema/types";
+import type { TableQueryState } from "@/schema/tableQuery";
 import { AddButton } from "./AddButton";
 import { SortControl } from "./SortControl";
 import { ExportButton } from "./ExportButton";

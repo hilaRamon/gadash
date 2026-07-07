@@ -1,7 +1,7 @@
 import { materialsSeedData } from './materialsSeed'
 import { suppliersSeedData } from './suppliersSeed'
-import { mockObjectId } from '../lib/mockObjectId'
-import type { CollectionDocument } from '../schema/types'
+import { mockObjectId } from "@/lib/mockObjectId"
+import type { CollectionDocument } from "@/schema/types"
 
 const seedRows = [
   {

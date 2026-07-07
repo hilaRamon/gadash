@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import type { CollectionDocument } from "../../../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import { ReferenceFieldSelect } from "../ReferenceFieldSelect";
 import { fieldControlStyles } from "./sharedStyles";
 

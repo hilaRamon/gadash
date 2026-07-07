@@ -1,5 +1,5 @@
 import { textColumn } from "../columnHelpers";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber } from "@/lib/formatNumber";
 import type { CollectionSchema } from "../types";
 
 export const materialsSchema: CollectionSchema = {

@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import styled from "styled-components";
-import { buttonBase, toolbarButtonAccent } from "../../../styles/buttonStyles";
+import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles";
 import type {
   CollectionDocument,
   CollectionSchema,
-} from "../../../schema/types";
-import { useCollectionList } from "../../../hooks/collections/useCollectionList";
+} from "@/schema/types";
+import { useCollectionList } from "@/hooks/collections/useCollectionList";
 import {
   applyBaleOrderFieldChange,
   getBaleOrderVisibleFields,

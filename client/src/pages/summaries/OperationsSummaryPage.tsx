@@ -3,12 +3,12 @@ import styled from "styled-components";
 import {
   ExportSearchToolbar,
   PageHeaderWithToolbar,
-} from "../../components/page/PageHeaderLayout";
-import { useSeason } from "../../context/SeasonContext";
-import { useOperationsSummary } from "../../hooks/summaries/useOperationsSummary";
-import { exportOperationsSummaryExcel } from "../../lib/exportOperationsSummaryExcel";
-import { formatNumber } from "../../lib/formatNumber";
-import type { OperationsSummaryRow } from "../../lib/operationsSummaryApi";
+} from "@/components/page/PageHeaderLayout";
+import { useSeason } from "@/context/SeasonContext";
+import { useOperationsSummary } from "@/hooks/summaries/useOperationsSummary";
+import { exportOperationsSummaryExcel } from "@/lib/exportOperationsSummaryExcel";
+import { formatNumber } from "@/lib/formatNumber";
+import type { OperationsSummaryRow } from "@/lib/operationsSummaryApi";
 import "../Page.css";
 
 function matchesGlobalSearch(

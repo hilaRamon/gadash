@@ -1,12 +1,12 @@
 import styled, { css } from "styled-components";
-import { PAID_BILLING_DELETE_TOOLTIP } from "../../../lib/customerBillingErrors";
-import { CHARGED_TRACKING_EDIT_TOOLTIP } from "../../../lib/chargedTrackingErrors";
+import { PAID_BILLING_DELETE_TOOLTIP } from "@/lib/customerBillingErrors";
+import { CHARGED_TRACKING_EDIT_TOOLTIP } from "@/lib/chargedTrackingErrors";
 import type {
   CollectionSchema,
   CollectionDocument,
-} from "../../../schema/types";
-import type { TableQueryState } from "../../../schema/tableQuery";
-import { formatCell, getCellValue, isNegativeNumberValue } from "../../../lib/tableQuery";
+} from "@/schema/types";
+import type { TableQueryState } from "@/schema/tableQuery";
+import { formatCell, getCellValue, isNegativeNumberValue } from "@/lib/tableQuery";
 import { EditIcon, ViewIcon, DeleteIcon } from "../Icons";
 import { tableActionDeleteButton, tableActionEditButton } from "./sharedStyles";
 import { ColumnFilterControl } from "./ColumnFilterControl";

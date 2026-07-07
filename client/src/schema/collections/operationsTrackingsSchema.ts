@@ -4,7 +4,7 @@ import type {
   FormFieldDef,
   FormSchema,
 } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber } from "@/lib/formatNumber";
 
 const nonFuelOperationFilter = (row: CollectionDocument) =>
   String(row.operationType ?? "") !== "דלק";

@@ -1,7 +1,7 @@
-import { mockObjectId } from '../lib/mockObjectId'
+import { mockObjectId } from "@/lib/mockObjectId"
 import { customersSeedData } from './customersSeed'
 import { resolvePlotCustomerName } from './plotCustomerAliases'
-import type { CollectionDocument } from '../schema/types'
+import type { CollectionDocument } from "@/schema/types"
 
 export type PlotSeedRow = {
   name: string

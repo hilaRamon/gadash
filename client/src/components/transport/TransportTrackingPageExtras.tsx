@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import styled from "styled-components";
-import type { CollectionDocument } from "../../schema/types";
-import { formatNumber } from "../../lib/formatNumber";
-import { useSeason } from "../../context/SeasonContext";
+import type { CollectionDocument } from "@/schema/types";
+import { formatNumber } from "@/lib/formatNumber";
+import { useSeason } from "@/context/SeasonContext";
 import {
   TRANSPORT_BILLING_TYPES,
   type TransportBillingType,
-} from "../../lib/transportBilling";
+} from "@/lib/transportBilling";
 import {
   sumAllTransportFinalPrices,
   sumTransportBillingTotals,
-} from "../../lib/transportTrackingPricing";
+} from "@/lib/transportTrackingPricing";
 
 const GLOBAL_BILLING = "חיוב גלובלי";
 const CUSTOMER_BILLING = "חיוב ללקוח";

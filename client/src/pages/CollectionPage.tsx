@@ -1,41 +1,41 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { getCollectionSchema } from "../schema/registry";
-import type { CollectionSchema } from "../schema/types";
-import { applyTableQuery } from "../lib/tableQuery";
-import { getDocumentLabel } from "../lib/documentLabel";
-import { exportCollectionToExcel } from "../lib/exportCollectionExcel";
-import { useTableQueryState } from "../hooks/useTableQueryState";
-import { useCollectionList } from "../hooks/collections/useCollectionList";
-import { useSeason } from "../context/SeasonContext";
+import { getCollectionSchema } from "@/schema/registry";
+import type { CollectionSchema } from "@/schema/types";
+import { applyTableQuery } from "@/lib/tableQuery";
+import { getDocumentLabel } from "@/lib/documentLabel";
+import { exportCollectionToExcel } from "@/lib/exportCollectionExcel";
+import { useTableQueryState } from "@/hooks/useTableQueryState";
+import { useCollectionList } from "@/hooks/collections/useCollectionList";
+import { useSeason } from "@/context/SeasonContext";
 import {
   useCreateDocument,
   useUpdateDocument,
   useDeleteDocument,
   useBulkDeleteDocuments,
-} from "../hooks/collections/useCollectionMutations";
-import { CollectionToolbar } from "../components/collection/CollectionToolbar";
+} from "@/hooks/collections/useCollectionMutations";
+import { CollectionToolbar } from "@/components/collection/CollectionToolbar";
 import {
   PageHeader,
   PageHeaderTop,
   PageTitle,
-} from "../components/page/PageHeaderLayout";
-import { DataTable } from "../components/collection/DataTable";
-import { CollectionFormModal } from "../components/collection/CollectionFormModal";
-import { ConfirmDialog } from "../components/collection/ConfirmDialog";
-import { TransportTrackingPageExtras } from "../components/transport/TransportTrackingPageExtras";
-import { TransportGlobalChargePageExtras } from "../components/transport/TransportGlobalChargePageExtras";
-import { GlobalTransportChargeViewModal } from "../components/transport/GlobalTransportChargeViewModal";
-import { CustomerBillingViewModal } from "../components/customerBilling/CustomerBillingViewModal";
-import { useGlobalChargeModalControls } from "../hooks/transport/useGlobalChargeModalControls";
+} from "@/components/page/PageHeaderLayout";
+import { DataTable } from "@/components/collection/DataTable";
+import { CollectionFormModal } from "@/components/collection/CollectionFormModal";
+import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
+import { TransportTrackingPageExtras } from "@/components/transport/TransportTrackingPageExtras";
+import { TransportGlobalChargePageExtras } from "@/components/transport/TransportGlobalChargePageExtras";
+import { GlobalTransportChargeViewModal } from "@/components/transport/GlobalTransportChargeViewModal";
+import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
+import { useGlobalChargeModalControls } from "@/hooks/transport/useGlobalChargeModalControls";
 import {
   GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP,
   PAID_BILLING_DELETE_TOOLTIP,
-} from "../lib/customerBillingErrors";
-import { isChargedTracking } from "../lib/chargedTracking";
-import { CHARGED_TRACKING_EDIT_ERROR } from "../lib/chargedTrackingErrors";
-import type { CollectionDocument } from "../schema/types";
+} from "@/lib/customerBillingErrors";
+import { isChargedTracking } from "@/lib/chargedTracking";
+import { CHARGED_TRACKING_EDIT_ERROR } from "@/lib/chargedTrackingErrors";
+import type { CollectionDocument } from "@/schema/types";
 import "./Page.css";
 
 type CollectionPageProps = {

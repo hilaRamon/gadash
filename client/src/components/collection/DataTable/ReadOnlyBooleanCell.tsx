@@ -1,4 +1,4 @@
-import type { CollectionDocument, ColumnDef } from '../../../schema/types'
+import type { CollectionDocument, ColumnDef } from "@/schema/types"
 import { BooleanCheckboxCell } from './BooleanCheckboxCell'
 
 type ReadOnlyBooleanCellProps = {

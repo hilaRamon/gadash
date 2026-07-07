@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
-import type { CollectionSchema } from '../../../schema/types'
-import type { TableQueryState } from '../../../schema/tableQuery'
+import type { CollectionSchema } from "@/schema/types"
+import type { TableQueryState } from "@/schema/tableQuery"
 import { buttonBase, selectControl, toolbarButtonAccent, toolbarButtonMaterial } from './sharedStyles'
 
 /* =========================================================================

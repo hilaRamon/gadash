@@ -1,8 +1,8 @@
 import styled from 'styled-components'
-import { useCollectionList } from '../../hooks/collections/useCollectionList'
-import { useSeason } from '../../context/SeasonContext'
-import { getCurrentSeasonYear } from '../../lib/seasonRange'
-import { SearchableSelect } from '../ui/SearchableSelect'
+import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useSeason } from "@/context/SeasonContext"
+import { getCurrentSeasonYear } from "@/lib/seasonRange"
+import { SearchableSelect } from "@/components/ui/SearchableSelect"
 
 export function SeasonSelect() {
   const { selectedSeasonYear, setSelectedSeasonYear } = useSeason()

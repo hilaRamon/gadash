@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
-import { buttonBase } from "../styles/buttonStyles";
+import { buttonBase } from "@/styles/buttonStyles";
 import {
   useEmployeeMonthlyReport,
   useMonthlySummary,
   useUpdateMonthlyAbsence,
-} from "../hooks/monthlyReport/useMonthlyReport";
-import { NumericMonthPicker } from "../components/reports/NumericMonthPicker";
-import { SearchableSelect } from "../components/ui/SearchableSelect";
-import { exportEmployeeMonthlyReportExcel } from "../lib/exportMonthlyReportExcel";
+} from "@/hooks/monthlyReport/useMonthlyReport";
+import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { exportEmployeeMonthlyReportExcel } from "@/lib/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
   formatHours,
   formatReportDate,
   statusLabel,
   type AbsenceDays,
-} from "../lib/monthlyReportApi";
+} from "@/lib/monthlyReportApi";
 import "./Page.css";
 
 export function EmployeeMonthlyReportPage() {

@@ -1,4 +1,4 @@
-import { dataCollections, trackingCollections } from "../../config/navigation";
+import { dataCollections, trackingCollections } from "@/config/navigation";
 import { textColumn } from "../columnHelpers";
 import type { CollectionSchema } from "../types";
 

@@ -3,7 +3,7 @@ import {
   buildMonthValue,
   parseMonthValue,
   yearOptions,
-} from "../../lib/monthlyReportApi";
+} from "@/lib/monthlyReportApi";
 
 type NumericMonthPickerProps = {
   id?: string;
