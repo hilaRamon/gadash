@@ -27,6 +27,7 @@
     "migrate:admin-operations-to-field-work": "tsx scripts/migrate-admin-operations-to-field-work.ts",
     "migrate:backfill-was-charged": "tsx scripts/backfill-was-charged.ts",
     "migrate:bale-order-pricing-form": "tsx scripts/migrate-bale-order-pricing-form.ts",
+    "migrate:contractor-pricing-form": "tsx scripts/migrate-contractor-pricing-form.ts",
     "migrate:customer-billing-statuses": "tsx scripts/migrate-customer-billing-statuses.ts",
     "migrate:material-amount-per-dunam": "tsx scripts/migrate-material-amount-per-dunam.ts",
     "migrate:employee-form-of-payment": "tsx scripts/migrate-employee-form-of-payment.ts",
