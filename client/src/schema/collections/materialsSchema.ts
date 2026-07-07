@@ -78,7 +78,8 @@ export const materialsSchema: CollectionSchema = {
       },
       { key: "currentSalePercent", label: "אחוז מכירה", type: "number" },
       { key: "amountPerDunam", label: "כמות לדונם", type: "number" },
-      { key: "inventoryGroup", label: "קבוצת מלאי", type: "text" },
+      // TODO: add inventory group
+      //  { key: "inventoryGroup", label: "קבוצת מלאי", type: "text" },
     ],
   },
 };

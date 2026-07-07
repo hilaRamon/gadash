@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
 import { customerBillingStatusOptions } from "@/lib/customerBillingStatuses";
-import { formatNumber } from "@/lib/formatNumber";
+import { formatWholeNumber } from "@/lib/formatNumber";
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -35,7 +35,7 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
       label: "סכום סופי",
       type: "number",
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {

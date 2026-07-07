@@ -22,13 +22,6 @@ export const transportGlobalChargesSchema: CollectionSchema = {
       width: "9rem",
     },
     {
-      key: "seasonYear",
-      label: "עונה",
-      type: "number",
-      sortable: true,
-      width: "5rem",
-    },
-    {
       key: "transportTotal",
       label: "סה״כ הובלות",
       type: "number",

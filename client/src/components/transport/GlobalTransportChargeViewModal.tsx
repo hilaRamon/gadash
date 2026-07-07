@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useQuery } from "@tanstack/react-query";
-import { formatNumber } from "@/lib/formatNumber";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
   fetchTransportGlobalChargeDetail,
   type GlobalTransportChargeDetail,
@@ -132,7 +132,7 @@ function ChargeDetailContent({
               {detail.customerBillings.map((billing) => (
                 <tr key={billing._id}>
                   <td>{billing.customerName ?? "—"}</td>
-                  <td>{formatNumber(billing.finalPrice ?? 0)}</td>
+                  <td>{formatWholeNumber(billing.finalPrice ?? 0)}</td>
                   <td>{billing.status ?? "—"}</td>
                   <td>{billing.paid === true ? "כן" : "לא"}</td>
                   <td>

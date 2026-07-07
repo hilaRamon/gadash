@@ -1,5 +1,5 @@
 import type { CollectionDocument, CollectionSchema } from "../types";
-import { formatNumber } from "@/lib/formatNumber";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
   BALE_ORDER_BY_UNIT,
   BALE_ORDER_PRICING_FORMS,
@@ -129,7 +129,7 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       label: "מחיר סופי",
       type: "number",
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {
