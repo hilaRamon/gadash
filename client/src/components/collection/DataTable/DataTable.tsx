@@ -41,9 +41,6 @@ const Table = styled.table<{ $previewMode?: boolean }>`
       $previewMode &&
       css`
         text-align: right;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       `}
   }
 
@@ -52,6 +49,21 @@ const Table = styled.table<{ $previewMode?: boolean }>`
     font-weight: 600;
     color: var(--text-secondary);
     border: none;
+
+    ${({ $previewMode }) =>
+      $previewMode &&
+      css`
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      `}
+  }
+
+  tbody td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    overflow: visible;
+    vertical-align: top;
   }
 
   tbody tr:hover {
@@ -82,6 +94,7 @@ const TableBodyCell = styled.td<{
       padding-bottom: 0.45rem;
       overflow: hidden;
       text-overflow: clip;
+      white-space: nowrap;
     `}
 `;
 
