@@ -194,8 +194,6 @@ function resolveOperationTrackingUnitCost(
 }
 
 function calcOperationTrackingFinalPrice(row: Record<string, unknown>): number {
-  if (row.billable === false) return 0;
-
   const operation = operationsSeedData.find(
     (item) => String(item._id) === String(row.operation ?? ""),
   );
