@@ -76,6 +76,7 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       sortable: true,
       enumOptions: pricingFormOptions,
       width: "8rem",
+      inlineEditable: () => false,
     },
     {
       key: "pricePerTon",

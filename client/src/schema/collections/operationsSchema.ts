@@ -1,11 +1,6 @@
 import { textColumn } from '../columnHelpers'
 import type { CollectionSchema } from '../types'
-
-const pricingFormOptions = [
-  { value: 'דונם', label: 'דונם' },
-  { value: 'שעתי', label: 'שעתי' },
-  { value: 'כמות יחידות', label: 'כמות יחידות' },
-]
+import { operationPricingFormOptions } from '@/lib/operationTrackingPricing'
 
 const operationTypeOptions = [
   { value: 'עיבוד', label: 'עיבוד' },
@@ -30,9 +25,10 @@ export const operationsSchema: CollectionSchema = {
       key: 'pricingForm',
       label: 'צורת תמחור',
       type: 'enum',
-      enumOptions: pricingFormOptions,
+      enumOptions: operationPricingFormOptions,
       nullable: true,
       filterable: true,
+      inlineEditable: () => false,
     },
     {
       key: 'operationType',
@@ -52,7 +48,7 @@ export const operationsSchema: CollectionSchema = {
         key: 'pricingForm',
         label: 'צורת תמחור',
         type: 'enum',
-        enumOptions: pricingFormOptions,
+        enumOptions: operationPricingFormOptions,
       },
       {
         key: 'operationType',

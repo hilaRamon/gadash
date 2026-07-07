@@ -2,6 +2,19 @@ export const OPERATION_PRICING_BY_DUNAM = "דונם" as const;
 export const OPERATION_PRICING_HOURLY = "שעתי" as const;
 export const OPERATION_PRICING_BY_UNIT = "כמות יחידות" as const;
 
+export const OPERATION_PRICING_FORMS = [
+  OPERATION_PRICING_BY_DUNAM,
+  OPERATION_PRICING_HOURLY,
+  OPERATION_PRICING_BY_UNIT,
+] as const;
+
+export const operationPricingFormOptions = OPERATION_PRICING_FORMS.map(
+  (value) => ({
+    value,
+    label: value,
+  }),
+);
+
 function parseTimeToMinutes(value: string): number | null {
   const trimmed = value.trim();
   if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(trimmed)) return null;

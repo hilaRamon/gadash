@@ -54,6 +54,7 @@ export const contractorTrackingsSchema: CollectionSchema = {
       enumOptions: pricingFormOptions,
       filterable: true,
       width: "7rem",
+      inlineEditable: () => false,
     },
     {
       key: "unitPrice",
