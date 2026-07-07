@@ -29,3 +29,24 @@ export function formatNumber(value: unknown): string {
   const fracStr = String(frac).padStart(MAX_DECIMALS, '0').replace(/0+$/, '');
   return wrapLtrNumeric(`${sign}${intStr}.${fracStr}`);
 }
+
+/** Rounds to the nearest integer and formats without a decimal part. */
+export function formatWholeNumber(value: unknown): string {
+  const amount = Number(value ?? '');
+  if (!Number.isFinite(amount)) return '';
+
+  const rounded = Math.round(amount);
+  const sign = rounded < 0 ? '-' : '';
+  const intStr = Math.abs(rounded).toLocaleString('he-IL');
+  return wrapLtrNumeric(`${sign}${intStr}`);
+}
+
+/** Formats with exactly 2 decimal digits for currency-like values. */
+export function formatNumber2(value: unknown): string {
+  const amount = Number(value ?? '');
+  if (!Number.isFinite(amount)) return '';
+  return wrapLtrNumeric(amount.toLocaleString('he-IL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }));
+}

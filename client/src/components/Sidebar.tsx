@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { NavLink, type NavLinkProps, useLocation, useNavigate } from 'react-router-dom'
 import styled, { css } from 'styled-components'
-import { buttonHoverLighten } from '../styles/buttonStyles'
-import { useAuth } from '../context/AuthContext'
+import { buttonHoverLighten } from "@/styles/buttonStyles"
+import { useAuth } from "@/context/AuthContext"
 import { SeasonSelect } from './collection/SeasonSelect'
 import { LogoutIcon } from './collection/Icons'
 
@@ -35,7 +35,7 @@ import {
   sidebarSections,
   summaryCollections,
   employeeAppNav,
-} from '../config/navigation'
+} from "@/config/navigation"
 
 export function Sidebar() {
   const location = useLocation()

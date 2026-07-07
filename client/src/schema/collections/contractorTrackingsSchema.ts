@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
-import { CONTRACTOR_PRICING_FORMS } from "../../lib/contractorTrackingPricing";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
+import { CONTRACTOR_PRICING_FORMS } from "@/lib/contractorTrackingPricing";
 
 const pricingFormOptions = CONTRACTOR_PRICING_FORMS.map((value) => ({
   value,
@@ -54,6 +54,7 @@ export const contractorTrackingsSchema: CollectionSchema = {
       enumOptions: pricingFormOptions,
       filterable: true,
       width: "7rem",
+      inlineEditable: () => false,
     },
     {
       key: "unitPrice",
@@ -77,7 +78,7 @@ export const contractorTrackingsSchema: CollectionSchema = {
       type: "number",
       sortable: true,
       getValue: (row) => Number(row.finalPrice ?? 0),
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {
@@ -86,7 +87,7 @@ export const contractorTrackingsSchema: CollectionSchema = {
       type: "number",
       sortable: true,
       getValue: (row) => Number(row.customerFinalPrice ?? 0),
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {

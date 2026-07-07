@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import styled from "styled-components";
-import { ExportButton } from "../collection/CollectionToolbar/ExportButton";
-import { GlobalSearch } from "../collection/CollectionToolbar/GlobalSearch";
+import { ExportButton } from "@/components/collection/CollectionToolbar/ExportButton";
+import { GlobalSearch } from "@/components/collection/CollectionToolbar/GlobalSearch";
 
 export const PageHeader = styled.header<{ $stacked?: boolean }>`
   display: flex;

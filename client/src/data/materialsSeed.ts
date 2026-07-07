@@ -1,5 +1,5 @@
-import { mockObjectId } from '../lib/mockObjectId'
-import type { CollectionDocument } from '../schema/types'
+import { mockObjectId } from "@/lib/mockObjectId"
+import type { CollectionDocument } from "@/schema/types"
 
 const SEED_EFFECTIVE_FROM = '2025-01-01T00:00:00.000Z'
 const DEFAULT_SALE_PERCENT = 15

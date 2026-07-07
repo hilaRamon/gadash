@@ -6,8 +6,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { useAuth } from '../../../context/AuthContext'
-import { todayIso } from '../lib/formDefaults'
+import { useAuth } from "@/context/AuthContext"
+import { todayIso } from "@/pages/employee/lib/formDefaults"
 
 type EmployeeContextValue = {
   employeeId: string | null

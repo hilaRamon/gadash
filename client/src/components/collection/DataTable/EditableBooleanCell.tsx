@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { CollectionDocument, ColumnDef } from '../../../schema/types'
-import { getCellValue } from '../../../lib/tableQuery'
+import type { CollectionDocument, ColumnDef } from "@/schema/types"
+import { getCellValue } from "@/lib/tableQuery"
 import { BooleanCheckboxCell } from './BooleanCheckboxCell'
 
 type EditableBooleanCellProps = {

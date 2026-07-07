@@ -1,4 +1,4 @@
-import type { ListCollectionParams } from '../lib/listCollectionParams'
+import type { ListCollectionParams } from "@/lib/listCollectionParams"
 
 export const collectionKeys = {
   all: ['collections'] as const,

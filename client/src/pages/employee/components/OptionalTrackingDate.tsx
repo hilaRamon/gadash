@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { DateField } from '../../../components/collection/CollectionFormModal/DateField'
-import { LogoutIcon } from '../../../components/collection/Icons'
+import { DateField } from "@/components/collection/CollectionFormModal/DateField"
+import { LogoutIcon } from "@/components/collection/Icons"
 import {
   isoToDateDisplay,
   parseDateDisplayToIso,
-} from '../../../lib/dateFieldFormat'
-import { useEmployee } from '../context/EmployeeContext'
+} from "@/lib/dateFieldFormat"
+import { useEmployee } from "@/pages/employee/context/EmployeeContext"
 import {
   EmployeeActionsRow,
   FormField,

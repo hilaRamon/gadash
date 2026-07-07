@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { formatDateInput } from "../../../lib/dateFieldFormat";
+import { formatDateInput } from "@/lib/dateFieldFormat";
 import { fieldControlStyles } from "./sharedStyles";
 
 type DateFieldProps = {

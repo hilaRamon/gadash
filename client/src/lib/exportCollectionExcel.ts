@@ -1,5 +1,5 @@
 import { utils, writeFile } from 'xlsx'
-import type { CollectionSchema, CollectionDocument } from '../schema/types'
+import type { CollectionSchema, CollectionDocument } from "@/schema/types"
 import { formatCell } from './tableQuery'
 
 function sanitizeFilenamePart(value: string): string {

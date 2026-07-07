@@ -1,5 +1,5 @@
 import type { CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber } from "@/lib/formatNumber";
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -20,13 +20,6 @@ export const transportGlobalChargesSchema: CollectionSchema = {
       sortable: true,
       format: (value) => formatDate(value),
       width: "9rem",
-    },
-    {
-      key: "seasonYear",
-      label: "עונה",
-      type: "number",
-      sortable: true,
-      width: "5rem",
     },
     {
       key: "transportTotal",

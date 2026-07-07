@@ -1,9 +1,9 @@
-export const CONTRACTOR_PRICING_FORMS = ["שעתי", "יומי", "לפי דונם"] as const;
+export const CONTRACTOR_PRICING_FORMS = ["שעתי", "יומי", "דונם"] as const;
 export type ContractorPricingForm = (typeof CONTRACTOR_PRICING_FORMS)[number];
 
 export const HOURLY_PRICING: ContractorPricingForm = "שעתי";
 export const DAILY_PRICING: ContractorPricingForm = "יומי";
-export const DUNAM_PRICING: ContractorPricingForm = "לפי דונם";
+export const DUNAM_PRICING: ContractorPricingForm = "דונם";
 
 export function isHourlyPricing(pricingForm: string): boolean {
   return pricingForm === HOURLY_PRICING;

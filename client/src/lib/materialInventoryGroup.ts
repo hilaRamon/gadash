@@ -1,4 +1,4 @@
-import type { CollectionDocument } from "../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import { roundQuantity } from "./quantityPrecision";
 
 export function buildGroupQuantityMap(

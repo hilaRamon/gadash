@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import styled from 'styled-components'
-import { buttonBase, buttonError } from '../../styles/buttonStyles'
+import { buttonBase, buttonError } from "@/styles/buttonStyles"
 
 type ConfirmDialogProps = {
   open: boolean

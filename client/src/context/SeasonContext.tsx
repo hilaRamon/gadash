@@ -10,7 +10,7 @@ import {
   getCurrentSeasonYear,
   readStoredSeasonYear,
   writeStoredSeasonYear,
-} from '../lib/seasonRange'
+} from "@/lib/seasonRange"
 
 type SeasonContextValue = {
   selectedSeasonYear: number

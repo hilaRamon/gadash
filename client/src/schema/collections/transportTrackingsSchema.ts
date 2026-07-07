@@ -1,6 +1,6 @@
 import type { CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
-import { TRANSPORT_BILLING_TYPES } from "../../lib/transportBilling";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
+import { TRANSPORT_BILLING_TYPES } from "@/lib/transportBilling";
 
 const billingOptions = TRANSPORT_BILLING_TYPES.map((value) => ({
   value,
@@ -66,7 +66,7 @@ export const transportTrackingsSchema: CollectionSchema = {
       label: "מחיר סופי",
       type: "number",
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {

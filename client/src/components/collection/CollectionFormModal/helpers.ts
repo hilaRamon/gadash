@@ -1,15 +1,15 @@
-import type { FormFieldDef, CollectionDocument } from "../../../schema/types";
+import type { FormFieldDef, CollectionDocument } from "@/schema/types";
 import {
   DATE_INVALID_ERROR,
   isoToDateDisplay,
   isValidDateDisplay,
   parseDateDisplayToIso,
-} from "../../../lib/dateFieldFormat";
+} from "@/lib/dateFieldFormat";
 import {
   formatMobileDisplay,
   MOBILE_INVALID_ERROR,
   normalizeMobile,
-} from "../../../lib/mobileFormat";
+} from "@/lib/mobileFormat";
 
 export const HOUR_INVALID_ERROR = "שעה לא תקינה";
 

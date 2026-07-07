@@ -1,6 +1,6 @@
-import type { CollectionDocument } from "../../../schema/types";
-import { calcMaterialUsageAmount } from "../../../lib/materialUsageAmount";
-import { formatNumber } from "../../../lib/formatNumber";
+import type { CollectionDocument } from "@/schema/types";
+import { calcMaterialUsageAmount } from "@/lib/materialUsageAmount";
+import { formatNumber } from "@/lib/formatNumber";
 import { numberToFormFieldValue } from "./helpers";
 
 export type MaterialUsageLineEntry = {

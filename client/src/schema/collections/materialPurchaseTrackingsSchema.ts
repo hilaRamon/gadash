@@ -1,5 +1,5 @@
 import type { CollectionSchema } from '../types'
-import { formatNumber } from '../../lib/formatNumber'
+import { formatNumber, formatNumber2 } from "@/lib/formatNumber"
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))
@@ -58,7 +58,7 @@ export const materialPurchaseTrackingsSchema: CollectionSchema = {
       format: (value, row) => {
         const fallback = Number(row.unitPrice ?? 0) * Number(row.amount ?? 0)
         const resolved = Number(value ?? fallback)
-        return formatNumber(resolved)
+        return formatNumber2(resolved)
       },
       width: '8rem',
     },

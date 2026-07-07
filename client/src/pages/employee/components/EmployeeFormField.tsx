@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { FormFieldControl } from '../../../components/collection/CollectionFormModal/FormFieldControl'
-import type { FormFieldDef } from '../../../schema/types'
+import { FormFieldControl } from "@/components/collection/CollectionFormModal/FormFieldControl"
+import type { FormFieldDef } from "@/schema/types"
 import { FieldError, FormField, FormLabel } from '../employeeStyles'
 
 type EmployeeFormFieldProps = {

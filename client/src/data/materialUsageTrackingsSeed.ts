@@ -1,8 +1,8 @@
 import { employeesSeedData } from './employeesSeed'
 import { materialsSeedData } from './materialsSeed'
 import { plotsSeedData } from './plotsSeed'
-import { mockObjectId } from '../lib/mockObjectId'
-import type { CollectionDocument } from '../schema/types'
+import { mockObjectId } from "@/lib/mockObjectId"
+import type { CollectionDocument } from "@/schema/types"
 
 const seedRows = [
   {

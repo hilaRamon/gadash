@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import styled from "styled-components";
-import { buttonHoverLighten } from "../../styles/buttonStyles";
-import type { CollectionDocument } from "../../schema/types";
-import { useSavedBillingBillPreview } from "../../hooks/customerBilling/useSavedBillingBillPreview";
+import { buttonHoverLighten } from "@/styles/buttonStyles";
+import type { CollectionDocument } from "@/schema/types";
+import { useSavedBillingBillPreview } from "@/hooks/customerBilling/useSavedBillingBillPreview";
 
 type CustomerBillingViewModalProps = {
   open: boolean;

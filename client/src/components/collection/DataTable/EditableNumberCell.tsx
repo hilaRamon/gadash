@@ -1,7 +1,7 @@
 import { useEffect, useState, type FocusEvent } from "react";
 import styled, { css } from "styled-components";
-import type { CollectionDocument, ColumnDef } from "../../../schema/types";
-import { getCellValue } from "../../../lib/tableQuery";
+import type { CollectionDocument, ColumnDef } from "@/schema/types";
+import { getCellValue } from "@/lib/tableQuery";
 import { CellSavingIndicator } from "./CellSavingIndicator";
 
 const CellEditableWrap = styled.span<{ $previewMode?: boolean }>`

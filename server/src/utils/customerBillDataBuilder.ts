@@ -5,7 +5,7 @@ import type {
   CustomerBillSection,
   CustomerBillSectionLayout,
 } from "../types/customerBill";
-import { formatNumber } from "./formatNumber";
+import { formatNumber, formatNumber2, formatWholeNumber } from "./formatNumber";
 import { isByWeightPricing } from "./baleOrderPricing";
 import { resolveContractorCustomerUnitPrice } from "./contractorTrackingPricing";
 import { isFuelOperationType } from "./unbilledTrackingFilters";
@@ -57,7 +57,7 @@ function operationLine(row: ApiDocument): CustomerBillLine {
     unitPrice:
       Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : "",
     price: Number(row.finalPrice ?? 0),
-    priceFormatted: formatNumber(row.finalPrice ?? 0),
+    priceFormatted: formatWholeNumber(row.finalPrice ?? 0),
   };
 }
 
@@ -82,7 +82,7 @@ function contractorLine(row: ApiDocument): CustomerBillLine {
         ? formatNumber(unitPriceValue)
         : "",
     price,
-    priceFormatted: formatNumber(price),
+    priceFormatted: formatWholeNumber(price),
   };
 }
 
@@ -102,7 +102,7 @@ function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
     amount,
     unitPrice: calcUnitPrice(finalPrice, amountValue),
     price: finalPrice,
-    priceFormatted: formatNumber(finalPrice),
+    priceFormatted: formatNumber2(finalPrice),
   };
 }
 
@@ -143,7 +143,7 @@ function baleLine(row: ApiDocument): CustomerBillLine {
         ? formatNumber(transport)
         : "",
     price: Number(row.finalPrice ?? 0),
-    priceFormatted: formatNumber(row.finalPrice ?? 0),
+    priceFormatted: formatWholeNumber(row.finalPrice ?? 0),
   };
 }
 

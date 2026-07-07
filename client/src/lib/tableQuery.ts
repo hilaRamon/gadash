@@ -3,8 +3,8 @@ import type {
   CollectionDocument,
   ColumnDef,
   FormSchema,
-} from '../schema/types'
-import type { TableQueryState } from '../schema/tableQuery'
+} from "@/schema/types"
+import type { TableQueryState } from "@/schema/tableQuery"
 import { formatNumber } from './formatNumber'
 
 export const ENUM_NULL_FILTER = '__null__'

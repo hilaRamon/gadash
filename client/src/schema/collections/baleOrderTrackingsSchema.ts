@@ -1,10 +1,10 @@
 import type { CollectionDocument, CollectionSchema } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
   BALE_ORDER_BY_UNIT,
   BALE_ORDER_PRICING_FORMS,
   isByWeightPricing,
-} from "../../lib/baleOrderPricing";
+} from "@/lib/baleOrderPricing";
 
 const pricingFormOptions = BALE_ORDER_PRICING_FORMS.map((value) => ({
   value,
@@ -76,6 +76,7 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       sortable: true,
       enumOptions: pricingFormOptions,
       width: "8rem",
+      inlineEditable: () => false,
     },
     {
       key: "pricePerTon",
@@ -128,7 +129,7 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       label: "מחיר סופי",
       type: "number",
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
     {

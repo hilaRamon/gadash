@@ -1,6 +1,6 @@
 import { Schema, model, type InferSchemaType } from 'mongoose';
 
-export const CONTRACTOR_PRICING_FORMS = ['שעתי', 'יומי', 'לפי דונם'] as const;
+export const CONTRACTOR_PRICING_FORMS = ['שעתי', 'יומי', 'דונם'] as const;
 export type ContractorPricingForm = (typeof CONTRACTOR_PRICING_FORMS)[number];
 
 const contractorTrackingSchema = new Schema(

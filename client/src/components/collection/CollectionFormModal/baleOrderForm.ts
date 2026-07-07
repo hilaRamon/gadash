@@ -1,9 +1,9 @@
-import type { CollectionDocument, FormFieldDef } from '../../../schema/types'
+import type { CollectionDocument, FormFieldDef } from "@/schema/types"
 import {
   BALE_ORDER_BY_UNIT,
   BALE_ORDER_BY_WEIGHT,
   isByWeightPricing,
-} from '../../../lib/baleOrderPricing'
+} from "@/lib/baleOrderPricing"
 
 export function getBaleOrderVisibleFields(
   fields: FormFieldDef[],

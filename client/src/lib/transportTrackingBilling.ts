@@ -1,4 +1,4 @@
-import type { CollectionDocument } from "../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 import {
   DEFAULT_TRANSPORT_BILLING,
   TRANSPORT_CUSTOMER_BILLING,

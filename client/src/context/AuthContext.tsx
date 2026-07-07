@@ -14,8 +14,8 @@ import {
   readStoredUser,
   setAuthToken,
   type AuthUser,
-} from '../lib/auth'
-import { registerUnauthorizedHandler } from '../lib/authSession'
+} from "@/lib/auth"
+import { registerUnauthorizedHandler } from "@/lib/authSession"
 
 type AuthContextValue = {
   user: AuthUser | null

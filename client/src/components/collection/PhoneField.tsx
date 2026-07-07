@@ -4,7 +4,7 @@ import {
   formatMobileDisplay,
   MOBILE_INVALID_ERROR,
   normalizeMobile,
-} from '../../lib/mobileFormat'
+} from "@/lib/mobileFormat"
 
 type PhoneFieldProps = {
   id: string

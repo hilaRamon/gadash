@@ -10,8 +10,8 @@ import {
   fetchCustomerBillPreview,
   hasIncludedBillItems,
   type UnbilledPreview,
-} from "../../lib/customerBillingApi";
-import { customerBillingKeys } from "../../lib/queryKeys";
+} from "@/lib/customerBillingApi";
+import { customerBillingKeys } from "@/lib/queryKeys";
 
 type UseCustomerBillPreviewOptions = {
   customerId: string;

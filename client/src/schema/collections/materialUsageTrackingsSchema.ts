@@ -1,5 +1,5 @@
 import type { CollectionSchema } from '../types'
-import { formatNumber } from '../../lib/formatNumber'
+import { formatNumber, formatNumber2 } from "@/lib/formatNumber"
 
 function formatDate(value: unknown): string {
   const date = new Date(String(value ?? ''))
@@ -68,7 +68,7 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
       label: 'מחיר סופי',
       type: 'number',
       sortable: true,
-      format: (value) => formatNumber(value),
+      format: (value) => formatNumber2(value),
       width: '8rem',
     },
     {

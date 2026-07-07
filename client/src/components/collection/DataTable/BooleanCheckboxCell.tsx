@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import type { CollectionDocument, ColumnDef } from '../../../schema/types'
+import type { CollectionDocument, ColumnDef } from "@/schema/types"
 import { CellSavingIndicator } from './CellSavingIndicator'
 
 const BooleanWrap = styled.span`

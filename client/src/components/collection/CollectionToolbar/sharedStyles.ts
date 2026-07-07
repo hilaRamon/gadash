@@ -6,7 +6,7 @@ export {
   toolbarButtonAccent,
   toolbarButtonExport,
   toolbarButtonMaterial,
-} from '../../../styles/buttonStyles'
+} from "@/styles/buttonStyles"
 
 import { css } from 'styled-components'
 

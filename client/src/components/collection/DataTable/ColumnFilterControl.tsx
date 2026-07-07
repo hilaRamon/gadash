@@ -1,12 +1,12 @@
 import styled from 'styled-components'
-import type { ColumnDef, FormSchema } from '../../../schema/types'
+import type { ColumnDef, FormSchema } from "@/schema/types"
 import {
   ENUM_NULL_FILTER,
   ENUM_NULL_LABEL,
   enumAllowsNull,
   getDiscreteColumnOptions,
   isDiscreteColumn,
-} from '../../../lib/tableQuery'
+} from "@/lib/tableQuery"
 import { focusRing } from './sharedStyles'
 
 const FilterSearchInput = styled.input`

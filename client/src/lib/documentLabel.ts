@@ -1,4 +1,4 @@
-import type { CollectionDocument, CollectionSchema } from '../schema/types'
+import type { CollectionDocument, CollectionSchema } from "@/schema/types"
 
 /**
  * Derives a human-readable label for a document using its schema's first

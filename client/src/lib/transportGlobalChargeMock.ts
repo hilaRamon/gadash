@@ -1,6 +1,6 @@
 import { createDocument, deleteCustomerBillingForGlobalChargeCancelMock, listCollection, updateDocument } from "./collectionApi";
 import { buildGlobalTransportBillDocument } from "./customerBill/buildCustomerBillData";
-import { plotsSeedData } from "../data/plotsSeed";
+import { plotsSeedData } from "@/data/plotsSeed";
 import { isDateInSeason } from "./seasonRange";
 import { DEFAULT_TRANSPORT_BILLING } from "./transportBilling";
 import type {
@@ -10,7 +10,7 @@ import type {
 } from "./transportGlobalChargeApi";
 import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
 import { isFuelOperation } from "./unbilledTrackingFilters";
-import type { CollectionDocument } from "../schema/types";
+import type { CollectionDocument } from "@/schema/types";
 
 type PlotRow = {
   _id: string;

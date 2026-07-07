@@ -1,5 +1,5 @@
 import { textColumn } from '../columnHelpers'
-import { formatMobileDisplay } from '../../lib/mobileFormat'
+import { formatMobileDisplay } from "@/lib/mobileFormat"
 import type { CollectionSchema } from '../types'
 
 export const moversSchema: CollectionSchema = {

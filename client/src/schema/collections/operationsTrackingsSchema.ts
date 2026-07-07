@@ -4,7 +4,7 @@ import type {
   FormFieldDef,
   FormSchema,
 } from "../types";
-import { formatNumber } from "../../lib/formatNumber";
+import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 
 const nonFuelOperationFilter = (row: CollectionDocument) =>
   String(row.operationType ?? "") !== "דלק";
@@ -151,7 +151,7 @@ const baseColumns: CollectionSchema["columns"] = [
     label: "מחיר סופי",
     type: "number",
     sortable: true,
-    format: (value) => formatNumber(value),
+    format: (value) => formatWholeNumber(value),
     width: "8rem",
   },
   {

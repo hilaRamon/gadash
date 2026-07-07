@@ -1,5 +1,5 @@
-import { mockObjectId } from '../lib/mockObjectId'
-import type { CollectionDocument } from '../schema/types'
+import { mockObjectId } from "@/lib/mockObjectId"
+import type { CollectionDocument } from "@/schema/types"
 
 const names = ['מכורה', 'מלאכי השלום', 'גבעה', 'יוליוס', 'גיתית']
 

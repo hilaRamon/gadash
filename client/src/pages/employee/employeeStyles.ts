@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { buttonHoverLighten } from '../../styles/buttonStyles'
+import { buttonHoverLighten } from "@/styles/buttonStyles"
 
 export const EmployeePage = styled.div`
   min-height: 100vh;
