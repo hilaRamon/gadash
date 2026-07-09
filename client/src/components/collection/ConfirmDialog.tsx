@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import styled from 'styled-components'
+import { ModalOverlay } from '@/components/ui/ModalOverlay'
+import { ModalPanel } from '@/components/ui/Modal'
 import { buttonBase, buttonError } from "@/styles/buttonStyles"
 
 type ConfirmDialogProps = {
@@ -13,33 +15,6 @@ type ConfirmDialogProps = {
   onConfirm: () => void
   onCancel: () => void
 }
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.55);
-`
-
-const Panel = styled.div`
-  width: 100%;
-  max-width: 28rem;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: var(--sidebar-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-`
-
-const Title = styled.h2`
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-`
 
 const Message = styled.div`
   margin: 0 0 1.25rem;
@@ -82,14 +57,14 @@ export function ConfirmDialog({
   if (!open) return null
 
   return (
-    <Overlay role="presentation" onClick={onCancel}>
-      <Panel
+    <ModalOverlay open={open} onClose={onCancel} layout="centered">
+      <ModalPanel
+        title={title}
+        titleId="dialog-title"
         role="alertdialog"
-        aria-modal="true"
+        aria-modal={true}
         aria-labelledby="dialog-title"
-        onClick={(e) => e.stopPropagation()}
       >
-        <Title id="dialog-title">{title}</Title>
         <Message>{message}</Message>
         {error && <ErrorText role="alert">{error}</ErrorText>}
         <Actions>
@@ -100,7 +75,7 @@ export function ConfirmDialog({
             {isPending ? 'מוחק...' : confirmLabel}
           </ConfirmButton>
         </Actions>
-      </Panel>
-    </Overlay>
+      </ModalPanel>
+    </ModalOverlay>
   )
 }

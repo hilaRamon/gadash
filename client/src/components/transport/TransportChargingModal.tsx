@@ -1,4 +1,6 @@
 import styled from 'styled-components'
+import { ModalOverlay } from '@/components/ui/ModalOverlay'
+import { ModalPanel } from '@/components/ui/Modal'
 import { formatNumber } from "@/lib/formatNumber"
 import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles"
 
@@ -12,33 +14,6 @@ type TransportChargingModalProps = {
   onConfirm: () => void
   onClose: () => void
 }
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.55);
-`
-
-const Modal = styled.div`
-  width: 100%;
-  max-width: 24rem;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: var(--sidebar-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-`
-
-const ModalTitle = styled.h2`
-  margin: 0 0 1rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-`
 
 const SummaryList = styled.dl`
   margin: 0 0 1.25rem;
@@ -95,14 +70,14 @@ export function TransportChargingModal({
   if (!open) return null
 
   return (
-    <Overlay role="presentation" onClick={onClose}>
-      <Modal
+    <ModalOverlay open={open} onClose={onClose} layout="centered">
+      <ModalPanel
+        title="ביצוע חיוב גלובלי"
+        titleId="charge-modal-title"
         role="dialog"
-        aria-modal="true"
+        aria-modal={true}
         aria-labelledby="charge-modal-title"
-        onClick={(e) => e.stopPropagation()}
       >
-        <ModalTitle id="charge-modal-title">ביצוע חיוב גלובלי</ModalTitle>
         <SummaryList>
           <dt>עונה</dt>
           <dd>{seasonYear}</dd>
@@ -120,7 +95,7 @@ export function TransportChargingModal({
             {isPending ? 'מבצע…' : 'אישור'}
           </PrimaryButton>
         </Actions>
-      </Modal>
-    </Overlay>
+      </ModalPanel>
+    </ModalOverlay>
   )
 }
