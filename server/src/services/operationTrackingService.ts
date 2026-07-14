@@ -8,7 +8,10 @@ import {
   type OperationTrackingInput,
 } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
-import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from '../utils/assertTrackingNotCharged';
 import {
   operationTrackingToApiDocument,
   operationTrackingToApiDocuments,
@@ -405,6 +408,7 @@ export const operationTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
     await monthlyReportService.assertMonthNotLocked(
       String(existing.employee?._id ?? existing.employee),
       new Date(existing.date as Date),
@@ -419,6 +423,7 @@ export const operationTrackingService = {
   async removeMany(ids: string[], adminOverride = false): Promise<void> {
     const rows = await operationTrackingRepository.findByIds(ids);
     for (const row of rows) {
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
       await monthlyReportService.assertMonthNotLocked(
         String(row.employee),
         new Date(row.date as Date),

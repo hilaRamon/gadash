@@ -20,7 +20,10 @@ import {
   TRANSPORT_CUSTOMER_BILLING,
   type TransportBillingType,
 } from '../models/TransportTracking';
-import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from '../utils/assertTrackingNotCharged';
 
 function parseDate(value: unknown): Date {
   if (value == null || value === '') return new Date();
@@ -252,6 +255,11 @@ export const transportTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
+    const existing = await transportTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
     const result = await transportTrackingRepository.delete(id);
     if (!result) {
       throw new Error('לא נמצא');
@@ -259,6 +267,20 @@ export const transportTrackingService = {
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await transportTrackingRepository.deleteMany(ids);
+    const uniqueIds = [
+      ...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean)),
+    ];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => transportTrackingRepository.findById(rowId)),
+    );
+    for (const row of rows) {
+      if (!row) {
+        throw new Error('לא נמצא');
+      }
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
+    }
+    await transportTrackingRepository.deleteMany(uniqueIds);
   },
 };

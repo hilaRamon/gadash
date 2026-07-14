@@ -36,7 +36,11 @@ import {
   PAID_BILLING_DELETE_TOOLTIP,
 } from "@/lib/customerBillingErrors";
 import { isChargedTracking } from "@/lib/chargedTracking";
-import { CHARGED_TRACKING_EDIT_ERROR } from "@/lib/chargedTrackingErrors";
+import {
+  CHARGED_TRACKING_DELETE_ERROR,
+  CHARGED_TRACKING_DELETE_TOOLTIP,
+  CHARGED_TRACKING_EDIT_ERROR,
+} from "@/lib/chargedTrackingErrors";
 import { toQueryParams } from "@/schema/tableQuery";
 import type { ListCollectionParams } from "@/lib/listCollectionParams";
 import { collectionHasDateField } from "@/lib/seasonRange";
@@ -286,6 +290,23 @@ function CollectionPageContent({
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
     setDeleteError(null);
+
+    if (deleteTarget.type === "single") {
+      if (isChargedTracking(deleteTarget.row)) {
+        setDeleteError(CHARGED_TRACKING_DELETE_ERROR);
+        return;
+      }
+    } else {
+      const chargedSelected = deleteTarget.ids.some((id) => {
+        const row = rows.find((r) => r._id === id);
+        return row != null && isChargedTracking(row);
+      });
+      if (chargedSelected) {
+        setDeleteError(CHARGED_TRACKING_DELETE_ERROR);
+        return;
+      }
+    }
+
     try {
       if (deleteTarget.type === "single") {
         await deleteMutation.mutateAsync(deleteTarget.row._id);
@@ -297,7 +318,13 @@ function CollectionPageContent({
     } catch (err) {
       setDeleteError(getMutationErrorMessage(err, "שגיאה במחיקה"));
     }
-  }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery]);
+  }, [
+    deleteTarget,
+    deleteMutation,
+    bulkDeleteMutation,
+    tableQuery,
+    rows,
+  ]);
 
   const isGlobalChargePage = collectionId === "transport-global-charges";
   const isCustomerBillingPage = collectionId === "customer-billing-trackings";
@@ -311,13 +338,26 @@ function CollectionPageContent({
       row.paid !== true && String(row.billKind ?? "") !== "globalTransport",
     [],
   );
-  const getBillingDeleteTooltip = useCallback((row: CollectionDocument) => {
-    if (row.paid === true) return PAID_BILLING_DELETE_TOOLTIP;
-    if (String(row.billKind ?? "") === "globalTransport") {
-      return GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP;
-    }
-    return undefined;
-  }, []);
+  const canDeleteRow = useCallback(
+    (row: CollectionDocument) => {
+      if (isChargedTracking(row)) return false;
+      if (isCustomerBillingPage) return canDeleteBillingRow(row);
+      return true;
+    },
+    [isCustomerBillingPage, canDeleteBillingRow],
+  );
+  const getDeleteDisabledTooltip = useCallback(
+    (row: CollectionDocument) => {
+      if (isChargedTracking(row)) return CHARGED_TRACKING_DELETE_TOOLTIP;
+      if (!isCustomerBillingPage) return undefined;
+      if (row.paid === true) return PAID_BILLING_DELETE_TOOLTIP;
+      if (String(row.billKind ?? "") === "globalTransport") {
+        return GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP;
+      }
+      return undefined;
+    },
+    [isCustomerBillingPage],
+  );
   const rowAction = schema.rowAction ?? "edit";
   const handleAdd = isCustomerBillingPage
     ? () => navigate("/trackings/customer-billing/new")
@@ -462,10 +502,8 @@ function CollectionPageContent({
           onEdit={handleRowAction}
           rowAction={rowAction}
           canEditRow={canEditChargedTrackingRow}
-          canDeleteRow={isCustomerBillingPage ? canDeleteBillingRow : undefined}
-          deleteDisabledTooltip={
-            isCustomerBillingPage ? getBillingDeleteTooltip : undefined
-          }
+          canDeleteRow={canDeleteRow}
+          deleteDisabledTooltip={getDeleteDisabledTooltip}
           onDelete={(row) => {
             setDeleteError(null);
             setDeleteTarget({ type: "single", row });

@@ -11,7 +11,10 @@ import {
   type ContractorTrackingInput,
 } from '../repositories/contractorTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
-import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from '../utils/assertTrackingNotCharged';
 import {
   contractorTrackingToApiDocument,
   contractorTrackingToApiDocuments,
@@ -265,6 +268,11 @@ export const contractorTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
+    const existing = await contractorTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
     const result = await contractorTrackingRepository.delete(id);
     if (!result) {
       throw new Error('לא נמצא');
@@ -272,6 +280,20 @@ export const contractorTrackingService = {
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await contractorTrackingRepository.deleteMany(ids);
+    const uniqueIds = [
+      ...new Set(ids.map((id) => String(id ?? '').trim()).filter(Boolean)),
+    ];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => contractorTrackingRepository.findById(rowId)),
+    );
+    for (const row of rows) {
+      if (!row) {
+        throw new Error('לא נמצא');
+      }
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
+    }
+    await contractorTrackingRepository.deleteMany(uniqueIds);
   },
 };

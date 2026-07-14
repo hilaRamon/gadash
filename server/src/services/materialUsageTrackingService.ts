@@ -7,7 +7,10 @@ import {
   type MaterialUsageTrackingInput,
 } from "../repositories/materialUsageTrackingRepository";
 import type { ApiDocument } from "../types/apiDocument";
-import { assertTrackingNotCharged } from "../utils/assertTrackingNotCharged";
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from "../utils/assertTrackingNotCharged";
 import {
   materialUsageTrackingToApiDocument,
   materialUsageTrackingToApiDocuments,
@@ -387,6 +390,7 @@ export const materialUsageTrackingService = {
     if (!existing) {
       throw new Error("לא נמצא");
     }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
 
     await restoreMaterialQuantityAfterUsageDelete(
       existing as Record<string, unknown>,
@@ -405,6 +409,10 @@ export const materialUsageTrackingService = {
     );
     if (rows.some((row) => row == null)) {
       throw new Error("לא נמצא");
+    }
+
+    for (const row of rows) {
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
     }
 
     for (const row of rows) {

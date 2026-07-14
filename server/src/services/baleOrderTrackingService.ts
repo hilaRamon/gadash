@@ -6,7 +6,10 @@ import {
   type BaleOrderTrackingInput,
 } from "../repositories/baleOrderTrackingRepository";
 import type { ApiDocument } from "../types/apiDocument";
-import { assertTrackingNotCharged } from "../utils/assertTrackingNotCharged";
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from "../utils/assertTrackingNotCharged";
 import {
   baleOrderTrackingToApiDocument,
   baleOrderTrackingToApiDocuments,
@@ -314,6 +317,11 @@ export const baleOrderTrackingService = {
   },
 
   async remove(id: string): Promise<void> {
+    const existing = await baleOrderTrackingRepository.findById(id);
+    if (!existing) {
+      throw new Error("לא נמצא");
+    }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
     const result = await baleOrderTrackingRepository.delete(id);
     if (!result) {
       throw new Error("לא נמצא");
@@ -321,6 +329,20 @@ export const baleOrderTrackingService = {
   },
 
   async removeMany(ids: string[]): Promise<void> {
-    await baleOrderTrackingRepository.deleteMany(ids);
+    const uniqueIds = [
+      ...new Set(ids.map((id) => String(id ?? "").trim()).filter(Boolean)),
+    ];
+    if (uniqueIds.length === 0) return;
+
+    const rows = await Promise.all(
+      uniqueIds.map((rowId) => baleOrderTrackingRepository.findById(rowId)),
+    );
+    for (const row of rows) {
+      if (!row) {
+        throw new Error("לא נמצא");
+      }
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
+    }
+    await baleOrderTrackingRepository.deleteMany(uniqueIds);
   },
 };

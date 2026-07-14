@@ -34,7 +34,10 @@ import {
 } from "./contractorTrackingPricing";
 import { CUSTOMER_BILLING_STATUSES } from "./customerBillingStatuses";
 import { PAID_BILLING_DELETE_ERROR, GLOBAL_TRANSPORT_BILLING_DELETE_ERROR } from "./customerBillingErrors";
-import { CHARGED_TRACKING_EDIT_ERROR } from "./chargedTrackingErrors";
+import {
+  CHARGED_TRACKING_DELETE_ERROR,
+  CHARGED_TRACKING_EDIT_ERROR,
+} from "./chargedTrackingErrors";
 import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
@@ -905,7 +908,11 @@ async function removeMock(collection: string, id: string): Promise<void> {
   await delay(150);
   const store = getMockStore(collection);
   const index = store.findIndex((d) => d._id === id);
-  if (index !== -1) store.splice(index, 1);
+  if (index === -1) return;
+  if (store[index].wasCharged === true) {
+    throw new Error(CHARGED_TRACKING_DELETE_ERROR);
+  }
+  store.splice(index, 1);
 }
 
 async function removeManyMock(
@@ -917,6 +924,12 @@ async function removeManyMock(
   }
   await delay(200);
   const store = getMockStore(collection);
+  for (const id of ids) {
+    const row = store.find((d) => d._id === id);
+    if (row?.wasCharged === true) {
+      throw new Error(CHARGED_TRACKING_DELETE_ERROR);
+    }
+  }
   for (const id of ids) {
     const index = store.findIndex((d) => d._id === id);
     if (index !== -1) store.splice(index, 1);
