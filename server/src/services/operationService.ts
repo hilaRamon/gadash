@@ -153,6 +153,14 @@ export const operationService = {
     return toApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await operationRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: toApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const metadata = pickMetadataFields(body);
 

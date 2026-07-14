@@ -170,6 +170,16 @@ export const contractorTrackingService = {
     return contractorTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await contractorTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: contractorTrackingToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const patch = await buildTrackingPatch(body, { requireAll: true });
     if (

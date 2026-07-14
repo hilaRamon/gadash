@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { transportGlobalChargeService } from '../services/transportGlobalChargeService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 import { parseSeasonQuery } from '../utils/seasonRange';
 
 function parseSeasonFromBody(body: Record<string, unknown>): number {
@@ -16,8 +17,15 @@ function parseSeasonFromBody(body: Record<string, unknown>): number {
 export const transportGlobalChargeController = {
   list: asyncHandler(async (req: Request, res: Response) => {
     const seasonYear = parseSeasonQuery(req.query as Record<string, unknown>);
-    const data = await transportGlobalChargeService.list(seasonYear);
-    res.json(data);
+    await respondToListRequest(
+      req,
+      res,
+      () => transportGlobalChargeService.list(seasonYear),
+      (listQuery) => transportGlobalChargeService.listPaginated({
+        ...listQuery,
+        season: listQuery.season ?? seasonYear,
+      }),
+    );
   }),
 
   getById: asyncHandler(async (req: Request, res: Response) => {

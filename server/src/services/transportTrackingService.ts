@@ -160,6 +160,14 @@ export const transportTrackingService = {
     return transportTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await transportTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: transportTrackingToApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const patch = await buildTrackingPatch(body, { requireAll: true });
     if (

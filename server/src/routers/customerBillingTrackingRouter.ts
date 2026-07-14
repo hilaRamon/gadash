@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { customerBillingTrackingController } from '../controllers/customerBillingTrackingController';
+import { parseListQuery } from '../middleware/listQueryMiddleware';
 
 export const customerBillingTrackingRouter = Router();
 
@@ -27,7 +28,7 @@ customerBillingTrackingRouter.get(
   '/:id/bill-preview',
   customerBillingTrackingController.billPreviewById,
 );
-customerBillingTrackingRouter.get('/', customerBillingTrackingController.list);
+customerBillingTrackingRouter.get('/', parseListQuery, customerBillingTrackingController.list);
 customerBillingTrackingRouter.post('/', customerBillingTrackingController.create);
 customerBillingTrackingRouter.post(
   '/bulk-delete',

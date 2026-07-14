@@ -1,12 +1,13 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { getCollectionSchema } from "@/schema/registry";
 import type { CollectionSchema } from "@/schema/types";
-import { applyTableQuery } from "@/lib/tableQuery";
 import { getDocumentLabel } from "@/lib/documentLabel";
 import { exportCollectionToExcel } from "@/lib/exportCollectionExcel";
+import { listCollectionAllForExport } from "@/lib/collectionApi";
 import { useTableQueryState } from "@/hooks/useTableQueryState";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useCollectionList } from "@/hooks/collections/useCollectionList";
 import { useSeason } from "@/context/SeasonContext";
 import {
@@ -22,6 +23,7 @@ import {
   PageTitle,
 } from "@/components/page/PageHeaderLayout";
 import { DataTable } from "@/components/collection/DataTable";
+import { Pagination } from "@/components/collection/Pagination";
 import { CollectionFormModal } from "@/components/collection/CollectionFormModal";
 import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
 import { TransportTrackingPageExtras } from "@/components/transport/TransportTrackingPageExtras";
@@ -35,6 +37,9 @@ import {
 } from "@/lib/customerBillingErrors";
 import { isChargedTracking } from "@/lib/chargedTracking";
 import { CHARGED_TRACKING_EDIT_ERROR } from "@/lib/chargedTrackingErrors";
+import { toQueryParams } from "@/schema/tableQuery";
+import type { ListCollectionParams } from "@/lib/listCollectionParams";
+import { collectionHasDateField } from "@/lib/seasonRange";
 import type { CollectionDocument } from "@/schema/types";
 import "./Page.css";
 
@@ -47,6 +52,8 @@ type DeleteTarget =
   | { type: "bulk"; ids: string[] }
   | null;
 
+const DEFAULT_PAGE_SIZE = 50;
+
 function getMutationErrorMessage(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "response" in err) {
     const response = (err as { response?: { data?: { error?: string } } })
@@ -57,22 +64,13 @@ function getMutationErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-function matchesOperationTrackingPageFilter(
+function resolveOperationScope(
   collectionId: string,
-  row: CollectionDocument,
-): boolean {
-  if (!collectionId.startsWith("operations-trackings-")) return true;
-  const operationType = String(row.operationType ?? "");
-  if (collectionId === "operations-trackings-field-work") {
-    return operationType === "עיבוד";
-  }
-  if (collectionId === "operations-trackings-admin") {
-    return operationType === "מנהלה";
-  }
-  if (collectionId === "operations-trackings-all") {
-    return operationType !== "דלק";
-  }
-  return true;
+): ListCollectionParams["operationScope"] | undefined {
+  if (collectionId === "operations-trackings-field-work") return "fieldWork";
+  if (collectionId === "operations-trackings-admin") return "admin";
+  if (collectionId === "operations-trackings-all") return "excludeFuel";
+  return undefined;
 }
 
 export function CollectionPage({ collectionId }: CollectionPageProps) {
@@ -106,6 +104,8 @@ function CollectionPageContent({
   const { selectedSeasonYear } = useSeason();
   const tableQuery = useTableQueryState(schema);
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<CollectionDocument | null>(null);
   const [viewingBillingRow, setViewingBillingRow] =
@@ -116,30 +116,90 @@ function CollectionPageContent({
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const queryParams = useMemo(
+    () => toQueryParams(tableQuery.state),
+    [tableQuery.state],
+  );
+  const debouncedSearch = useDebouncedValue(queryParams.search ?? "", 300);
+  const columnSearchKey = useMemo(
+    () => JSON.stringify(queryParams.q ?? {}),
+    [queryParams.q],
+  );
+  const debouncedColumnSearchKey = useDebouncedValue(columnSearchKey, 300);
+  const debouncedQ = useMemo(() => {
+    const parsed = JSON.parse(debouncedColumnSearchKey) as Record<string, string>;
+    return Object.keys(parsed).length > 0 ? parsed : undefined;
+  }, [debouncedColumnSearchKey]);
+  const operationScope = resolveOperationScope(collectionId);
+
+  const listParams = useMemo(
+    (): ListCollectionParams & { page: number; pageSize: number } => {
+      const usesSeason =
+        collectionHasDateField(schema.collection) ||
+        schema.collection === "transportGlobalCharges";
+      return {
+        season: usesSeason ? selectedSeasonYear : undefined,
+        page,
+        pageSize,
+        sort: queryParams.sort,
+        search: debouncedSearch || undefined,
+        q: debouncedQ,
+        filter: queryParams.filter,
+        operationScope,
+      };
+    },
+    [
+      schema.collection,
+      selectedSeasonYear,
+      page,
+      pageSize,
+      queryParams.sort,
+      queryParams.filter,
+      debouncedSearch,
+      debouncedQ,
+      operationScope,
+    ],
+  );
+
+  // Reset page / selection when the filter query changes (not when page alone changes)
+  useEffect(() => {
+    setPage(1);
+    tableQuery.resetSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit page
+  }, [
+    selectedSeasonYear,
+    pageSize,
+    queryParams.sort,
+    queryParams.filter,
+    debouncedSearch,
+    debouncedColumnSearchKey,
+    operationScope,
+  ]);
 
   const {
-    data: rows = [],
+    data: pageData,
     isLoading,
+    isFetching,
     isError,
     error,
-  } = useCollectionList(schema.collection, { season: selectedSeasonYear });
+  } = useCollectionList(schema.collection, listParams);
+
+  const rows = pageData?.items ?? [];
+  const total = pageData?.total ?? 0;
+
+  const isTransportTrackingPage = collectionId === "transport-trackings";
+  const { data: transportAllRows = [] } = useCollectionList(
+    schema.collection,
+    { season: selectedSeasonYear },
+    { enabled: isTransportTrackingPage },
+  );
 
   const createMutation = useCreateDocument(schema.collection);
   const updateMutation = useUpdateDocument(schema.collection);
   const deleteMutation = useDeleteDocument(schema.collection);
   const bulkDeleteMutation = useBulkDeleteDocuments(schema.collection);
-
-  const visibleRows = useMemo(
-    () =>
-      applyTableQuery(
-        rows.filter((row) =>
-          matchesOperationTrackingPageFilter(collectionId, row),
-        ),
-        schema,
-        tableQuery.state,
-      ),
-    [rows, schema, tableQuery.state, collectionId],
-  );
 
   const openCreate = useCallback(() => {
     setEditingRow(null);
@@ -198,9 +258,30 @@ function CollectionPageContent({
     [updateMutation],
   );
 
-  const handleExportExcel = useCallback(() => {
-    exportCollectionToExcel(schema, visibleRows);
-  }, [schema, visibleRows]);
+  const handleExportExcel = useCallback(async () => {
+    setExporting(true);
+    try {
+      const exportRows = await listCollectionAllForExport(schema.collection, {
+        season: selectedSeasonYear,
+        sort: queryParams.sort,
+        search: debouncedSearch || undefined,
+        q: debouncedQ,
+        filter: queryParams.filter,
+        operationScope,
+      });
+      exportCollectionToExcel(schema, exportRows);
+    } finally {
+      setExporting(false);
+    }
+  }, [
+    schema,
+    selectedSeasonYear,
+    queryParams.sort,
+    queryParams.filter,
+    debouncedSearch,
+    debouncedQ,
+    operationScope,
+  ]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
@@ -218,7 +299,6 @@ function CollectionPageContent({
     }
   }, [deleteTarget, deleteMutation, bulkDeleteMutation, tableQuery]);
 
-  const isTransportTrackingPage = collectionId === "transport-trackings";
   const isGlobalChargePage = collectionId === "transport-global-charges";
   const isCustomerBillingPage = collectionId === "customer-billing-trackings";
   const globalChargeControls = useGlobalChargeModalControls(isGlobalChargePage);
@@ -353,18 +433,24 @@ function CollectionPageContent({
                 ids: tableQuery.state.selectedIds,
               });
             }}
-            exportDisabled={isLoading || isError}
+            exportDisabled={isLoading || isError || exporting}
             onExportExcel={handleExportExcel}
           />
         </PageHeaderTop>
-        {isTransportTrackingPage && <TransportTrackingPageExtras rows={rows} />}
+        {isTransportTrackingPage && (
+          <TransportTrackingPageExtras
+            rows={
+              Array.isArray(transportAllRows) ? transportAllRows : []
+            }
+          />
+        )}
         {isGlobalChargePage && <TransportGlobalChargePageExtras />}
       </PageHeader>
 
       <section className="page-body page-body-flush">
         <DataTable
           schema={schema}
-          rows={visibleRows}
+          rows={rows}
           queryState={tableQuery.state}
           isLoading={isLoading}
           isError={isError}
@@ -384,6 +470,14 @@ function CollectionPageContent({
             setDeleteError(null);
             setDeleteTarget({ type: "single", row });
           }}
+        />
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          isFetching={isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
         />
       </section>
 

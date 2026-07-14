@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { baleService } from '../services/baleService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const baleController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await baleService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => baleService.list(),
+      (listQuery) => baleService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

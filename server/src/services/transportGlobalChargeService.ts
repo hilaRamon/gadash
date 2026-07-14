@@ -180,6 +180,16 @@ export const transportGlobalChargeService = {
     return transportGlobalChargeToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await transportGlobalChargeRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: transportGlobalChargeToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async getById(id: string): Promise<GlobalTransportChargeDetail> {
     const row = await transportGlobalChargeRepository.findById(id);
     if (!row) {

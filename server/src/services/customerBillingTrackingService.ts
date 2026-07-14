@@ -150,6 +150,16 @@ export const customerBillingTrackingService = {
     return customerBillingTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await customerBillingTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: customerBillingTrackingToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const patch = await buildTrackingPatch(body, { requireAll: true });
     if (

@@ -1,13 +1,21 @@
 import type { Request, Response } from 'express';
 import { baleOrderTrackingService } from '../services/baleOrderTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 import { parseSeasonQuery } from '../utils/seasonRange';
 
 export const baleOrderTrackingController = {
   list: asyncHandler(async (req: Request, res: Response) => {
-    const seasonYear = parseSeasonQuery(req.query);
-    const data = await baleOrderTrackingService.list(seasonYear);
-    res.json(data);
+    const seasonYear = parseSeasonQuery(req.query as Record<string, unknown>);
+    await respondToListRequest(
+      req,
+      res,
+      () => baleOrderTrackingService.list(seasonYear),
+      (listQuery) => baleOrderTrackingService.listPaginated({
+        ...listQuery,
+        season: listQuery.season ?? seasonYear,
+      }),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

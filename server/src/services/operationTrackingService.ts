@@ -256,6 +256,14 @@ export const operationTrackingService = {
     return operationTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await operationTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: operationTrackingToApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const adminOverride = parseAdminOverride(body);
     const patch = await buildTrackingPatch(stripAdminOverride(body), { requireAll: true });

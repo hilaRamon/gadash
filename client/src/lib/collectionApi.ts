@@ -15,7 +15,14 @@ import { materialPurchaseTrackingsSeedData } from "@/data/materialPurchaseTracki
 import { materialUsageTrackingsSeedData } from "@/data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "@/schema/types";
 import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "./baleOrderPricing";
-import type { ListCollectionParams } from "./listCollectionParams";
+import type {
+  ListCollectionParams,
+  PaginatedResult,
+} from "./listCollectionParams";
+import {
+  buildListQueryString,
+  isPaginatedResult,
+} from "./listCollectionParams";
 import {
   collectionHasDateField,
   isDateInSeason,
@@ -465,7 +472,7 @@ function filterRowsBySeason(
   return rows.filter((row) => isDateInSeason(row.date, seasonYear));
 }
 
-async function listMock(
+async function listMockAll(
   collection: string,
   seasonYear?: number,
 ): Promise<CollectionDocument[]> {
@@ -506,6 +513,74 @@ async function listMock(
     return enrichMaterialsWithGroupQuantity(rows);
   }
   return rows;
+}
+
+function applyMockListParams(
+  rows: CollectionDocument[],
+  params?: ListCollectionParams,
+): CollectionDocument[] | PaginatedResult<CollectionDocument> {
+  let result = [...rows];
+
+  if (params?.operationScope && params.operationScope !== "excludeFuel") {
+    // Mock only; excludeFuel / fieldWork / admin refined on server via operation refs
+  }
+
+  if (params?.search?.trim()) {
+    const needle = params.search.trim().toLowerCase();
+    result = result.filter((row) =>
+      Object.values(row).some((v) =>
+        String(v ?? "").toLowerCase().includes(needle),
+      ),
+    );
+  }
+
+  if (params?.q) {
+    for (const [key, raw] of Object.entries(params.q)) {
+      const value = raw.trim().toLowerCase();
+      if (!value) continue;
+      result = result.filter((row) =>
+        String(row[key] ?? "").toLowerCase().includes(value),
+      );
+    }
+  }
+
+  if (params?.sort) {
+    const [field, direction] = params.sort.split(":");
+    if (field) {
+      const factor = direction === "desc" ? -1 : 1;
+      result.sort((a, b) => {
+        const av = a[field];
+        const bv = b[field];
+        if (av == null && bv == null) return 0;
+        if (av == null) return factor;
+        if (bv == null) return -factor;
+        if (typeof av === "number" && typeof bv === "number") {
+          return (av - bv) * factor;
+        }
+        return String(av).localeCompare(String(bv), "he") * factor;
+      });
+    }
+  }
+
+  if (params?.page == null) return result;
+
+  const page = params.page;
+  const pageSize = params.pageSize ?? 50;
+  const start = (page - 1) * pageSize;
+  return {
+    items: result.slice(start, start + pageSize),
+    total: result.length,
+    page,
+    pageSize,
+  };
+}
+
+async function listMock(
+  collection: string,
+  params?: ListCollectionParams,
+): Promise<CollectionDocument[] | PaginatedResult<CollectionDocument>> {
+  const rows = await listMockAll(collection, params?.season);
+  return applyMockListParams(rows, params);
 }
 
 async function createMock(
@@ -854,20 +929,47 @@ function delay(ms: number) {
 
 export async function listCollection(
   collection: string,
+  params: ListCollectionParams & { page: number; pageSize?: number },
+): Promise<PaginatedResult<CollectionDocument>>;
+export async function listCollection(
+  collection: string,
   params?: ListCollectionParams,
-): Promise<CollectionDocument[]> {
-  if (useMock) return listMock(collection, params?.season);
-  if (collection === "transportGlobalCharges") {
-    const { listTransportGlobalCharges } = await import(
-      "./transportGlobalChargeApi"
-    );
-    return (await listTransportGlobalCharges(
-      params?.season,
-    )) as CollectionDocument[];
+): Promise<CollectionDocument[]>;
+export async function listCollection(
+  collection: string,
+  params?: ListCollectionParams,
+): Promise<CollectionDocument[] | PaginatedResult<CollectionDocument>> {
+  if (useMock) return listMock(collection, params);
+
+  const query = buildListQueryString(params);
+  const { data } = await api.get<
+    CollectionDocument[] | PaginatedResult<CollectionDocument>
+  >(`/api/${collection}${query}`);
+
+  if (params?.page != null && !isPaginatedResult(data) && Array.isArray(data)) {
+    return {
+      items: data,
+      total: data.length,
+      page: params.page,
+      pageSize: params.pageSize ?? data.length,
+    };
   }
-  const query = params?.season != null ? `?season=${params.season}` : "";
-  const { data } = await api.get<CollectionDocument[]>(`/api/${collection}${query}`);
+
   return data;
+}
+
+export async function listCollectionAllForExport(
+  collection: string,
+  params: Omit<ListCollectionParams, "page" | "pageSize" | "export">,
+): Promise<CollectionDocument[]> {
+  const result = await listCollection(collection, {
+    ...params,
+    page: 1,
+    pageSize: 10_000,
+    export: true,
+  });
+  if (isPaginatedResult(result)) return result.items;
+  return result;
 }
 
 export async function createDocument(

@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { materialController } from '../controllers/materialController';
+import { parseListQuery } from '../middleware/listQueryMiddleware';
 
 export const materialRouter = Router();
 
-materialRouter.get('/', materialController.list);
+materialRouter.get('/', parseListQuery, materialController.list);
 materialRouter.post('/', materialController.create);
 materialRouter.post('/bulk-delete', materialController.bulkRemove);
 materialRouter.post('/:id/pricing-changes', materialController.appendPricingChange);

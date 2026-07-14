@@ -20,6 +20,14 @@ export const supplierService = {
     return toApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await supplierRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: toApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const fields = pickSupplierFields(body);
     if (!fields.name.trim()) {

@@ -241,6 +241,16 @@ export const materialPurchaseTrackingService = {
     return materialPurchaseTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await materialPurchaseTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: materialPurchaseTrackingToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const patch = await buildTrackingPatch(body, { requireAll: true });
     if (

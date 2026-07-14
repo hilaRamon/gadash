@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { moverService } from '../services/moverService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const moverController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await moverService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => moverService.list(),
+      (listQuery) => moverService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

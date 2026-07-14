@@ -259,6 +259,16 @@ export const materialUsageTrackingService = {
     );
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await materialUsageTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: materialUsageTrackingToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const patch = await buildTrackingPatch(body, { requireAll: true });
     if (

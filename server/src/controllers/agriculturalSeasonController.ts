@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { agriculturalSeasonService } from '../services/agriculturalSeasonService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const agriculturalSeasonController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await agriculturalSeasonService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => agriculturalSeasonService.list(),
+      (listQuery) => agriculturalSeasonService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

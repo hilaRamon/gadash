@@ -6,6 +6,7 @@ import { customerBillingTrackingService } from '../services/customerBillingTrack
 import { asyncHandler } from '../utils/asyncHandler';
 import { attachmentContentDisposition } from '../utils/contentDisposition';
 import { buildCustomerBillDownloadFilename } from '../utils/customerBillFilename';
+import { respondToListRequest } from '../utils/listResponse';
 import { parseSeasonQuery } from '../utils/seasonRange';
 
 export const customerBillingTrackingController = {
@@ -47,9 +48,16 @@ export const customerBillingTrackingController = {
   }),
 
   list: asyncHandler(async (req: Request, res: Response) => {
-    const seasonYear = parseSeasonQuery(req.query);
-    const data = await customerBillingTrackingService.list(seasonYear);
-    res.json(data);
+    const seasonYear = parseSeasonQuery(req.query as Record<string, unknown>);
+    await respondToListRequest(
+      req,
+      res,
+      () => customerBillingTrackingService.list(seasonYear),
+      (listQuery) => customerBillingTrackingService.listPaginated({
+        ...listQuery,
+        season: listQuery.season ?? seasonYear,
+      }),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

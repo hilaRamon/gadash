@@ -215,6 +215,17 @@ export const materialService = {
     return enriched.map(withCustomerCost);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await materialRepository.findPaginated(listQuery);
+    const enriched = enrichMaterialsWithGroupQuantity(
+      result.items as Record<string, unknown>[],
+    );
+    return {
+      ...result,
+      items: enriched.map(withCustomerCost),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const metadata = buildMetadataPatch(body, { requireAll: true }) as MaterialMetadataPatch;
     const cost = parseBuyingCost(body.currentBuyingCost ?? body.cost);

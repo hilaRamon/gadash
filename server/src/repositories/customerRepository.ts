@@ -1,4 +1,6 @@
 import { CustomerModel } from '../models/Customer';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type CustomerInput = {
@@ -11,6 +13,10 @@ export type CustomerInput = {
 export const customerRepository = {
   findAll() {
     return CustomerModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('customers', CustomerModel, listQuery);
   },
 
   findById(id: string) {

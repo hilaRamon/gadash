@@ -1,6 +1,8 @@
 import type { Types } from 'mongoose';
 import { BaleOrderTrackingModel } from '../models/BaleOrderTracking';
 import type { BaleOrderPricingForm } from '../models/BaleOrderTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
@@ -30,6 +32,15 @@ export const baleOrderTrackingRepository = {
       .populate(customerPopulate)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'baleOrderTrackings',
+      BaleOrderTrackingModel,
+      listQuery,
+      [balePopulate, customerPopulate],
+    );
   },
 
   findById(id: string) {

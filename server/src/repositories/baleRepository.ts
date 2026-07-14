@@ -1,4 +1,6 @@
 import { BaleModel } from '../models/Bale';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type BaleInput = {
@@ -10,6 +12,10 @@ export type BaleInput = {
 export const baleRepository = {
   findAll() {
     return BaleModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('bales', BaleModel, listQuery);
   },
 
   findById(id: string) {

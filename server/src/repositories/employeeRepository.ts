@@ -3,6 +3,8 @@ import {
   type EmployeeFormOfPayment,
   type EmployeeRole,
 } from '../models/Employee';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type EmployeeInput = {
@@ -17,6 +19,10 @@ export type EmployeeInput = {
 export const employeeRepository = {
   findAll() {
     return EmployeeModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('employees', EmployeeModel, listQuery);
   },
 
   findById(id: string) {

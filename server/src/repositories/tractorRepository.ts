@@ -1,4 +1,6 @@
 import { TractorModel } from '../models/Tractor';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type TractorInput = {
@@ -9,6 +11,10 @@ export type TractorInput = {
 export const tractorRepository = {
   findAll() {
     return TractorModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('tractors', TractorModel, listQuery);
   },
 
   findById(id: string) {

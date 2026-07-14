@@ -88,6 +88,14 @@ export const plotService = {
     return plotsToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await plotRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: plotsToApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const fields = await pickPlotFields(body);
     const created = await plotRepository.create(fields);

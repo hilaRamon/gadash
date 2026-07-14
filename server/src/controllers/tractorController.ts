@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { tractorService } from '../services/tractorService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const tractorController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await tractorService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => tractorService.list(),
+      (listQuery) => tractorService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

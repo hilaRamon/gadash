@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
@@ -35,6 +37,15 @@ export const materialUsageTrackingRepository = {
       .populate(employeePopulate)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'materialUsageTrackings',
+      MaterialUsageTrackingModel,
+      listQuery,
+      [materialPopulate, plotPopulate, employeePopulate],
+    );
   },
 
   findById(id: string) {

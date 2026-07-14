@@ -4,6 +4,8 @@ import {
   type CustomerBillingKind,
   type CustomerBillingStatus,
 } from '../models/CustomerBillingTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 import type { CustomerBillDocument } from '../types/customerBill';
@@ -34,6 +36,15 @@ export const customerBillingTrackingRepository = {
       .populate(customerPopulate)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'customerBillingTrackings',
+      CustomerBillingTrackingModel,
+      listQuery,
+      customerPopulate,
+    );
   },
 
   findById(id: string) {

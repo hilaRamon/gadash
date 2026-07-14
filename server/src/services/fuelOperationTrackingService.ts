@@ -246,6 +246,16 @@ export const fuelOperationTrackingService = {
     return fuelOperationTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await fuelOperationTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: fuelOperationTrackingToApiDocuments(
+        result.items as Record<string, unknown>[],
+      ),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const { patch, fuelDirection } = await buildTrackingPatch(body, { requireAll: true });
     if (
