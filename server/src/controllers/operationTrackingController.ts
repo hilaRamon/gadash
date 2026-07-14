@@ -2,13 +2,21 @@ import type { Request, Response } from 'express';
 import { operationTrackingService } from '../services/operationTrackingService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { prepareEmployeeTrackingBody } from '../utils/employeeAuth';
+import { respondToListRequest } from '../utils/listResponse';
 import { parseSeasonQuery } from '../utils/seasonRange';
 
 export const operationTrackingController = {
   list: asyncHandler(async (req: Request, res: Response) => {
-    const seasonYear = parseSeasonQuery(req.query);
-    const data = await operationTrackingService.list(seasonYear);
-    res.json(data);
+    const seasonYear = parseSeasonQuery(req.query as Record<string, unknown>);
+    await respondToListRequest(
+      req,
+      res,
+      () => operationTrackingService.list(seasonYear),
+      (listQuery) => operationTrackingService.listPaginated({
+        ...listQuery,
+        season: listQuery.season ?? seasonYear,
+      }),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

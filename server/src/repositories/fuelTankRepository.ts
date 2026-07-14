@@ -1,4 +1,6 @@
 import { FuelTankModel } from '../models/FuelTank';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type FuelTankInput = {
@@ -9,6 +11,10 @@ export type FuelTankInput = {
 export const fuelTankRepository = {
   findAll() {
     return FuelTankModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('fuelTanks', FuelTankModel, listQuery);
   },
 
   findById(id: string) {

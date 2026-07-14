@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
+import { ModalPanel } from "@/components/ui/Modal";
 import { useQuery } from "@tanstack/react-query";
 import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
@@ -56,27 +58,23 @@ export function GlobalTransportChargeViewModal({
 
   return (
     <>
-      <Overlay onClick={onClose}>
-        <Modal onClick={(event) => event.stopPropagation()}>
-          <ModalHeader>
-            <ModalTitle>פרטי חיוב גלובלי</ModalTitle>
-            <CloseButton type="button" onClick={onClose} aria-label="סגירה">
-              ×
-            </CloseButton>
-          </ModalHeader>
-          <ModalBody>
-            {isLoading ? (
-              <StatusText>טוען פרטים...</StatusText>
-            ) : isError ? (
-              <ErrorText role="alert">
-                {error instanceof Error ? error.message : "שגיאה בטעינת הפרטים"}
-              </ErrorText>
-            ) : data ? (
-              <ChargeDetailContent detail={data} onViewBill={setViewingBilling} />
-            ) : null}
-          </ModalBody>
-        </Modal>
-      </Overlay>
+      <ModalOverlay open={open} onClose={onClose} layout="scrollable">
+        <ModalPanel
+          title="פרטי חיוב גלובלי"
+          onClose={onClose}
+          maxWidth="min(720px, 100%)"
+        >
+          {isLoading ? (
+            <StatusText>טוען פרטים...</StatusText>
+          ) : isError ? (
+            <ErrorText role="alert">
+              {error instanceof Error ? error.message : "שגיאה בטעינת הפרטים"}
+            </ErrorText>
+          ) : data ? (
+            <ChargeDetailContent detail={data} onViewBill={setViewingBilling} />
+          ) : null}
+        </ModalPanel>
+      </ModalOverlay>
 
       <CustomerBillingViewModal
         open={viewingBilling !== null}
@@ -154,60 +152,6 @@ function ChargeDetailContent({
     </>
   );
 }
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
-  background: rgba(0, 0, 0, 0.55);
-`;
-
-const Modal = styled.div`
-  width: 100%;
-  max-width: min(720px, 100%);
-  margin: auto;
-  border-radius: 12px;
-  background: var(--sidebar-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-`;
-
-const ModalTitle = styled.h2`
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 700;
-`;
-
-const CloseButton = styled.button`
-  ${buttonBase};
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  font-size: 1.5rem;
-  line-height: 1;
-  background: transparent;
-  color: var(--text-secondary);
-
-  ${buttonHoverLighten};
-`;
-
-const ModalBody = styled.div`
-  padding: 1.25rem;
-`;
 
 const SummaryGrid = styled.dl`
   margin: 0 0 1.5rem;

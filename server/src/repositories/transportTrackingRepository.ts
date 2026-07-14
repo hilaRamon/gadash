@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
 import { TransportTrackingModel } from '../models/TransportTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 import { unchargedGlobalTransportsInSeasonFilter } from '../utils/unbilledTrackingFilters';
@@ -30,6 +32,15 @@ export const transportTrackingRepository = {
       .populate(populateRefs)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'transportTrackings',
+      TransportTrackingModel,
+      listQuery,
+      populateRefs,
+    );
   },
 
   findById(id: string) {

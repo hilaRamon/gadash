@@ -1,4 +1,6 @@
 import { MaterialModel } from '../models/Material';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type MaterialPricingEntryInput = {
@@ -25,6 +27,10 @@ export type MaterialMetadataPatch = Pick<
 export const materialRepository = {
   findAll() {
     return MaterialModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('materials', MaterialModel, listQuery);
   },
 
   findById(id: string) {

@@ -86,6 +86,14 @@ export const transportTrackingsSchema: CollectionSchema = {
       width: "8rem",
     },
     {
+      key: "wasCharged",
+      label: "חויב",
+      type: "boolean",
+      format: (value) => (value === false ? "לא" : "כן"),
+      width: "6rem",
+      inlineEditable: () => false,
+    },
+    {
       key: "notes",
       label: "הערות",
       type: "text",

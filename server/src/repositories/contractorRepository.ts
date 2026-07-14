@@ -1,4 +1,6 @@
 import { ContractorModel } from '../models/Contractor';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type ContractorInput = {
@@ -11,6 +13,10 @@ export type ContractorInput = {
 export const contractorRepository = {
   findAll() {
     return ContractorModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('contractors', ContractorModel, listQuery);
   },
 
   findById(id: string) {

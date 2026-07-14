@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { PlotModel } from '../models/Plot';
 import type { PlotType } from '../models/Plot';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type PlotInput = {
@@ -16,6 +18,10 @@ const customerPopulate = { path: 'customer', select: '_id name' };
 export const plotRepository = {
   findAll() {
     return PlotModel.find().populate(customerPopulate).sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('plots', PlotModel, listQuery, customerPopulate);
   },
 
   findById(id: string) {

@@ -8,7 +8,10 @@ import {
   type OperationTrackingInput,
 } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
-import { assertTrackingNotCharged } from '../utils/assertTrackingNotCharged';
+import {
+  assertTrackingNotCharged,
+  assertTrackingNotChargedForDelete,
+} from '../utils/assertTrackingNotCharged';
 import {
   operationTrackingToApiDocument,
   operationTrackingToApiDocuments,
@@ -256,6 +259,14 @@ export const operationTrackingService = {
     return operationTrackingToApiDocuments(rows as Record<string, unknown>[]);
   },
 
+  async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
+    const result = await operationTrackingRepository.findPaginated(listQuery);
+    return {
+      ...result,
+      items: operationTrackingToApiDocuments(result.items as Record<string, unknown>[]),
+    };
+  },
+
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
     const adminOverride = parseAdminOverride(body);
     const patch = await buildTrackingPatch(stripAdminOverride(body), { requireAll: true });
@@ -397,6 +408,7 @@ export const operationTrackingService = {
     if (!existing) {
       throw new Error('לא נמצא');
     }
+    assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
     await monthlyReportService.assertMonthNotLocked(
       String(existing.employee?._id ?? existing.employee),
       new Date(existing.date as Date),
@@ -411,6 +423,7 @@ export const operationTrackingService = {
   async removeMany(ids: string[], adminOverride = false): Promise<void> {
     const rows = await operationTrackingRepository.findByIds(ids);
     for (const row of rows) {
+      assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
       await monthlyReportService.assertMonthNotLocked(
         String(row.employee),
         new Date(row.date as Date),

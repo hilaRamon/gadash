@@ -1,4 +1,6 @@
 import { AgriculturalSeasonModel } from '../models/AgriculturalSeason';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type AgriculturalSeasonInput = {
@@ -8,6 +10,10 @@ export type AgriculturalSeasonInput = {
 export const agriculturalSeasonRepository = {
   findAll() {
     return AgriculturalSeasonModel.find().sort({ year: -1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('agriculturalSeasons', AgriculturalSeasonModel, listQuery);
   },
 
   findById(id: string) {

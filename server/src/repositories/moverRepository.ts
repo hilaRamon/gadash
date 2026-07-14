@@ -1,4 +1,6 @@
 import { MoverModel } from '../models/Mover';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type MoverInput = {
@@ -11,6 +13,10 @@ export type MoverInput = {
 export const moverRepository = {
   findAll() {
     return MoverModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('movers', MoverModel, listQuery);
   },
 
   findById(id: string) {

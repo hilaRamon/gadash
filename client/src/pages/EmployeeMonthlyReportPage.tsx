@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
-import { buttonBase } from "@/styles/buttonStyles";
+import { ExportButton } from "@/components/collection/CollectionToolbar/ExportButton";
 import {
   useEmployeeMonthlyReport,
   useMonthlySummary,
@@ -149,7 +149,6 @@ export function EmployeeMonthlyReportPage() {
 
           {report && footerTotals && (
             <ExportButton
-              type="button"
               disabled={report.days.length === 0}
               onClick={() =>
                 exportEmployeeMonthlyReportExcel(report, {
@@ -157,9 +156,7 @@ export function EmployeeMonthlyReportPage() {
                   workingDaysCount,
                 })
               }
-            >
-              ייצוא לאקסל
-            </ExportButton>
+            />
           )}
           {report && (
             <StatusBadge $closed={isClosed}>
@@ -349,15 +346,6 @@ const FilterLabel = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
-`;
-
-const ExportButton = styled.button`
-  ${buttonBase};
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
 `;
 
 const StatusBadge = styled.span<{ $closed: boolean }>`

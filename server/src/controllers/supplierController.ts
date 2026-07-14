@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { supplierService } from '../services/supplierService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const supplierController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await supplierService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => supplierService.list(),
+      (listQuery) => supplierService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

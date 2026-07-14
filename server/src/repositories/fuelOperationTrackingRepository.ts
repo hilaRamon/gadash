@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
 import { FuelOperationTrackingModel } from '../models/FuelOperationTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
@@ -31,6 +33,15 @@ export const fuelOperationTrackingRepository = {
       .populate(tractorPopulate)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'fuelOperationsTrackings',
+      FuelOperationTrackingModel,
+      listQuery,
+      [operationPopulate, fuelTankPopulate, employeePopulate, tractorPopulate],
+    );
   },
 
   findById(id: string) {

@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { ContractorTrackingModel } from '../models/ContractorTracking';
 import type { ContractorPricingForm } from '../models/ContractorTracking';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
@@ -36,6 +38,15 @@ export const contractorTrackingRepository = {
       .populate(operationPopulate)
       .sort({ date: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'contractorTrackings',
+      ContractorTrackingModel,
+      listQuery,
+      [contractorPopulate, plotPopulate, operationPopulate],
+    );
   },
 
   findById(id: string) {

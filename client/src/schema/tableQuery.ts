@@ -13,6 +13,7 @@ export type TableQueryState = {
 }
 
 export type TableQueryParams = {
+  search?: string
   q?: Record<string, string>
   sort?: string
   filter?: string
@@ -32,6 +33,10 @@ export function createInitialTableQueryState(
 
 export function toQueryParams(state: TableQueryState): TableQueryParams {
   const params: TableQueryParams = {}
+
+  if (state.globalSearch?.trim()) {
+    params.search = state.globalSearch.trim()
+  }
 
   const qEntries = Object.entries(state.columnSearch).filter(
     (entry): entry is [string, string] =>

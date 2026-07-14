@@ -81,7 +81,6 @@ function calcOperationFinalPrice(
   operationRaw: PopulatedOperationRef | undefined,
   plotRaw: PopulatedPlotRef | undefined,
 ): number {
-  if (doc.billable === false) return 0;
   if (!operationRaw || typeof operationRaw !== 'object') return 0;
 
   const unitCost = resolveTrackingUnitCost(doc, operationRaw);

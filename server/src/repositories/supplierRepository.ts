@@ -1,4 +1,6 @@
 import { SupplierModel } from '../models/Supplier';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type SupplierInput = {
@@ -10,6 +12,10 @@ export type SupplierInput = {
 export const supplierRepository = {
   findAll() {
     return SupplierModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('suppliers', SupplierModel, listQuery);
   },
 
   findById(id: string) {

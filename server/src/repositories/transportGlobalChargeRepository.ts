@@ -1,5 +1,7 @@
 import { Types } from 'mongoose';
 import { TransportGlobalChargeModel } from '../models/TransportGlobalCharge';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 
 export type TransportGlobalChargeInput = {
   seasonYear: number;
@@ -37,6 +39,14 @@ export const transportGlobalChargeRepository = {
     return TransportGlobalChargeModel.find(filter)
       .sort({ executedAt: -1 })
       .lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments(
+      'transportGlobalCharges',
+      TransportGlobalChargeModel,
+      listQuery,
+    );
   },
 
   deleteById(id: string, session?: unknown) {

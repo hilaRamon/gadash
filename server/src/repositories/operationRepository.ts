@@ -1,5 +1,7 @@
 import { OperationModel } from '../models/Operation';
 import type { NullablePricingForm, OperationType } from '../models/Operation';
+import type { ListQuery } from '../utils/listQuery';
+import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
 
 export type CostHistoryEntryInput = {
@@ -23,6 +25,10 @@ export type OperationMetadataPatch = Pick<
 export const operationRepository = {
   findAll() {
     return OperationModel.find().sort({ name: 1 }).lean();
+  },
+
+  findPaginated(listQuery: ListQuery) {
+    return listPaginatedDocuments('operations', OperationModel, listQuery);
   },
 
   findById(id: string) {

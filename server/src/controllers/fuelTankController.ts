@@ -1,11 +1,16 @@
 import type { Request, Response } from 'express';
 import { fuelTankService } from '../services/fuelTankService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { respondToListRequest } from '../utils/listResponse';
 
 export const fuelTankController = {
-  list: asyncHandler(async (_req: Request, res: Response) => {
-    const data = await fuelTankService.list();
-    res.json(data);
+  list: asyncHandler(async (req: Request, res: Response) => {
+    await respondToListRequest(
+      req,
+      res,
+      () => fuelTankService.list(),
+      (listQuery) => fuelTankService.listPaginated(listQuery),
+    );
   }),
 
   create: asyncHandler(async (req: Request, res: Response) => {

@@ -28,6 +28,8 @@ import {
   applyTransportTrackingFieldChange,
   getTransportTrackingVisibleFields,
 } from "./transportTrackingForm";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
+import { ModalPanel } from "@/components/ui/Modal";
 import { FormFieldControl } from "./FormFieldControl";
 import {
   useCollectionFormInitEffects,
@@ -45,35 +47,6 @@ type CollectionFormModalProps = {
   onClose: () => void;
   onSubmit: (values: Record<string, unknown> | Record<string, unknown>[]) => void;
 };
-
-const Overlay = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.55);
-`;
-
-const Modal = styled.div<{ $wide?: boolean }>`
-  width: 100%;
-  max-width: ${({ $wide }) => ($wide ? "32rem" : "28rem")};
-  max-height: 90vh;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: var(--sidebar-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-  overflow-y: auto;
-`;
-
-const ModalTitle = styled.h2`
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-`;
 
 const FormField = styled.div`
   margin-bottom: 1rem;
@@ -365,15 +338,20 @@ export function CollectionFormModal({
   };
 
   return (
-    <Overlay role="presentation" onClick={onClose}>
-      <Modal
+    <ModalOverlay open={open} onClose={onClose} layout="centered">
+      <ModalPanel
+        title={title}
+        titleId="modal-title"
+        maxWidth={
+          isMaterialUsageMultiCreate || isOperationTrackingMultiCreate
+            ? "32rem"
+            : "28rem"
+        }
+        scrollable
         role="dialog"
-        aria-modal="true"
+        aria-modal={true}
         aria-labelledby="modal-title"
-        $wide={isMaterialUsageMultiCreate || isOperationTrackingMultiCreate}
-        onClick={(e) => e.stopPropagation()}
       >
-        <ModalTitle id="modal-title">{title}</ModalTitle>
         <form onSubmit={handleSubmit} noValidate>
           {visibleFields.map((field) => (
             <div key={field.key}>
@@ -445,7 +423,7 @@ export function CollectionFormModal({
             </PrimaryButton>
           </Actions>
         </form>
-      </Modal>
-    </Overlay>
+      </ModalPanel>
+    </ModalOverlay>
   );
 }
