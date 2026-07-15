@@ -1,6 +1,6 @@
 import type { CollectionSchema, CollectionDocument } from "@/schema/types"
 import { exportExcelRows } from './excelExport'
-import { formatCell } from './tableQuery'
+import { formatCell } from '../tableQuery'
 
 /** LRM/RLM + directional isolates from RTL number formatters; Excel may show them as [LRI]/[PDI]. */
 const BIDI_CONTROLS = /[\u200E\u200F\u2066-\u2069]/g

@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { ExportButton } from "@/components/collection/CollectionToolbar/ExportButton";
 import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles";
 import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
-import { exportMonthlyReportExcel } from "@/lib/exportMonthlyReportExcel";
+import { exportMonthlyReportExcel } from "@/lib/excel/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
   formatHours,
