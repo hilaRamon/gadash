@@ -171,6 +171,24 @@ const baseColumns: CollectionSchema["columns"] = [
   },
 ];
 
+const unitCostColumn: CollectionSchema["columns"][number] = {
+  key: "unitCost",
+  label: "מחיר ליחידה",
+  type: "number",
+  sortable: true,
+  format: (value) => formatNumber(value),
+  width: "8rem",
+};
+
+const finalPriceColumnIndex = baseColumns.findIndex(
+  (column) => column.key === "finalPrice",
+);
+const fieldWorkColumns: CollectionSchema["columns"] = [
+  ...baseColumns.slice(0, finalPriceColumnIndex),
+  unitCostColumn,
+  ...baseColumns.slice(finalPriceColumnIndex),
+];
+
 const adminColumns = baseColumns.filter(
   (column) =>
     !["customer", "plot", "billable", "finalPrice"].includes(column.key),
@@ -192,7 +210,7 @@ export const operationsTrackingsFieldWorkSchema: CollectionSchema = {
   id: "operations-trackings-field-work",
   collection: "operationsTrackings",
   label: "משימות - עיבודים",
-  columns: baseColumns,
+  columns: fieldWorkColumns,
   defaultSort: { field: "date", direction: "desc" },
   form: buildOperationsTrackingForm(fieldWorkOperationFilter, {
     createTitle: "הוספת משימת עיבוד",
