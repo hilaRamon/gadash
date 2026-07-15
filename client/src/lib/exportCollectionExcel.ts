@@ -1,9 +1,12 @@
-import { utils, writeFile } from 'xlsx'
 import type { CollectionSchema, CollectionDocument } from "@/schema/types"
+import { exportExcelRows } from './excelExport'
 import { formatCell } from './tableQuery'
 
-function sanitizeFilenamePart(value: string): string {
-  return value.replace(/[^\w\u0590-\u05FF-]+/g, '_').replace(/_+/g, '_')
+/** LRM/RLM + directional isolates from RTL number formatters; Excel may show them as [LRI]/[PDI]. */
+const BIDI_CONTROLS = /[\u200E\u200F\u2066-\u2069]/g
+
+function stripBidiControls(value: string): string {
+  return value.replace(BIDI_CONTROLS, '')
 }
 
 export function exportCollectionToExcel(
@@ -12,16 +15,14 @@ export function exportCollectionToExcel(
 ): void {
   const headers = schema.columns.map((col) => col.label)
   const data = rows.map((row) =>
-    schema.columns.map((col) => formatCell(row, col)),
+    schema.columns.map((col) => stripBidiControls(formatCell(row, col))),
   )
 
-  const worksheet = utils.aoa_to_sheet([headers, ...data])
-  const workbook = utils.book_new()
-  workbook.Workbook = { Views: [{ RTL: true }] }
-  const sheetName = schema.label.slice(0, 31) || schema.collection
-  utils.book_append_sheet(workbook, worksheet, sheetName)
-
   const date = new Date().toISOString().slice(0, 10)
-  const filename = `${sanitizeFilenamePart(schema.collection)}-${date}.xlsx`
-  writeFile(workbook, filename)
+  exportExcelRows({
+    rows: [headers, ...data],
+    sheetName: schema.label || schema.collection,
+    filenameTitle: schema.label,
+    filenameDetails: [date],
+  })
 }

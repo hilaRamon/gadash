@@ -1,4 +1,4 @@
-import { utils, writeFile } from "xlsx";
+import { exportExcelRows } from "./excelExport";
 import type {
   EmployeeMonthlyReport,
   MonthlySummaryRow,
@@ -9,19 +9,6 @@ import {
   formatReportMonth,
   statusLabel,
 } from "./monthlyReportApi";
-
-function sanitizeFilenamePart(value: string): string {
-  return value.replace(/[^\w\u0590-\u05FF-]+/g, "_").replace(/_+/g, "_");
-}
-
-function summaryFilename(month: string): string {
-  return `${sanitizeFilenamePart(`סיכום-חודשי-${month}`)}.xlsx`;
-}
-
-function employeeReportFilename(employeeName: string, month: string): string {
-  const name = sanitizeFilenamePart(employeeName || "עובד");
-  return `${sanitizeFilenamePart(`דוח-חודשי-${name}-${month}`)}.xlsx`;
-}
 
 export function exportMonthlyReportExcel(
   rows: MonthlySummaryRow[],
@@ -53,12 +40,12 @@ export function exportMonthlyReportExcel(
     statusLabel(row.status),
   ]);
 
-  const worksheet = utils.aoa_to_sheet([headers, ...data]);
-  const workbook = utils.book_new();
-  workbook.Workbook = { Views: [{ RTL: true }] };
-  utils.book_append_sheet(workbook, worksheet, "סיכום חודשי");
-
-  writeFile(workbook, summaryFilename(month));
+  exportExcelRows({
+    rows: [headers, ...data],
+    sheetName: "סיכום חודשי",
+    filenameTitle: "סיכום חודשי",
+    filenameDetails: [month],
+  });
 }
 
 export function exportEmployeeMonthlyReportExcel(
@@ -118,10 +105,10 @@ export function exportEmployeeMonthlyReportExcel(
     ["שעות נוספות 150%", formatHours(totals.overtime150Hours)],
   );
 
-  const worksheet = utils.aoa_to_sheet(rows);
-  const workbook = utils.book_new();
-  workbook.Workbook = { Views: [{ RTL: true }] };
-  utils.book_append_sheet(workbook, worksheet, "דוח חודשי");
-
-  writeFile(workbook, employeeReportFilename(report.employeeName, report.month));
+  exportExcelRows({
+    rows,
+    sheetName: "דוח חודשי",
+    filenameTitle: "דוח חודשי",
+    filenameDetails: [report.employeeName || "עובד", report.month],
+  });
 }
