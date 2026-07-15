@@ -6,7 +6,7 @@ import {
 } from "@/components/page/PageHeaderLayout";
 import { useSeason } from "@/context/SeasonContext";
 import { useOperationsSummary } from "@/hooks/summaries/useOperationsSummary";
-import { exportOperationsSummaryExcel } from "@/lib/exportOperationsSummaryExcel";
+import { exportOperationsSummaryExcel } from "@/lib/excel/exportOperationsSummaryExcel";
 import { formatNumber } from "@/lib/formatNumber";
 import type { OperationsSummaryRow } from "@/lib/operationsSummaryApi";
 import "../Page.css";

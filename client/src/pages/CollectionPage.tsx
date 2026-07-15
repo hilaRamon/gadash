@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { getCollectionSchema } from "@/schema/registry";
 import type { CollectionSchema } from "@/schema/types";
 import { getDocumentLabel } from "@/lib/documentLabel";
-import { exportCollectionToExcel } from "@/lib/exportCollectionExcel";
+import { exportCollectionToExcel } from "@/lib/excel/exportCollectionExcel";
 import { listCollectionAllForExport } from "@/lib/collectionApi";
 import { useTableQueryState } from "@/hooks/useTableQueryState";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
