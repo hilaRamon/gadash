@@ -13,7 +13,7 @@ async function migrateContractorPricingForm() {
 
   await mongoose.connect(uri);
 
-  const result = await ContractorTrackingModel.updateMany(
+  const result = await ContractorTrackingModel.collection.updateMany(
     { pricingForm: LEGACY_DUNAM_PRICING },
     { $set: { pricingForm: DUNAM_PRICING } },
   );

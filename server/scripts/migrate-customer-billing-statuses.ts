@@ -11,11 +11,11 @@ async function migrateCustomerBillingStatuses() {
   await mongoose.connect(uri);
 
   const [internalApproved, invoiceReceived] = await Promise.all([
-    CustomerBillingTrackingModel.updateMany(
+    CustomerBillingTrackingModel.collection.updateMany(
       { status: 'אושר פנימי' },
       { $set: { status: 'לא אושר כלל' } },
     ),
-    CustomerBillingTrackingModel.updateMany(
+    CustomerBillingTrackingModel.collection.updateMany(
       { status: 'התקבלה חשבונית' },
       { $set: { status: 'הופקה חשבונית' } },
     ),
