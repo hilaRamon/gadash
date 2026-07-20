@@ -5,17 +5,24 @@ import { CustomerModel } from '../src/models/Customer';
 import { EmployeeModel } from '../src/models/Employee';
 import { tryNormalizeMobile } from '../src/utils/mobileFormat';
 
-type ContactDoc = {
+type ContactRow = {
   _id: unknown;
   name?: string;
   mobile?: string;
 };
 
-async function normalizeCollectionMobiles(
-  label: string,
-  model: mongoose.Model<ContactDoc>,
-) {
-  const docs = await model.find({ mobile: { $nin: ['', null] } }).lean<ContactDoc[]>();
+type MobileModel = {
+  find(filter: { mobile: { $nin: Array<string | null> } }): {
+    lean<T>(): Promise<T>;
+  };
+  updateOne(
+    filter: { _id: unknown },
+    update: { $set: { mobile: string } },
+  ): Promise<unknown>;
+};
+
+async function normalizeCollectionMobiles(label: string, model: MobileModel) {
+  const docs = await model.find({ mobile: { $nin: ['', null] } }).lean<ContactRow[]>();
 
   let updated = 0;
   let skipped = 0;
