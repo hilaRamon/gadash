@@ -177,6 +177,150 @@ export function buildOperationTrackingCreatePayloads(
   );
 }
 
+export type PlotTrackingLineEntry = {
+  plotId: string;
+  amount: string;
+};
+
+type PlotAmountContext = {
+  plots: CollectionDocument[];
+  operationId: string;
+  operations: CollectionDocument[];
+  startTime: string;
+  endTime: string;
+};
+
+export function calcPlotTrackingAmountForLine(
+  plotId: string,
+  context: PlotAmountContext,
+): string {
+  const normalizedPlotId = plotId.trim();
+  if (!normalizedPlotId) return "";
+
+  const operation = findOperation(context.operations, context.operationId);
+  if (!operation) return "";
+
+  const plot = findPlot(context.plots, normalizedPlotId);
+  const pricingForm = String(operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM);
+  const suggested = suggestOperationAmount(pricingForm, {
+    startTime: context.startTime,
+    endTime: context.endTime,
+    plotDunam: plot ? Number(plot.dunam ?? 0) : null,
+  });
+
+  return suggested == null ? "" : numberToFormFieldValue(suggested);
+}
+
+export function togglePlotTrackingLine(
+  entries: PlotTrackingLineEntry[],
+  plotId: string,
+  checked: boolean,
+  context: PlotAmountContext,
+): PlotTrackingLineEntry[] {
+  if (!checked) {
+    return entries.filter((entry) => entry.plotId !== plotId);
+  }
+  if (entries.some((entry) => entry.plotId === plotId)) {
+    return entries;
+  }
+  return [
+    ...entries,
+    {
+      plotId,
+      amount: calcPlotTrackingAmountForLine(plotId, context),
+    },
+  ];
+}
+
+export function updatePlotTrackingLine(
+  entries: PlotTrackingLineEntry[],
+  plotId: string,
+  patch: Partial<Pick<PlotTrackingLineEntry, "plotId" | "amount">>,
+  context: PlotAmountContext,
+): PlotTrackingLineEntry[] {
+  return entries.map((entry) => {
+    if (entry.plotId !== plotId) return entry;
+    const nextPlotId = patch.plotId ?? entry.plotId;
+    const shouldRecalcAmount =
+      patch.plotId != null && patch.plotId !== entry.plotId;
+    return {
+      plotId: nextPlotId,
+      amount: shouldRecalcAmount
+        ? calcPlotTrackingAmountForLine(nextPlotId, context)
+        : (patch.amount ?? entry.amount),
+    };
+  });
+}
+
+export function recalcPlotTrackingLineAmounts(
+  entries: PlotTrackingLineEntry[],
+  context: PlotAmountContext,
+  options?: { onlyEmpty?: boolean },
+): PlotTrackingLineEntry[] {
+  return entries.map((entry) => {
+    if (options?.onlyEmpty && entry.amount.trim()) {
+      return entry;
+    }
+    return {
+      ...entry,
+      amount: calcPlotTrackingAmountForLine(entry.plotId, context),
+    };
+  });
+}
+
+export function getPlotTrackingMultiCreateErrors(
+  entries: PlotTrackingLineEntry[],
+): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (entries.length === 0) {
+    errors.plots = "יש לבחור לפחות חלקה אחת";
+    return errors;
+  }
+
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (!entry.plotId.trim()) {
+      errors[entry.plotId || "unknown"] = "יש לבחור חלקה";
+      continue;
+    }
+    if (seen.has(entry.plotId)) {
+      errors[entry.plotId] = "חלקה כבר נבחרה";
+      continue;
+    }
+    seen.add(entry.plotId);
+    if (!entry.amount.trim()) {
+      errors[entry.plotId] = "יש להזין כמות";
+      continue;
+    }
+    const amount = Number(entry.amount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      errors[entry.plotId] = "כמות לא תקינה";
+    }
+  }
+
+  return errors;
+}
+
+export function buildPlotTrackingCreatePayloads(
+  basePayload: Record<string, unknown>,
+  entries: PlotTrackingLineEntry[],
+  values: Record<string, string>,
+  context: OperationTrackingFormContext,
+): Record<string, unknown>[] {
+  return entries.map((entry) =>
+    enrichOperationTrackingPayload(
+      {
+        ...basePayload,
+        plot: entry.plotId,
+        amount: entry.amount === "" ? "" : Number(entry.amount),
+      },
+      { ...values, plot: entry.plotId, amount: entry.amount },
+      context.operations,
+      context.plots,
+    ),
+  );
+}
+
 function resolvePricingFromSelections(
   values: Record<string, string>,
   context: OperationTrackingFormContext,

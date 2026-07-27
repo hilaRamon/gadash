@@ -1,4 +1,3 @@
-import { calcHoursBetween } from './transportTrackingPricing';
 import { dateToDayKey } from './monthRange';
 
 export const REGULAR_HOURS_PER_DAY = 8.4;
@@ -28,6 +27,11 @@ export type MonthlyHoursResult = {
   totalDaysWorked: number;
 };
 
+type MinuteInterval = {
+  start: number;
+  end: number;
+};
+
 function roundHours(value: number): number {
   return Number(value.toFixed(3));
 }
@@ -47,22 +51,83 @@ function splitDayHours(dayTotal: number) {
   };
 }
 
+function parseTimeToMinutes(value: string): number | null {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return hour * 60 + minute;
+}
+
+export function mergeDayIntervalsHours(intervals: MinuteInterval[]): number {
+  if (intervals.length === 0) return 0;
+
+  const sorted = [...intervals].sort(
+    (a, b) => a.start - b.start || a.end - b.end,
+  );
+  const merged: MinuteInterval[] = [];
+
+  for (const interval of sorted) {
+    const last = merged[merged.length - 1];
+    if (!last || interval.start > last.end) {
+      merged.push({ ...interval });
+      continue;
+    }
+    last.end = Math.max(last.end, interval.end);
+  }
+
+  const totalMinutes = merged.reduce(
+    (sum, interval) => sum + (interval.end - interval.start),
+    0,
+  );
+  return totalMinutes / 60;
+}
+
+function toMinuteInterval(
+  startTime: string,
+  endTime: string,
+): MinuteInterval | null {
+  const start = parseTimeToMinutes(startTime);
+  const end = parseTimeToMinutes(endTime);
+  if (start == null || end == null || end <= start) return null;
+  return { start, end };
+}
+
 export function calculateMonthlyHoursFromTrackings(
   trackings: TrackingTimeEntry[],
 ): MonthlyHoursResult {
-  const byDay = new Map<string, number>();
+  const intervalsByDay = new Map<string, MinuteInterval[]>();
 
   for (const tracking of trackings) {
+    const interval = toMinuteInterval(tracking.startTime, tracking.endTime);
+    if (!interval) continue;
+
     const dayKey = dateToDayKey(new Date(tracking.date));
-    const hours = calcHoursBetween(tracking.startTime, tracking.endTime);
-    byDay.set(dayKey, (byDay.get(dayKey) ?? 0) + hours);
+    const dayIntervals = intervalsByDay.get(dayKey);
+    if (dayIntervals) {
+      dayIntervals.push(interval);
+    } else {
+      intervalsByDay.set(dayKey, [interval]);
+    }
   }
 
-  const days = [...byDay.entries()]
+  const days = [...intervalsByDay.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, dayTotal]) => ({
+    .map(([date, intervals]) => ({
       date,
-      ...splitDayHours(dayTotal),
+      ...splitDayHours(mergeDayIntervalsHours(intervals)),
     }));
 
   const totals = days.reduce(

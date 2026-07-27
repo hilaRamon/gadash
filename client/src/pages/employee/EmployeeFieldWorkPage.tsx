@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   applyOperationTrackingFieldChange,
+  buildPlotTrackingCreatePayloads,
   enrichOperationTrackingPayload,
   getOperationTrackingRequiredErrors,
+  getPlotTrackingMultiCreateErrors,
+  recalcPlotTrackingLineAmounts,
+  togglePlotTrackingLine,
+  updatePlotTrackingLine,
+  type PlotTrackingLineEntry,
 } from "@/components/collection/CollectionFormModal/operationTrackingForm"
+import { PlotMultiCreateFields } from "@/components/collection/CollectionFormModal/PlotMultiCreateFields"
 import {
   buildPayload,
   getInitialValues,
@@ -57,6 +64,7 @@ export function EmployeeFieldWorkPage() {
   const [values, setValues] = useState<Record<string, string>>(() =>
     getInitialValues(formFields, null),
   )
+  const [plotEntries, setPlotEntries] = useState<PlotTrackingLineEntry[]>([])
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -84,6 +92,10 @@ export function EmployeeFieldWorkPage() {
   const pricingForm = String(
     selectedOperation?.pricingForm ?? OPERATION_PRICING_BY_DUNAM,
   )
+  const isMultiPlotMode =
+    !isAdminOperation &&
+    Boolean(values.operation) &&
+    pricingForm === OPERATION_PRICING_BY_DUNAM
 
   const amountField = useMemo(() => {
     const base = getField('amount')
@@ -98,18 +110,37 @@ export function EmployeeFieldWorkPage() {
 
   const showAmountField =
     !isAdminOperation &&
+    !isMultiPlotMode &&
     Boolean(values.operation) &&
     pricingForm !== OPERATION_PRICING_HOURLY
 
   const fieldWorkVisibleFields = useMemo(
-    () => formFields.filter((field) => !field.hidden && !hiddenKeys.has(field.key)),
-    [],
+    () =>
+      formFields.filter((field) => {
+        if (field.hidden || hiddenKeys.has(field.key)) return false
+        if (isMultiPlotMode && (field.key === 'plot' || field.key === 'amount')) {
+          return false
+        }
+        return true
+      }),
+    [isMultiPlotMode],
   )
 
   const visibleFields = isAdminOperation
     ? employeeAdminVisibleFields
     : fieldWorkVisibleFields
   const submitFormFields = isAdminOperation ? adminFormFields : formFields
+
+  const plotAmountContext = useMemo(
+    () => ({
+      plots,
+      operations,
+      operationId: values.operation,
+      startTime: values.startTime,
+      endTime: values.endTime,
+    }),
+    [plots, operations, values.operation, values.startTime, values.endTime],
+  )
 
   useEffect(() => {
     setValues((prev) => {
@@ -141,6 +172,18 @@ export function EmployeeFieldWorkPage() {
     })
   }, [isAdminOperation])
 
+  useEffect(() => {
+    if (!isMultiPlotMode) {
+      setPlotEntries((prev) => (prev.length === 0 ? prev : []))
+      return
+    }
+
+    setPlotEntries((prev) => {
+      if (prev.length === 0) return prev
+      return recalcPlotTrackingLineAmounts(prev, plotAmountContext)
+    })
+  }, [isMultiPlotMode, plotAmountContext])
+
   const handleChange = (key: string, value: string) => {
     setFieldErrors((prev) => {
       const next = { ...prev }
@@ -153,6 +196,44 @@ export function EmployeeFieldWorkPage() {
         plots,
         editingRow: null,
       })
+      if (key === 'operation') {
+        next.plot = ''
+        if (String(
+          operations.find((row) => String(row._id) === value)?.pricingForm ?? '',
+        ) === OPERATION_PRICING_BY_DUNAM) {
+          next.amount = ''
+        }
+      }
+      return next
+    })
+  }
+
+  const handleTogglePlot = (plotId: string, checked: boolean) => {
+    setPlotEntries((entries) =>
+      togglePlotTrackingLine(entries, plotId, checked, plotAmountContext),
+    )
+    setFieldErrors((prev) => {
+      if (!prev.plots && !prev[plotId]) return prev
+      const next = { ...prev }
+      delete next.plots
+      delete next[plotId]
+      return next
+    })
+  }
+
+  const handleUpdatePlotLine = (
+    plotId: string,
+    patch: Partial<Pick<PlotTrackingLineEntry, 'plotId' | 'amount'>>,
+  ) => {
+    setPlotEntries((entries) =>
+      updatePlotTrackingLine(entries, plotId, patch, plotAmountContext),
+    )
+    setFieldErrors((prev) => {
+      const nextKey = patch.plotId ?? plotId
+      if (!prev[plotId] && !prev[nextKey]) return prev
+      const next = { ...prev }
+      delete next[plotId]
+      delete next[nextKey]
       return next
     })
   }
@@ -169,12 +250,26 @@ export function EmployeeFieldWorkPage() {
     if (!values.operation.trim()) errors.operation = 'שדה חובה'
     if (timeError) errors.endTime = timeError
 
+    if (isMultiPlotMode) {
+      Object.assign(errors, getPlotTrackingMultiCreateErrors(plotEntries))
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
     }
 
-    const payloadResult = buildPayload(submitFormFields, values)
+    const payloadValues = isMultiPlotMode
+      ? { ...values, plot: '', amount: '' }
+      : values
+    const payloadFields = isMultiPlotMode
+      ? submitFormFields.map((field) =>
+          field.key === 'plot' || field.key === 'amount'
+            ? { ...field, required: false }
+            : field,
+        )
+      : submitFormFields
+    const payloadResult = buildPayload(payloadFields, payloadValues)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')
       return
@@ -184,15 +279,26 @@ export function EmployeeFieldWorkPage() {
       return
     }
 
-    const enriched = enrichOperationTrackingPayload(
-      payloadResult,
-      values,
-      operations,
-      plots,
-    )
-
     try {
-      await createMutation.mutateAsync(enriched)
+      if (isMultiPlotMode) {
+        const payloads = buildPlotTrackingCreatePayloads(
+          payloadResult,
+          plotEntries,
+          payloadValues,
+          { operations, plots, editingRow: null },
+        )
+        for (const payload of payloads) {
+          await createMutation.mutateAsync(payload)
+        }
+      } else {
+        const enriched = enrichOperationTrackingPayload(
+          payloadResult,
+          values,
+          operations,
+          plots,
+        )
+        await createMutation.mutateAsync(enriched)
+      }
       setSuccess(true)
     } catch (submitError) {
       setError(getApiErrorMessage(submitError))
@@ -223,12 +329,22 @@ export function EmployeeFieldWorkPage() {
           />
         ) : (
           <>
-            <EmployeeFormField
-              field={getField('plot')}
-              value={values.plot}
-              error={fieldErrors.plot}
-              onChange={handleChange}
-            />
+            {isMultiPlotMode ? (
+              <PlotMultiCreateFields
+                plots={plots}
+                entries={plotEntries}
+                fieldErrors={fieldErrors}
+                onTogglePlot={handleTogglePlot}
+                onUpdateLine={handleUpdatePlotLine}
+              />
+            ) : (
+              <EmployeeFormField
+                field={getField('plot')}
+                value={values.plot}
+                error={fieldErrors.plot}
+                onChange={handleChange}
+              />
+            )}
 
             <EmployeeFormField
               field={getField('startTime')}
