@@ -1,28 +1,22 @@
-import { useNavigate } from 'react-router-dom'
-import styled from 'styled-components'
-import {
-  AdminTaskIcon,
-  FieldWorkIcon,
-  FuelIcon,
-  MaterialIcon,
-} from './EmployeeMenuIcons'
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { FieldWorkIcon, FuelIcon, MaterialIcon } from "./EmployeeMenuIcons";
 
 const MenuGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.875rem;
   margin-bottom: 1rem;
-`
+`;
 
 const MenuCard = styled.button<{ $accent: string; $accentSoft: string }>`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  aspect-ratio: 1;
+  gap: 1rem;
   width: 100%;
-  padding: 1rem 0.75rem;
+  height: 5rem;
+  padding: 0 1.25rem;
   border: none;
   border-radius: 16px;
   background: ${({ $accentSoft }) => $accentSoft};
@@ -44,7 +38,7 @@ const MenuCard = styled.button<{ $accent: string; $accentSoft: string }>`
     transform: translateY(0);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
-`
+`;
 
 const IconWrap = styled.span<{ $accent: string }>`
   display: flex;
@@ -56,49 +50,42 @@ const IconWrap = styled.span<{ $accent: string }>`
   background: ${({ $accent }) => $accent};
   color: var(--text-on-brand);
   flex-shrink: 0;
-`
+`;
 
 const MenuLabel = styled.span`
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
-  text-align: center;
+  text-align: right;
   color: var(--text-primary);
-`
+`;
 
 const ACTIONS = [
   {
-    path: '/employee/field-work',
-    label: 'משימת עיבוד',
-    accent: 'var(--color-employee-field)',
-    accentSoft: 'var(--color-employee-field-soft)',
+    path: "/employee/operation-report",
+    label: "משימות",
+    accent: "var(--color-employee-field)",
+    accentSoft: "var(--color-employee-field-soft)",
     Icon: FieldWorkIcon,
   },
   {
-    path: '/employee/admin',
-    label: 'משימת מנהלה',
-    accent: 'var(--color-employee-admin)',
-    accentSoft: 'var(--color-employee-admin-soft)',
-    Icon: AdminTaskIcon,
-  },
-  {
-    path: '/employee/material',
-    label: 'שימוש בחומר',
-    accent: 'var(--color-employee-material)',
-    accentSoft: 'var(--color-employee-material-soft)',
+    path: "/employee/material",
+    label: "שימוש בחומר",
+    accent: "var(--color-employee-material)",
+    accentSoft: "var(--color-employee-material-soft)",
     Icon: MaterialIcon,
   },
   {
-    path: '/employee/fuel',
-    label: 'פעולת דלק',
-    accent: 'var(--color-employee-fuel)',
-    accentSoft: 'var(--color-employee-fuel-soft)',
+    path: "/employee/fuel",
+    label: "פעולת דלק",
+    accent: "var(--color-employee-fuel)",
+    accentSoft: "var(--color-employee-fuel-soft)",
     Icon: FuelIcon,
   },
-] as const
+] as const;
 
 export function EmployeeActionMenu() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <MenuGrid>
@@ -117,5 +104,5 @@ export function EmployeeActionMenu() {
         </MenuCard>
       ))}
     </MenuGrid>
-  )
+  );
 }

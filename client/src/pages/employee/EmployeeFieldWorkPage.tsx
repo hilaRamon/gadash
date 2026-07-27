@@ -11,13 +11,21 @@ import {
 import { useCollectionList } from "@/hooks/collections/useCollectionList"
 import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import {
   OPERATION_PRICING_BY_DUNAM,
   OPERATION_PRICING_BY_UNIT,
   OPERATION_PRICING_HOURLY,
 } from "@/lib/operationTrackingPricing"
-import { operationsTrackingsFieldWorkSchema } from "@/schema/collections/operationsTrackingsSchema"
+import {
+  operationsTrackingsAdminSchema,
+  operationsTrackingsFieldWorkSchema,
+} from "@/schema/collections/operationsTrackingsSchema"
 import type { FormFieldDef } from "@/schema/types"
+import {
+  EmployeeAdminFormFields,
+  employeeAdminVisibleFields,
+} from './components/EmployeeAdminFormFields'
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'
@@ -30,6 +38,7 @@ import {
 import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsFieldWorkSchema.form.fields
+const adminFormFields = operationsTrackingsAdminSchema.form.fields
 const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
 
 function getField(key: string): FormFieldDef {
@@ -56,7 +65,11 @@ export function EmployeeFieldWorkPage() {
 
   useEffect(() => {
     if (employeeId) {
-      setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
+      setValues((prev) => ({
+        ...prev,
+        employee: employeeId,
+        date: isoToDateDisplay(trackingDate),
+      }))
     }
   }, [employeeId, trackingDate])
 
@@ -65,6 +78,8 @@ export function EmployeeFieldWorkPage() {
       operations.find((row) => String(row._id) === values.operation) ?? null,
     [operations, values.operation],
   )
+  const selectedOperationType = String(selectedOperation?.operationType ?? '')
+  const isAdminOperation = selectedOperationType === 'מנהלה'
 
   const pricingForm = String(
     selectedOperation?.pricingForm ?? OPERATION_PRICING_BY_DUNAM,
@@ -82,12 +97,49 @@ export function EmployeeFieldWorkPage() {
   }, [pricingForm])
 
   const showAmountField =
-    Boolean(values.operation) && pricingForm !== OPERATION_PRICING_HOURLY
+    !isAdminOperation &&
+    Boolean(values.operation) &&
+    pricingForm !== OPERATION_PRICING_HOURLY
 
-  const visibleFields = useMemo(
+  const fieldWorkVisibleFields = useMemo(
     () => formFields.filter((field) => !field.hidden && !hiddenKeys.has(field.key)),
     [],
   )
+
+  const visibleFields = isAdminOperation
+    ? employeeAdminVisibleFields
+    : fieldWorkVisibleFields
+  const submitFormFields = isAdminOperation ? adminFormFields : formFields
+
+  useEffect(() => {
+    setValues((prev) => {
+      if (!prev.operation.trim()) {
+        return prev.billable === 'true'
+          ? prev
+          : { ...prev, billable: 'true' }
+      }
+
+      if (isAdminOperation) {
+        const next = {
+          ...prev,
+          billable: 'false',
+          plot: '',
+          amount: '',
+        }
+        return (
+          next.billable === prev.billable &&
+          next.plot === prev.plot &&
+          next.amount === prev.amount
+        )
+          ? prev
+          : next
+      }
+
+      return prev.billable === 'true'
+        ? prev
+        : { ...prev, billable: 'true' }
+    })
+  }, [isAdminOperation])
 
   const handleChange = (key: string, value: string) => {
     setFieldErrors((prev) => {
@@ -114,6 +166,7 @@ export function EmployeeFieldWorkPage() {
       operations,
     )
     const errors = { ...requiredErrors }
+    if (!values.operation.trim()) errors.operation = 'שדה חובה'
     if (timeError) errors.endTime = timeError
 
     if (Object.keys(errors).length > 0) {
@@ -121,7 +174,7 @@ export function EmployeeFieldWorkPage() {
       return
     }
 
-    const payloadResult = buildPayload(formFields, values)
+    const payloadResult = buildPayload(submitFormFields, values)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')
       return
@@ -148,7 +201,7 @@ export function EmployeeFieldWorkPage() {
 
   return (
     <EmployeeFormShell
-      title="משימת עיבוד"
+      title="דיווח על משימה"
       onSubmit={() => void handleSubmit()}
       isSubmitting={createMutation.isPending}
       error={error}
@@ -156,47 +209,57 @@ export function EmployeeFieldWorkPage() {
     >
       <FormStack onSubmit={(event) => event.preventDefault()}>
         <EmployeeFormField
-          field={getField('plot')}
-          value={values.plot}
-          error={fieldErrors.plot}
-          onChange={handleChange}
-        />
-
-        <EmployeeFormField
           field={getField('operation')}
           value={values.operation}
           error={fieldErrors.operation}
           onChange={handleChange}
         />
 
-        <EmployeeFormField
-          field={getField('startTime')}
-          value={values.startTime}
-          error={fieldErrors.startTime}
-          onChange={handleChange}
-        />
-
-        <EmployeeFormField
-          field={getField('endTime')}
-          value={values.endTime}
-          error={fieldErrors.endTime}
-          onChange={handleChange}
-        />
-
-        {showAmountField ? (
-          <EmployeeFormField
-            field={amountField}
-            value={values.amount}
-            error={fieldErrors.amount}
+        {isAdminOperation ? (
+          <EmployeeAdminFormFields
+            values={values}
+            fieldErrors={fieldErrors}
             onChange={handleChange}
           />
-        ) : null}
+        ) : (
+          <>
+            <EmployeeFormField
+              field={getField('plot')}
+              value={values.plot}
+              error={fieldErrors.plot}
+              onChange={handleChange}
+            />
 
-        <OptionalNotesField
-          field={getField('notes')}
-          value={values.notes}
-          onChange={handleChange}
-        />
+            <EmployeeFormField
+              field={getField('startTime')}
+              value={values.startTime}
+              error={fieldErrors.startTime}
+              onChange={handleChange}
+            />
+
+            <EmployeeFormField
+              field={getField('endTime')}
+              value={values.endTime}
+              error={fieldErrors.endTime}
+              onChange={handleChange}
+            />
+
+            {showAmountField ? (
+              <EmployeeFormField
+                field={amountField}
+                value={values.amount}
+                error={fieldErrors.amount}
+                onChange={handleChange}
+              />
+            ) : null}
+
+            <OptionalNotesField
+              field={getField('notes')}
+              value={values.notes}
+              onChange={handleChange}
+            />
+          </>
+        )}
       </FormStack>
     </EmployeeFormShell>
   )

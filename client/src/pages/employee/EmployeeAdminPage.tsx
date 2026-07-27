@@ -11,11 +11,13 @@ import {
 import { useCollectionList } from "@/hooks/collections/useCollectionList"
 import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import { operationsTrackingsAdminSchema } from "@/schema/collections/operationsTrackingsSchema"
-import type { FormFieldDef } from "@/schema/types"
-import { EmployeeFormField } from './components/EmployeeFormField'
+import {
+  EmployeeAdminFormFields,
+  employeeAdminVisibleFields,
+} from './components/EmployeeAdminFormFields'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
-import { OptionalNotesField } from './components/OptionalNotesField'
 import { useEmployee } from './context/EmployeeContext'
 import { useFormSuccessRedirect } from './hooks/useFormSuccessRedirect'
 import { useRequireEmployee } from './hooks/useRequireEmployee'
@@ -25,12 +27,6 @@ import {
 import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsAdminSchema.form.fields
-
-function getField(key: string): FormFieldDef {
-  const field = formFields.find((item) => item.key === key)
-  if (!field) throw new Error(`Missing form field: ${key}`)
-  return field
-}
 
 export function EmployeeAdminPage() {
   useRequireEmployee()
@@ -57,7 +53,11 @@ export function EmployeeAdminPage() {
 
   useEffect(() => {
     if (employeeId) {
-      setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
+      setValues((prev) => ({
+        ...prev,
+        employee: employeeId,
+        date: isoToDateDisplay(trackingDate),
+      }))
     }
   }, [employeeId, trackingDate])
 
@@ -69,14 +69,6 @@ export function EmployeeAdminPage() {
       }))
     }
   }, [adminOperations, values.operation])
-
-  const visibleFields = useMemo(
-    () => [
-      getField('startTime'),
-      getField('endTime'),
-    ],
-    [],
-  )
 
   const handleChange = (key: string, value: string) => {
     setFieldErrors((prev) => {
@@ -98,7 +90,7 @@ export function EmployeeAdminPage() {
     setError(null)
     const timeError = assertEndAfterStart(values.startTime, values.endTime)
     const requiredErrors = getOperationTrackingRequiredErrors(
-      visibleFields,
+      employeeAdminVisibleFields,
       values,
       operations,
     )
@@ -136,8 +128,6 @@ export function EmployeeAdminPage() {
     }
   }
 
-  const operationField = getField('operation')
-
   return (
     <EmployeeFormShell
       title="משימת מנהלה"
@@ -147,33 +137,11 @@ export function EmployeeAdminPage() {
       success={success}
     >
       <FormStack onSubmit={(event) => event.preventDefault()}>
-        {adminOperations.length > 1 ? (
-          <EmployeeFormField
-            field={{ ...operationField, hidden: false }}
-            value={values.operation}
-            error={fieldErrors.operation}
-            onChange={handleChange}
-          />
-        ) : null}
-
-        <EmployeeFormField
-          field={getField('startTime')}
-          value={values.startTime}
-          error={fieldErrors.startTime}
+        <EmployeeAdminFormFields
+          values={values}
+          fieldErrors={fieldErrors}
           onChange={handleChange}
-        />
-
-        <EmployeeFormField
-          field={getField('endTime')}
-          value={values.endTime}
-          error={fieldErrors.endTime}
-          onChange={handleChange}
-        />
-
-        <OptionalNotesField
-          field={getField('notes')}
-          value={values.notes}
-          onChange={handleChange}
+          showOperationField={adminOperations.length > 1}
         />
       </FormStack>
     </EmployeeFormShell>
