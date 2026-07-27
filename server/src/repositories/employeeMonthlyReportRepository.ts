@@ -7,14 +7,6 @@ export type AbsenceDaysInput = {
   reserveDays?: number;
 };
 
-export type MonthlyReportSnapshot = {
-  totalHours: number;
-  regularHours: number;
-  overtime125Hours: number;
-  overtime150Hours: number;
-  totalDaysWorked: number;
-};
-
 const employeePopulate = { path: 'employee', select: '_id name' };
 
 export const employeeMonthlyReportRepository = {
@@ -30,16 +22,6 @@ export const employeeMonthlyReportRepository = {
   findByMonth(month: string) {
     return EmployeeMonthlyReportModel.find({ month })
       .populate(employeePopulate)
-      .lean();
-  },
-
-  isMonthClosed(employeeId: string, month: string) {
-    return EmployeeMonthlyReportModel.findOne({
-      employee: new Types.ObjectId(employeeId),
-      month,
-      status: 'closed',
-    })
-      .select('_id')
       .lean();
   },
 
@@ -69,7 +51,7 @@ export const employeeMonthlyReportRepository = {
     ).lean();
   },
 
-  upsertOpenAbsence(
+  upsertAbsence(
     employeeId: string,
     month: string,
     fields: Required<AbsenceDaysInput>,
@@ -78,7 +60,6 @@ export const employeeMonthlyReportRepository = {
       {
         employee: new Types.ObjectId(employeeId),
         month,
-        status: 'open',
       },
       {
         $set: {
@@ -90,34 +71,6 @@ export const employeeMonthlyReportRepository = {
           employee: new Types.ObjectId(employeeId),
           month,
           status: 'open',
-        },
-      },
-      { upsert: true, returnDocument: 'after', runValidators: true },
-    )
-      .populate(employeePopulate)
-      .lean();
-  },
-
-  closeReport(
-    employeeId: string,
-    month: string,
-    snapshot: MonthlyReportSnapshot,
-    absence: Required<AbsenceDaysInput>,
-  ) {
-    return EmployeeMonthlyReportModel.findOneAndUpdate(
-      { employee: new Types.ObjectId(employeeId), month },
-      {
-        $set: {
-          ...snapshot,
-          sickDays: absence.sickDays,
-          vacationDays: absence.vacationDays,
-          reserveDays: absence.reserveDays,
-          status: 'closed',
-          lockedAt: new Date(),
-        },
-        $setOnInsert: {
-          employee: new Types.ObjectId(employeeId),
-          month,
         },
       },
       { upsert: true, returnDocument: 'after', runValidators: true },

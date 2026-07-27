@@ -7,7 +7,6 @@ import {
   formatHours,
   formatReportDate,
   formatReportMonth,
-  statusLabel,
 } from "../monthlyReportApi";
 
 export function exportMonthlyReportExcel(
@@ -24,7 +23,6 @@ export function exportMonthlyReportExcel(
     "ימי מחלה",
     "ימי חופש",
     "ימי מילואים",
-    "סטטוס",
   ];
 
   const data = rows.map((row) => [
@@ -37,7 +35,6 @@ export function exportMonthlyReportExcel(
     row.sickDays,
     row.vacationDays,
     row.reserveDays,
-    statusLabel(row.status),
   ]);
 
   exportExcelRows({
@@ -61,16 +58,12 @@ export function exportEmployeeMonthlyReportExcel(
     workingDaysCount: number;
   },
 ): void {
-  const isClosed = report.status === "closed";
-  const workingDays = isClosed
-    ? report.totals.totalDaysWorked
-    : options.workingDaysCount;
+  const workingDays = options.workingDaysCount;
   const totals = options.footerTotals;
 
   const rows: (string | number)[][] = [
     ["עובד", report.employeeName],
     ["חודש", formatReportMonth(report.month)],
-    ["סטטוס", statusLabel(report.status)],
     [],
     ["תאריך", 'סה"כ שעות', "שעות רגילות", "שעות נוספות 125%", "שעות נוספות 150%"],
     ...report.days.map((day) => [

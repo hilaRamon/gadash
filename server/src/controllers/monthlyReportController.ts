@@ -25,17 +25,4 @@ export const monthlyReportController = {
     );
     res.json(data);
   }),
-
-  close: asyncHandler(async (req: Request, res: Response) => {
-    const employeeId = String(req.body?.employeeId ?? '');
-    const month = String(req.body?.month ?? '');
-    const data = await monthlyReportService.closeMonth(employeeId, month);
-    res.json(data);
-  }),
-
-  closeAll: asyncHandler(async (req: Request, res: Response) => {
-    const month = String(req.body?.month ?? '');
-    const data = await monthlyReportService.closeAllMonths(month);
-    res.json(data);
-  }),
 };

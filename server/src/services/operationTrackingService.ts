@@ -23,12 +23,6 @@ import {
 } from '../utils/operationTrackingPricing';
 import { monthlyReportService } from './monthlyReportService';
 
-function parseAdminOverride(body: Record<string, unknown>): boolean {
-  const value = body.adminOverride;
-  if (value === true || value === 'true') return true;
-  return false;
-}
-
 function stripAdminOverride(body: Record<string, unknown>): Record<string, unknown> {
   const { adminOverride: _adminOverride, ...rest } = body;
   return rest;
@@ -268,7 +262,6 @@ export const operationTrackingService = {
   },
 
   async create(body: Record<string, unknown>): Promise<ApiDocument> {
-    const adminOverride = parseAdminOverride(body);
     const patch = await buildTrackingPatch(stripAdminOverride(body), { requireAll: true });
     if (
       patch.date == null ||
@@ -281,12 +274,6 @@ export const operationTrackingService = {
     }
 
     assertTimeRange(patch.startTime, patch.endTime);
-
-    await monthlyReportService.assertMonthNotLocked(
-      String(patch.employee),
-      patch.date,
-      adminOverride,
-    );
 
     const operationDetails = await resolveOperationDetails(patch.operation);
     const amount = await resolveAmountForSave({
@@ -323,7 +310,6 @@ export const operationTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const adminOverride = parseAdminOverride(body);
     const patch = await buildTrackingPatch(stripAdminOverride(body));
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
@@ -349,17 +335,6 @@ export const operationTrackingService = {
       ? String(patch.employee)
       : String(existing.employee?._id ?? existing.employee);
     const nextDate = patch.date ?? new Date(existing.date as Date);
-    const previousEmployeeId = String(existing.employee?._id ?? existing.employee);
-    const previousDate = new Date(existing.date as Date);
-
-    await monthlyReportService.assertMonthNotLocked(
-      previousEmployeeId,
-      previousDate,
-      adminOverride,
-    );
-    if (nextEmployeeId !== previousEmployeeId || nextDate.getTime() !== previousDate.getTime()) {
-      await monthlyReportService.assertMonthNotLocked(nextEmployeeId, nextDate, adminOverride);
-    }
 
     const existingRecord = existing as Record<string, unknown>;
     const existingOperationId = toObjectIdRef(existingRecord.operation);
@@ -403,32 +378,22 @@ export const operationTrackingService = {
     return operationTrackingToApiDocument(updated as Record<string, unknown>);
   },
 
-  async remove(id: string, adminOverride = false): Promise<void> {
+  async remove(id: string): Promise<void> {
     const existing = await operationTrackingRepository.findById(id);
     if (!existing) {
       throw new Error('לא נמצא');
     }
     assertTrackingNotChargedForDelete(existing as { wasCharged?: boolean });
-    await monthlyReportService.assertMonthNotLocked(
-      String(existing.employee?._id ?? existing.employee),
-      new Date(existing.date as Date),
-      adminOverride,
-    );
     const result = await operationTrackingRepository.delete(id);
     if (!result) {
       throw new Error('לא נמצא');
     }
   },
 
-  async removeMany(ids: string[], adminOverride = false): Promise<void> {
+  async removeMany(ids: string[]): Promise<void> {
     const rows = await operationTrackingRepository.findByIds(ids);
     for (const row of rows) {
       assertTrackingNotChargedForDelete(row as { wasCharged?: boolean });
-      await monthlyReportService.assertMonthNotLocked(
-        String(row.employee),
-        new Date(row.date as Date),
-        adminOverride,
-      );
     }
     await operationTrackingRepository.deleteMany(ids);
   },
