@@ -18,7 +18,7 @@ import {
 } from '../utils/transportGlobalChargeApiMapper';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import {
-  findSeasonPlotsWithWork,
+  findSeasonPlotsForGlobalCharge,
   type SeasonPlotRow,
 } from '../utils/seasonPlotDiscovery';
 
@@ -131,7 +131,7 @@ async function computeChargeData(
 }> {
   const [transportRows, plots] = await Promise.all([
     transportTrackingRepository.findUnchargedGlobalInSeason(seasonYear, session),
-    findSeasonPlotsWithWork(seasonYear),
+    findSeasonPlotsForGlobalCharge(seasonYear),
   ]);
 
   const transportTotal = sumTransportTotal(transportRows);

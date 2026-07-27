@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   applyOperationTrackingFieldChange,
+  buildPlotTrackingCreatePayloads,
   enrichOperationTrackingPayload,
   getOperationTrackingRequiredErrors,
+  getPlotTrackingMultiCreateErrors,
+  recalcPlotTrackingLineAmounts,
+  togglePlotTrackingLine,
+  updatePlotTrackingLine,
+  type PlotTrackingLineEntry,
 } from "@/components/collection/CollectionFormModal/operationTrackingForm"
+import { PlotMultiCreateFields } from "@/components/collection/CollectionFormModal/PlotMultiCreateFields"
 import {
   buildPayload,
   getInitialValues,
@@ -11,13 +18,21 @@ import {
 import { useCollectionList } from "@/hooks/collections/useCollectionList"
 import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import {
   OPERATION_PRICING_BY_DUNAM,
   OPERATION_PRICING_BY_UNIT,
   OPERATION_PRICING_HOURLY,
 } from "@/lib/operationTrackingPricing"
-import { operationsTrackingsFieldWorkSchema } from "@/schema/collections/operationsTrackingsSchema"
+import {
+  operationsTrackingsAdminSchema,
+  operationsTrackingsFieldWorkSchema,
+} from "@/schema/collections/operationsTrackingsSchema"
 import type { FormFieldDef } from "@/schema/types"
+import {
+  EmployeeAdminFormFields,
+  employeeAdminVisibleFields,
+} from './components/EmployeeAdminFormFields'
 import { EmployeeFormField } from './components/EmployeeFormField'
 import { EmployeeFormShell } from './components/EmployeeFormShell'
 import { OptionalNotesField } from './components/OptionalNotesField'
@@ -30,6 +45,7 @@ import {
 import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsFieldWorkSchema.form.fields
+const adminFormFields = operationsTrackingsAdminSchema.form.fields
 const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
 
 function getField(key: string): FormFieldDef {
@@ -48,6 +64,7 @@ export function EmployeeFieldWorkPage() {
   const [values, setValues] = useState<Record<string, string>>(() =>
     getInitialValues(formFields, null),
   )
+  const [plotEntries, setPlotEntries] = useState<PlotTrackingLineEntry[]>([])
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -56,7 +73,11 @@ export function EmployeeFieldWorkPage() {
 
   useEffect(() => {
     if (employeeId) {
-      setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
+      setValues((prev) => ({
+        ...prev,
+        employee: employeeId,
+        date: isoToDateDisplay(trackingDate),
+      }))
     }
   }, [employeeId, trackingDate])
 
@@ -65,10 +86,16 @@ export function EmployeeFieldWorkPage() {
       operations.find((row) => String(row._id) === values.operation) ?? null,
     [operations, values.operation],
   )
+  const selectedOperationType = String(selectedOperation?.operationType ?? '')
+  const isAdminOperation = selectedOperationType === 'מנהלה'
 
   const pricingForm = String(
     selectedOperation?.pricingForm ?? OPERATION_PRICING_BY_DUNAM,
   )
+  const isMultiPlotMode =
+    !isAdminOperation &&
+    Boolean(values.operation) &&
+    pricingForm === OPERATION_PRICING_BY_DUNAM
 
   const amountField = useMemo(() => {
     const base = getField('amount')
@@ -82,12 +109,80 @@ export function EmployeeFieldWorkPage() {
   }, [pricingForm])
 
   const showAmountField =
-    Boolean(values.operation) && pricingForm !== OPERATION_PRICING_HOURLY
+    !isAdminOperation &&
+    !isMultiPlotMode &&
+    Boolean(values.operation) &&
+    pricingForm !== OPERATION_PRICING_HOURLY
 
-  const visibleFields = useMemo(
-    () => formFields.filter((field) => !field.hidden && !hiddenKeys.has(field.key)),
-    [],
+  const fieldWorkVisibleFields = useMemo(
+    () =>
+      formFields.filter((field) => {
+        if (field.hidden || hiddenKeys.has(field.key)) return false
+        if (isMultiPlotMode && (field.key === 'plot' || field.key === 'amount')) {
+          return false
+        }
+        return true
+      }),
+    [isMultiPlotMode],
   )
+
+  const visibleFields = isAdminOperation
+    ? employeeAdminVisibleFields
+    : fieldWorkVisibleFields
+  const submitFormFields = isAdminOperation ? adminFormFields : formFields
+
+  const plotAmountContext = useMemo(
+    () => ({
+      plots,
+      operations,
+      operationId: values.operation,
+      startTime: values.startTime,
+      endTime: values.endTime,
+    }),
+    [plots, operations, values.operation, values.startTime, values.endTime],
+  )
+
+  useEffect(() => {
+    setValues((prev) => {
+      if (!prev.operation.trim()) {
+        return prev.billable === 'true'
+          ? prev
+          : { ...prev, billable: 'true' }
+      }
+
+      if (isAdminOperation) {
+        const next = {
+          ...prev,
+          billable: 'false',
+          plot: '',
+          amount: '',
+        }
+        return (
+          next.billable === prev.billable &&
+          next.plot === prev.plot &&
+          next.amount === prev.amount
+        )
+          ? prev
+          : next
+      }
+
+      return prev.billable === 'true'
+        ? prev
+        : { ...prev, billable: 'true' }
+    })
+  }, [isAdminOperation])
+
+  useEffect(() => {
+    if (!isMultiPlotMode) {
+      setPlotEntries((prev) => (prev.length === 0 ? prev : []))
+      return
+    }
+
+    setPlotEntries((prev) => {
+      if (prev.length === 0) return prev
+      return recalcPlotTrackingLineAmounts(prev, plotAmountContext)
+    })
+  }, [isMultiPlotMode, plotAmountContext])
 
   const handleChange = (key: string, value: string) => {
     setFieldErrors((prev) => {
@@ -101,6 +196,44 @@ export function EmployeeFieldWorkPage() {
         plots,
         editingRow: null,
       })
+      if (key === 'operation') {
+        next.plot = ''
+        if (String(
+          operations.find((row) => String(row._id) === value)?.pricingForm ?? '',
+        ) === OPERATION_PRICING_BY_DUNAM) {
+          next.amount = ''
+        }
+      }
+      return next
+    })
+  }
+
+  const handleTogglePlot = (plotId: string, checked: boolean) => {
+    setPlotEntries((entries) =>
+      togglePlotTrackingLine(entries, plotId, checked, plotAmountContext),
+    )
+    setFieldErrors((prev) => {
+      if (!prev.plots && !prev[plotId]) return prev
+      const next = { ...prev }
+      delete next.plots
+      delete next[plotId]
+      return next
+    })
+  }
+
+  const handleUpdatePlotLine = (
+    plotId: string,
+    patch: Partial<Pick<PlotTrackingLineEntry, 'plotId' | 'amount'>>,
+  ) => {
+    setPlotEntries((entries) =>
+      updatePlotTrackingLine(entries, plotId, patch, plotAmountContext),
+    )
+    setFieldErrors((prev) => {
+      const nextKey = patch.plotId ?? plotId
+      if (!prev[plotId] && !prev[nextKey]) return prev
+      const next = { ...prev }
+      delete next[plotId]
+      delete next[nextKey]
       return next
     })
   }
@@ -114,14 +247,29 @@ export function EmployeeFieldWorkPage() {
       operations,
     )
     const errors = { ...requiredErrors }
+    if (!values.operation.trim()) errors.operation = 'שדה חובה'
     if (timeError) errors.endTime = timeError
+
+    if (isMultiPlotMode) {
+      Object.assign(errors, getPlotTrackingMultiCreateErrors(plotEntries))
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       return
     }
 
-    const payloadResult = buildPayload(formFields, values)
+    const payloadValues = isMultiPlotMode
+      ? { ...values, plot: '', amount: '' }
+      : values
+    const payloadFields = isMultiPlotMode
+      ? submitFormFields.map((field) =>
+          field.key === 'plot' || field.key === 'amount'
+            ? { ...field, required: false }
+            : field,
+        )
+      : submitFormFields
+    const payloadResult = buildPayload(payloadFields, payloadValues)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')
       return
@@ -131,15 +279,26 @@ export function EmployeeFieldWorkPage() {
       return
     }
 
-    const enriched = enrichOperationTrackingPayload(
-      payloadResult,
-      values,
-      operations,
-      plots,
-    )
-
     try {
-      await createMutation.mutateAsync(enriched)
+      if (isMultiPlotMode) {
+        const payloads = buildPlotTrackingCreatePayloads(
+          payloadResult,
+          plotEntries,
+          payloadValues,
+          { operations, plots, editingRow: null },
+        )
+        for (const payload of payloads) {
+          await createMutation.mutateAsync(payload)
+        }
+      } else {
+        const enriched = enrichOperationTrackingPayload(
+          payloadResult,
+          values,
+          operations,
+          plots,
+        )
+        await createMutation.mutateAsync(enriched)
+      }
       setSuccess(true)
     } catch (submitError) {
       setError(getApiErrorMessage(submitError))
@@ -148,7 +307,7 @@ export function EmployeeFieldWorkPage() {
 
   return (
     <EmployeeFormShell
-      title="משימת עיבוד"
+      title="דיווח על משימה"
       onSubmit={() => void handleSubmit()}
       isSubmitting={createMutation.isPending}
       error={error}
@@ -156,47 +315,67 @@ export function EmployeeFieldWorkPage() {
     >
       <FormStack onSubmit={(event) => event.preventDefault()}>
         <EmployeeFormField
-          field={getField('plot')}
-          value={values.plot}
-          error={fieldErrors.plot}
-          onChange={handleChange}
-        />
-
-        <EmployeeFormField
           field={getField('operation')}
           value={values.operation}
           error={fieldErrors.operation}
           onChange={handleChange}
         />
 
-        <EmployeeFormField
-          field={getField('startTime')}
-          value={values.startTime}
-          error={fieldErrors.startTime}
-          onChange={handleChange}
-        />
-
-        <EmployeeFormField
-          field={getField('endTime')}
-          value={values.endTime}
-          error={fieldErrors.endTime}
-          onChange={handleChange}
-        />
-
-        {showAmountField ? (
-          <EmployeeFormField
-            field={amountField}
-            value={values.amount}
-            error={fieldErrors.amount}
+        {isAdminOperation ? (
+          <EmployeeAdminFormFields
+            values={values}
+            fieldErrors={fieldErrors}
             onChange={handleChange}
           />
-        ) : null}
+        ) : (
+          <>
+            {isMultiPlotMode ? (
+              <PlotMultiCreateFields
+                plots={plots}
+                entries={plotEntries}
+                fieldErrors={fieldErrors}
+                onTogglePlot={handleTogglePlot}
+                onUpdateLine={handleUpdatePlotLine}
+              />
+            ) : (
+              <EmployeeFormField
+                field={getField('plot')}
+                value={values.plot}
+                error={fieldErrors.plot}
+                onChange={handleChange}
+              />
+            )}
 
-        <OptionalNotesField
-          field={getField('notes')}
-          value={values.notes}
-          onChange={handleChange}
-        />
+            <EmployeeFormField
+              field={getField('startTime')}
+              value={values.startTime}
+              error={fieldErrors.startTime}
+              onChange={handleChange}
+            />
+
+            <EmployeeFormField
+              field={getField('endTime')}
+              value={values.endTime}
+              error={fieldErrors.endTime}
+              onChange={handleChange}
+            />
+
+            {showAmountField ? (
+              <EmployeeFormField
+                field={amountField}
+                value={values.amount}
+                error={fieldErrors.amount}
+                onChange={handleChange}
+              />
+            ) : null}
+
+            <OptionalNotesField
+              field={getField('notes')}
+              value={values.notes}
+              onChange={handleChange}
+            />
+          </>
+        )}
       </FormStack>
     </EmployeeFormShell>
   )

@@ -29,7 +29,7 @@ function App() {
         <Route element={<ProtectedRoute role="employee" />}>
           <Route path="employee" element={<EmployeeLayout />}>
             <Route index element={<EmployeeHomePage />} />
-            <Route path="field-work" element={<EmployeeFieldWorkPage />} />
+            <Route path="operation-report" element={<EmployeeFieldWorkPage />} />
             <Route path="admin" element={<EmployeeAdminPage />} />
             <Route path="material" element={<EmployeeMaterialPage />} />
             <Route path="fuel" element={<EmployeeFuelPage />} />

@@ -9,8 +9,10 @@ import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 const nonFuelOperationFilter = (row: CollectionDocument) =>
   String(row.operationType ?? "") !== "דלק";
 
-const fieldWorkOperationFilter = (row: CollectionDocument) =>
-  String(row.operationType ?? "") === "עיבוד";
+const operationReportFilter = (row: CollectionDocument) => {
+  const operationType = String(row.operationType ?? "");
+  return operationType === "עיבוד" || operationType === "מנהלה";
+};
 
 const adminOperationFilter = (row: CollectionDocument) =>
   String(row.operationType ?? "") === "מנהלה";
@@ -212,7 +214,7 @@ export const operationsTrackingsFieldWorkSchema: CollectionSchema = {
   label: "משימות - עיבודים",
   columns: fieldWorkColumns,
   defaultSort: { field: "date", direction: "desc" },
-  form: buildOperationsTrackingForm(fieldWorkOperationFilter, {
+  form: buildOperationsTrackingForm(operationReportFilter, {
     createTitle: "הוספת משימת עיבוד",
     editTitle: "עריכת משימת עיבוד",
   }),

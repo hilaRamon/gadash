@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { GLOBAL_TRANSPORT_CHARGE_OPERATIONS } from '../lib/globalTransportChargeConfig';
 import { ContractorTrackingModel } from '../models/ContractorTracking';
 import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { OperationTrackingModel } from '../models/OperationTracking';
@@ -13,6 +14,27 @@ export type SeasonPlotRow = {
   customerName: string;
   dunam: number;
 };
+
+async function loadSeasonPlotRows(plotIdSet: Set<string>): Promise<SeasonPlotRow[]> {
+  if (plotIdSet.size === 0) return [];
+
+  const plots = await PlotModel.find({
+    _id: { $in: [...plotIdSet].map((id) => new Types.ObjectId(id)) },
+  })
+    .populate({ path: 'customer', select: '_id name' })
+    .lean();
+
+  return plots.map((plot) => {
+    const customer = plot.customer as { _id?: unknown; name?: string } | null;
+    return {
+      _id: plot._id as Types.ObjectId,
+      name: String(plot.name ?? ''),
+      customer: (customer?._id ?? plot.customer) as Types.ObjectId,
+      customerName: String(customer?.name ?? ''),
+      dunam: Number(plot.dunam ?? 0),
+    };
+  });
+}
 
 async function distinctPlotIdsFromSeasonOperations(
   seasonYear: number,
@@ -57,22 +79,28 @@ export async function findSeasonPlotsWithWork(
     if (id) plotIdSet.add(String(id));
   }
 
-  if (plotIdSet.size === 0) return [];
+  return loadSeasonPlotRows(plotIdSet);
+}
 
-  const plots = await PlotModel.find({
-    _id: { $in: [...plotIdSet].map((id) => new Types.ObjectId(id)) },
+export async function findSeasonPlotsForGlobalCharge(
+  seasonYear: number,
+): Promise<SeasonPlotRow[]> {
+  const seasonFilter = buildSeasonDateQuery(seasonYear);
+
+  const rows = await OperationTrackingModel.find({
+    ...seasonFilter,
+    plot: { $exists: true, $ne: null },
   })
-    .populate({ path: 'customer', select: '_id name' })
+    .select('plot operation')
+    .populate({ path: 'operation', select: 'name' })
     .lean();
 
-  return plots.map((plot) => {
-    const customer = plot.customer as { _id?: unknown; name?: string } | null;
-    return {
-      _id: plot._id as Types.ObjectId,
-      name: String(plot.name ?? ''),
-      customer: (customer?._id ?? plot.customer) as Types.ObjectId,
-      customerName: String(customer?.name ?? ''),
-      dunam: Number(plot.dunam ?? 0),
-    };
-  });
+  const plotIdSet = new Set<string>();
+  for (const row of rows) {
+    const operation = row.operation as { name?: string } | null;
+    if (!GLOBAL_TRANSPORT_CHARGE_OPERATIONS.includes(operation?.name ?? '')) continue;
+    if (row.plot) plotIdSet.add(String(row.plot));
+  }
+
+  return loadSeasonPlotRows(plotIdSet);
 }
