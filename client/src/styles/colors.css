@@ -48,8 +48,7 @@
 
   /* -------------------------------------------------------------------------
    * Semantic — success
-   * BooleanCheckboxCell checked state, monthly report open/closed badges
-   * (closed = success).
+   * BooleanCheckboxCell checked state.
    * ------------------------------------------------------------------------- */
   --color-success: #48bb78;
   --color-success-hover: #38a169;

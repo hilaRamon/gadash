@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  closeAllEmployeeMonths,
   fetchEmployeeMonthlyReport,
   fetchMonthlySummary,
   updateMonthlyAbsenceDays,
@@ -35,21 +34,6 @@ export function useUpdateMonthlyAbsence(employeeId: string, month: string) {
       });
       queryClient.invalidateQueries({
         queryKey: monthlyReportKeys.summary(month),
-      });
-    },
-  });
-}
-
-export function useCloseAllEmployeeMonths(month: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => closeAllEmployeeMonths(month),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: monthlyReportKeys.summary(month),
-      });
-      queryClient.invalidateQueries({
-        queryKey: monthlyReportKeys.all,
       });
     },
   });

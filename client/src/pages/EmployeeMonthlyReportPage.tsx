@@ -14,7 +14,6 @@ import {
   defaultSelectedMonth,
   formatHours,
   formatReportDate,
-  statusLabel,
   type AbsenceDays,
 } from "@/lib/monthlyReportApi";
 import "./Page.css";
@@ -69,11 +68,9 @@ export function EmployeeMonthlyReportPage() {
     setAbsenceDraft(report.absence);
   }, [report]);
 
-  const isClosed = report?.status === "closed";
   const workingDaysCount = report?.days.length ?? 0;
   const footerTotals = useMemo(() => {
     if (!report) return null;
-    if (isClosed) return report.totals;
     return report.days.reduce(
       (acc, day) => ({
         totalHours: acc.totalHours + day.totalHours,
@@ -90,7 +87,7 @@ export function EmployeeMonthlyReportPage() {
         totalDaysWorked: 0,
       },
     );
-  }, [report, isClosed]);
+  }, [report]);
 
   const employeeOptions = useMemo(
     () =>
@@ -102,7 +99,7 @@ export function EmployeeMonthlyReportPage() {
   );
 
   const handleAbsenceBlur = () => {
-    if (!report || isClosed) return;
+    if (!report) return;
     if (
       absenceDraft.sickDays === report.absence.sickDays &&
       absenceDraft.vacationDays === report.absence.vacationDays &&
@@ -157,11 +154,6 @@ export function EmployeeMonthlyReportPage() {
                 })
               }
             />
-          )}
-          {report && (
-            <StatusBadge $closed={isClosed}>
-              {statusLabel(report.status)}
-            </StatusBadge>
           )}
         </FiltersRow>
 
@@ -243,18 +235,13 @@ export function EmployeeMonthlyReportPage() {
                 <tbody>
                   <tr>
                     <td>
-                      <ReadOnlyValue>
-                        {isClosed
-                          ? report.totals.totalDaysWorked
-                          : workingDaysCount}
-                      </ReadOnlyValue>
+                      <ReadOnlyValue>{workingDaysCount}</ReadOnlyValue>
                     </td>
                     <td>
                       <AbsenceInput
                         type="number"
                         min={0}
                         step={1}
-                        disabled={isClosed}
                         value={absenceDraft.sickDays}
                         onChange={(event) =>
                           setAbsenceDraft((prev) => ({
@@ -270,7 +257,6 @@ export function EmployeeMonthlyReportPage() {
                         type="number"
                         min={0}
                         step={1}
-                        disabled={isClosed}
                         value={absenceDraft.vacationDays}
                         onChange={(event) =>
                           setAbsenceDraft((prev) => ({
@@ -286,7 +272,6 @@ export function EmployeeMonthlyReportPage() {
                         type="number"
                         min={0}
                         step={1}
-                        disabled={isClosed}
                         value={absenceDraft.reserveDays}
                         onChange={(event) =>
                           setAbsenceDraft((prev) => ({
@@ -346,18 +331,6 @@ const FilterLabel = styled.label`
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
-`;
-
-const StatusBadge = styled.span<{ $closed: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  background: ${({ $closed }) =>
-    $closed ? 'var(--color-success-soft)' : 'var(--color-warning-soft)'};
-  color: ${({ $closed }) => ($closed ? 'var(--color-success)' : 'var(--color-warning)')};
 `;
 
 const StatusText = styled.p<{ $error?: boolean }>`

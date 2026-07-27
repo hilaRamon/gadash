@@ -31,17 +31,13 @@ export const operationTrackingController = {
   }),
 
   remove: asyncHandler(async (req: Request, res: Response) => {
-    const adminOverride =
-      req.body?.adminOverride === true || req.body?.adminOverride === 'true';
-    await operationTrackingService.remove(req.params.id, adminOverride);
+    await operationTrackingService.remove(req.params.id);
     res.status(204).send();
   }),
 
   bulkRemove: asyncHandler(async (req: Request, res: Response) => {
     const ids = Array.isArray(req.body?.ids) ? (req.body.ids as string[]) : [];
-    const adminOverride =
-      req.body?.adminOverride === true || req.body?.adminOverride === 'true';
-    await operationTrackingService.removeMany(ids, adminOverride);
+    await operationTrackingService.removeMany(ids);
     res.status(204).send();
   }),
 };

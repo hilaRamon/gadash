@@ -2,15 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
 import { ExportButton } from "@/components/collection/CollectionToolbar/ExportButton";
-import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles";
 import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
 import { exportMonthlyReportExcel } from "@/lib/excel/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
   formatHours,
-  statusLabel,
 } from "@/lib/monthlyReportApi";
-import { useMonthlySummary, useCloseAllEmployeeMonths } from "@/hooks/monthlyReport/useMonthlyReport";
+import { useMonthlySummary } from "@/hooks/monthlyReport/useMonthlyReport";
 import "./Page.css";
 
 export function MonthlySummaryPage() {
@@ -25,8 +23,6 @@ export function MonthlySummaryPage() {
     isError,
     error,
   } = useMonthlySummary(selectedMonth);
-  const closeAllMonths = useCloseAllEmployeeMonths(selectedMonth);
-  const hasOpenRows = rows.some((row) => row.status === "open");
 
   useEffect(() => {
     const month = searchParams.get("month");
@@ -54,23 +50,7 @@ export function MonthlySummaryPage() {
             disabled={rows.length === 0 || isLoading}
             onClick={() => exportMonthlyReportExcel(rows, selectedMonth)}
           />
-
-          <CloseButton
-            type="button"
-            disabled={
-              rows.length === 0 || isLoading || !hasOpenRows || closeAllMonths.isPending
-            }
-            onClick={() => closeAllMonths.mutate()}
-          >
-            {closeAllMonths.isPending ? "סוגר..." : "סגור חודש"}
-          </CloseButton>
         </Toolbar>
-
-        {closeAllMonths.isError && (
-          <StatusText $error role="alert">
-            {closeAllMonths.error?.message ?? "שגיאה בסגירת החודש"}
-          </StatusText>
-        )}
 
         {isLoading && <StatusText>טוען סיכום...</StatusText>}
 
@@ -98,7 +78,6 @@ export function MonthlySummaryPage() {
                   <th>מחלה</th>
                   <th>חופש</th>
                   <th>מילואים</th>
-                  <th>סטטוס</th>
                   <th>פירוט</th>
                 </tr>
               </thead>
@@ -114,11 +93,6 @@ export function MonthlySummaryPage() {
                     <td>{row.sickDays}</td>
                     <td>{row.vacationDays}</td>
                     <td>{row.reserveDays}</td>
-                    <td>
-                      <StatusBadge $closed={row.status === "closed"}>
-                        {statusLabel(row.status)}
-                      </StatusBadge>
-                    </td>
                     <td>
                       <DetailLink
                         to={`/reports/employee-monthly?employeeId=${encodeURIComponent(row.employeeId)}&month=${encodeURIComponent(selectedMonth)}`}
@@ -168,17 +142,6 @@ const FilterLabel = styled.label`
   color: var(--text-secondary);
 `;
 
-const CloseButton = styled.button`
-  ${buttonBase};
-  ${toolbarButtonAccent};
-  font-weight: 600;
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-`;
-
 const StatusText = styled.p<{ $error?: boolean }>`
   margin: 0;
   font-size: 0.875rem;
@@ -207,16 +170,6 @@ const SummaryTable = styled.table`
     font-weight: 600;
     background: var(--hover-bg);
   }
-`;
-
-const StatusBadge = styled.span<{ $closed: boolean }>`
-  display: inline-flex;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: ${({ $closed }) => ($closed ? 'var(--color-success-soft)' : 'var(--color-warning-soft)')};
-  color: ${({ $closed }) => ($closed ? 'var(--color-success)' : 'var(--color-warning)')};
 `;
 
 const DetailLink = styled(Link)`

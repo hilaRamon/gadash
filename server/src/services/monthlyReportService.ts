@@ -57,16 +57,6 @@ function buildTotalsFromCalculation(calc: ReturnType<typeof calculateMonthlyHour
   };
 }
 
-function buildTotalsFromReport(report: Record<string, unknown>) {
-  return {
-    totalHours: Number(report.totalHours ?? 0),
-    regularHours: Number(report.regularHours ?? 0),
-    overtime125Hours: Number(report.overtime125Hours ?? 0),
-    overtime150Hours: Number(report.overtime150Hours ?? 0),
-    totalDaysWorked: Number(report.totalDaysWorked ?? 0),
-  };
-}
-
 async function resolveEmployee(employeeId: unknown): Promise<{
   id: string;
   formOfPayment: EmployeeFormOfPayment;
@@ -134,19 +124,13 @@ export const monthlyReportService = {
       EmployeeModel.findById(employeeObjectId).select('_id name').lean(),
     ]);
 
-    const status = String(report?.status ?? 'open');
-    const isClosed = status === 'closed';
     const absence = buildAbsence(report as Record<string, unknown> | null | undefined);
-    const totals = isClosed && report
-      ? buildTotalsFromReport(report as Record<string, unknown>)
-      : buildTotalsFromCalculation(calculation);
+    const totals = buildTotalsFromCalculation(calculation);
 
     return {
       employeeId: employeeObjectId,
       employeeName: String(employeeDoc?.name ?? getEmployeeName(report as Record<string, unknown>)),
       month: validMonth,
-      status,
-      lockedAt: report?.lockedAt ? new Date(report.lockedAt).toISOString() : null,
       days: calculation.days,
       totals,
       absence,
@@ -173,19 +157,14 @@ export const monthlyReportService = {
       hourlyEmployees.map(async (hourlyEmployee) => {
         const employeeId = String(hourlyEmployee._id);
         const report = reportByEmployeeId.get(employeeId);
-        const status = String(report?.status ?? 'open');
-        const isClosed = status === 'closed';
         const calculation = await this.calculateMonthlyReport(employeeId, validMonth);
-        const totals = isClosed && report
-          ? buildTotalsFromReport(report as Record<string, unknown>)
-          : buildTotalsFromCalculation(calculation);
+        const totals = buildTotalsFromCalculation(calculation);
         const absence = buildAbsence(report as Record<string, unknown> | null | undefined);
 
         return {
           employeeId,
           employeeName: employeeNameById.get(employeeId) ?? getEmployeeName(report as Record<string, unknown>),
           month: validMonth,
-          status,
           ...totals,
           ...absence,
         };
@@ -200,16 +179,9 @@ export const monthlyReportService = {
     const employee = await resolveEmployee(employeeId);
     assertHourlyEmployee(employee.formOfPayment);
     const employeeObjectId = employee.id;
-    const existing = await employeeMonthlyReportRepository.findByEmployeeAndMonth(
-      employeeObjectId,
-      validMonth,
-    );
-    if (existing?.status === 'closed') {
-      throw new Error('החודש נסגר — לא ניתן לערוך ימי היעדרות');
-    }
 
     const absence = parseAbsenceFields(body);
-    const updated = await employeeMonthlyReportRepository.upsertOpenAbsence(
+    const updated = await employeeMonthlyReportRepository.upsertAbsence(
       employeeObjectId,
       validMonth,
       absence,
@@ -220,94 +192,10 @@ export const monthlyReportService = {
     return toApiDocument(updated as Record<string, unknown>);
   },
 
-  async closeMonth(employeeId: string, month: string) {
-    const validMonth = assertValidMonth(month);
-    const employee = await resolveEmployee(employeeId);
-    assertHourlyEmployee(employee.formOfPayment);
-    const employeeObjectId = employee.id;
-    const existing = await employeeMonthlyReportRepository.findByEmployeeAndMonth(
-      employeeObjectId,
-      validMonth,
-    );
-    if (existing?.status === 'closed') {
-      throw new Error('החודש כבר נסגר');
-    }
-
-    const calculation = await this.calculateMonthlyReport(employeeObjectId, validMonth);
-    if (calculation.totalDaysWorked === 0) {
-      throw new Error('אין ימי עבודה לסגירה בחודש זה');
-    }
-
-    const absence = buildAbsence(existing as Record<string, unknown> | null | undefined);
-    const closed = await employeeMonthlyReportRepository.closeReport(
-      employeeObjectId,
-      validMonth,
-      buildTotalsFromCalculation(calculation),
-      absence,
-    );
-    if (!closed) {
-      throw new Error('לא ניתן לסגור את החודש');
-    }
-
-    return this.getEmployeeReport(employeeObjectId, validMonth);
-  },
-
   async ensureOpenReport(employeeId: string, date: Date): Promise<void> {
     const employee = await resolveEmployee(employeeId);
     if (isGlobalEmployee(employee.formOfPayment)) return;
     const month = dateToMonthKey(date);
     await employeeMonthlyReportRepository.ensureOpenReport(employee.id, month);
-  },
-
-  async closeAllMonths(month: string) {
-    const validMonth = assertValidMonth(month);
-    const { startDate, endDate } = parseMonth(validMonth);
-    const employeeIds = await operationTrackingRepository.findDistinctEmployeeIdsInDateRange(
-      startDate,
-      endDate,
-    );
-    const hourlyEmployees = await findHourlyEmployeesByIds(employeeIds);
-    if (hourlyEmployees.length === 0) {
-      throw new Error('אין עובדים לסגירה בחודש זה');
-    }
-
-    let closedCount = 0;
-    let skippedCount = 0;
-    for (const hourlyEmployee of hourlyEmployees) {
-      const employeeId = String(hourlyEmployee._id);
-      const existing = await employeeMonthlyReportRepository.findByEmployeeAndMonth(
-        employeeId,
-        validMonth,
-      );
-      if (existing?.status === 'closed') {
-        skippedCount += 1;
-        continue;
-      }
-      await this.closeMonth(employeeId, validMonth);
-      closedCount += 1;
-    }
-
-    return {
-      month: validMonth,
-      closedCount,
-      skippedCount,
-      total: hourlyEmployees.length,
-      rows: await this.getMonthSummary(validMonth),
-    };
-  },
-
-  async assertMonthNotLocked(
-    employeeId: string,
-    date: Date,
-    adminOverride?: boolean,
-  ): Promise<void> {
-    if (adminOverride === true) return;
-    const employee = await resolveEmployee(employeeId);
-    if (isGlobalEmployee(employee.formOfPayment)) return;
-    const month = dateToMonthKey(date);
-    const closed = await employeeMonthlyReportRepository.isMonthClosed(employee.id, month);
-    if (closed) {
-      throw new Error('החודש נסגר — לא ניתן לערוך');
-    }
   },
 };

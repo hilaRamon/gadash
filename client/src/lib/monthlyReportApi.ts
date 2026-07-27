@@ -26,8 +26,6 @@ export type EmployeeMonthlyReport = {
   employeeId: string;
   employeeName: string;
   month: string;
-  status: "open" | "closed";
-  lockedAt: string | null;
   days: DailyHoursRow[];
   totals: MonthlyTotals;
   absence: AbsenceDays;
@@ -37,7 +35,6 @@ export type MonthlySummaryRow = {
   employeeId: string;
   employeeName: string;
   month: string;
-  status: "open" | "closed";
   totalHours: number;
   regularHours: number;
   overtime125Hours: number;
@@ -114,23 +111,6 @@ export async function updateMonthlyAbsenceDays(
   await api.patch(`/api/monthly-report/${employeeId}/${month}/absence`, absence);
 }
 
-export async function closeAllEmployeeMonths(month: string): Promise<{
-  month: string;
-  closedCount: number;
-  skippedCount: number;
-  total: number;
-  rows: MonthlySummaryRow[];
-}> {
-  const { data } = await api.post<{
-    month: string;
-    closedCount: number;
-    skippedCount: number;
-    total: number;
-    rows: MonthlySummaryRow[];
-  }>("/api/monthly-report/close-all", { month });
-  return data;
-}
-
 export function formatHours(value: number): string {
   return Number(value).toFixed(2);
 }
@@ -139,8 +119,4 @@ export function formatReportDate(date: string): string {
   const parsed = new Date(`${date}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return date;
   return parsed.toLocaleDateString("he-IL");
-}
-
-export function statusLabel(status: "open" | "closed"): string {
-  return status === "closed" ? "סגור" : "טיוטה (מחושב)";
 }
