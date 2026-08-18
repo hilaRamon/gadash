@@ -38,7 +38,7 @@ export type ColumnDef<T extends DocumentBase = CollectionDocument> = {
 export type FormFieldDef<T extends DocumentBase = CollectionDocument> = {
   key: keyof T & string
   label: string
-  type: ColumnType | 'textarea' | 'select' | 'phone' | 'time'
+  type: ColumnType | 'textarea' | 'select' | 'phone' | 'time' | 'month'
   required?: boolean
   enumOptions?: { value: string; label: string }[]
   referenceCollection?: string

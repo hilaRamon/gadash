@@ -6,12 +6,18 @@ import {
   parseDateDisplayToIso,
 } from "@/lib/dateFieldFormat";
 import {
+  isoToMonthValue,
+  isValidMonthValue,
+  monthValueToIsoDate,
+} from "@/lib/monthlyReportApi";
+import {
   formatMobileDisplay,
   MOBILE_INVALID_ERROR,
   normalizeMobile,
 } from "@/lib/mobileFormat";
 
 export const HOUR_INVALID_ERROR = "שעה לא תקינה";
+export const MONTH_INVALID_ERROR = "חודש לא תקין";
 
 export function isValidHour(value: string): boolean {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
@@ -98,6 +104,15 @@ export function getInitialValues(
         values[field.key] = row ? "" : isoToDateDisplay(today);
       } else {
         values[field.key] = isoToDateDisplay(String(raw).slice(0, 10));
+      }
+      continue;
+    }
+
+    if (field.type === "month") {
+      if (raw == null || raw === "") {
+        values[field.key] = "";
+      } else {
+        values[field.key] = isoToMonthValue(String(raw));
       }
       continue;
     }
@@ -194,6 +209,18 @@ export function buildPayload(
       continue;
     }
 
+    if (field.type === "month") {
+      const trimmed = String(val).trim();
+      if (!trimmed) {
+        payload[field.key] = "";
+      } else {
+        const iso = monthValueToIsoDate(trimmed);
+        if (!iso) return { error: MONTH_INVALID_ERROR };
+        payload[field.key] = iso;
+      }
+      continue;
+    }
+
     payload[field.key] = val;
   }
 
@@ -224,6 +251,13 @@ export function getRequiredFieldErrors(
       const trimmed = String(val).trim();
       if (trimmed && !isValidDateDisplay(trimmed)) {
         errors[field.key] = DATE_INVALID_ERROR;
+      }
+    }
+
+    if (field.type === "month") {
+      const trimmed = String(val).trim();
+      if (trimmed && !isValidMonthValue(trimmed)) {
+        errors[field.key] = MONTH_INVALID_ERROR;
       }
     }
   }

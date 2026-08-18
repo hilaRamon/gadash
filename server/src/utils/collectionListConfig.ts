@@ -294,6 +294,25 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
       status: 'status',
     },
   },
+  invoices: {
+    searchFields: ['invoiceNumber', 'companyName', 'notes'],
+    fields: fields(
+      date('date'),
+      str('invoiceNumber'),
+      str('companyName'),
+      num('amount'),
+      date('dueDate'),
+      bool('paid'),
+      str('notes'),
+    ),
+    defaultSort: { date: -1 },
+    sortFields: {
+      date: 'date',
+      amount: 'amount',
+      dueDate: 'dueDate',
+      paid: 'paid',
+    },
+  },
 }
 
 export function getCollectionListConfig(

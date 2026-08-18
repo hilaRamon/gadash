@@ -66,6 +66,28 @@ export function buildMonthValue(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
+export function isoToMonthValue(iso: string): string {
+  const trimmed = iso.trim().slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(trimmed) ? trimmed : "";
+}
+
+export function monthValueToIsoDate(month: string): string | null {
+  const { year, month: monthNum } = parseMonthValue(month);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(monthNum) ||
+    monthNum < 1 ||
+    monthNum > 12
+  ) {
+    return null;
+  }
+  return `${buildMonthValue(year, monthNum)}-01`;
+}
+
+export function isValidMonthValue(month: string): boolean {
+  return monthValueToIsoDate(month) != null;
+}
+
 export function formatReportMonth(month: string): string {
   const { year, month: monthNum } = parseMonthValue(month);
   if (!Number.isFinite(year) || !Number.isFinite(monthNum) || monthNum < 1) {

@@ -51,6 +51,7 @@ const dedicatedSchemaIds = new Set([
   "transport-trackings",
   "transport-global-charges",
   "customer-billing-trackings",
+  "invoices",
 ]);
 
 export const stubSchemas: CollectionSchema[] = [

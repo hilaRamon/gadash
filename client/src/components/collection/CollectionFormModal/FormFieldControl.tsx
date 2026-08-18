@@ -1,5 +1,6 @@
 import { PhoneField } from "../PhoneField";
 import { ReferenceFieldSelect } from "../ReferenceFieldSelect";
+import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
 import { DateField } from "./DateField";
 import { HourField } from "./HourField";
 import type { FormFieldDef } from "@/schema/types";
@@ -122,6 +123,18 @@ export function FormFieldControl({
         value={value}
         disabled={disabled}
         required={field.required}
+        onChange={(nextValue) => setFieldValue(field.key, nextValue)}
+      />
+    );
+  }
+
+  if (field.type === "month") {
+    return (
+      <NumericMonthPicker
+        id={`field-${field.key}`}
+        value={value}
+        allowEmpty={!field.required}
+        yearRange={10}
         onChange={(nextValue) => setFieldValue(field.key, nextValue)}
       />
     );

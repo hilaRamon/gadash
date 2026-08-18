@@ -169,6 +169,15 @@ export const customerBillingTrackingCollections: TrackingCollection[] = [
   },
 ];
 
+export const invoiceTrackingCollections: TrackingCollection[] = [
+  {
+    id: "invoices",
+    label: "חשבוניות",
+    path: "/trackings/invoices",
+    collection: "invoices",
+  },
+];
+
 export type ReportCollection = {
   id: string;
   label: string;
@@ -210,6 +219,7 @@ export const trackingCollections: TrackingCollection[] = [
   ...fuelTrackingCollections,
   ...baleTrackingCollections,
   ...customerBillingTrackingCollections,
+  ...invoiceTrackingCollections,
 ];
 
 export const sidebarSections = [
