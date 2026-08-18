@@ -28,6 +28,7 @@ import { CollectionFormModal } from "@/components/collection/CollectionFormModal
 import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
 import { TransportTrackingPageExtras } from "@/components/transport/TransportTrackingPageExtras";
 import { TransportGlobalChargePageExtras } from "@/components/transport/TransportGlobalChargePageExtras";
+import { InvoiceMonthlySummary } from "@/components/invoices/InvoiceMonthlySummary";
 import { GlobalTransportChargeViewModal } from "@/components/transport/GlobalTransportChargeViewModal";
 import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
 import { useGlobalChargeModalControls } from "@/hooks/transport/useGlobalChargeModalControls";
@@ -194,6 +195,7 @@ function CollectionPageContent({
   const total = pageData?.total ?? 0;
 
   const isTransportTrackingPage = collectionId === "transport-trackings";
+  const isInvoicesPage = collectionId === "invoices";
   const { data: transportAllRows = [] } = useCollectionList(
     schema.collection,
     { season: selectedSeasonYear },
@@ -484,6 +486,7 @@ function CollectionPageContent({
             }
           />
         )}
+        {isInvoicesPage && <InvoiceMonthlySummary />}
         {isGlobalChargePage && <TransportGlobalChargePageExtras />}
       </PageHeader>
 

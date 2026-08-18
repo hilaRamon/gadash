@@ -22,6 +22,7 @@ import { contractorTrackingRouter } from "./contractorTrackingRouter";
 import { transportTrackingRouter } from "./transportTrackingRouter";
 import { transportGlobalChargeRouter } from "./transportGlobalChargeRouter";
 import { customerBillingTrackingRouter } from "./customerBillingTrackingRouter";
+import { invoiceRouter } from "./invoiceRouter";
 import { monthlyReportRouter } from "./monthlyReportRouter";
 import { summariesRouter } from "./summariesRouter";
 
@@ -60,6 +61,7 @@ apiRouter.use("/transportGlobalCharges", requireAdmin, transportGlobalChargeRout
 apiRouter.use("/transport-global-charges", requireAdmin, transportGlobalChargeRouter);
 apiRouter.use("/customerBillingTrackings", requireAdmin, customerBillingTrackingRouter);
 apiRouter.use("/customer-billing-trackings", requireAdmin, customerBillingTrackingRouter);
+apiRouter.use("/invoices", requireAdmin, invoiceRouter);
 apiRouter.use("/monthly-report", requireAdmin, monthlyReportRouter);
 apiRouter.use("/monthly-reports", requireAdmin, monthlyReportRouter);
 apiRouter.use("/summaries", requireAdmin, summariesRouter);

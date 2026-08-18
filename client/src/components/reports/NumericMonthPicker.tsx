@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import {
   buildMonthValue,
@@ -9,6 +10,8 @@ type NumericMonthPickerProps = {
   id?: string;
   value: string;
   onChange: (month: string) => void;
+  allowEmpty?: boolean;
+  yearRange?: number;
 };
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => index + 1);
@@ -17,19 +20,47 @@ export function NumericMonthPicker({
   id,
   value,
   onChange,
+  allowEmpty = false,
+  yearRange,
 }: NumericMonthPickerProps) {
-  const { year, month } = parseMonthValue(value);
-  const years = yearOptions();
+  const parsed = parseMonthValue(value);
+  const selectedYear = Number.isInteger(parsed.year) ? parsed.year : null;
+  const selectedMonth =
+    Number.isInteger(parsed.month) && parsed.month >= 1 && parsed.month <= 12
+      ? parsed.month
+      : null;
+  const [draftYear, setDraftYear] = useState(
+    () => selectedYear ?? new Date().getFullYear(),
+  );
+
+  useEffect(() => {
+    if (selectedYear != null) setDraftYear(selectedYear);
+  }, [selectedYear]);
+
+  const year = selectedYear ?? draftYear;
+  const years = useMemo(() => {
+    const options = yearOptions(yearRange);
+    if (!options.includes(year)) {
+      return [...options, year].sort((a, b) => a - b);
+    }
+    return options;
+  }, [year, yearRange]);
 
   return (
     <PickerRow id={id}>
       <MonthSelect
         aria-label="חודש"
-        value={month}
-        onChange={(event) =>
-          onChange(buildMonthValue(year, Number(event.target.value)))
-        }
+        value={selectedMonth ?? ""}
+        onChange={(event) => {
+          const nextMonth = Number(event.target.value);
+          if (!nextMonth) {
+            onChange("");
+            return;
+          }
+          onChange(buildMonthValue(year, nextMonth));
+        }}
       >
+        {allowEmpty ? <option value="">—</option> : null}
         {MONTH_OPTIONS.map((monthOption) => (
           <option key={monthOption} value={monthOption}>
             {monthOption}
@@ -39,9 +70,14 @@ export function NumericMonthPicker({
       <YearSelect
         aria-label="שנה"
         value={year}
-        onChange={(event) =>
-          onChange(buildMonthValue(Number(event.target.value), month))
-        }
+        onChange={(event) => {
+          const nextYear = Number(event.target.value);
+          if (selectedMonth) {
+            onChange(buildMonthValue(nextYear, selectedMonth));
+            return;
+          }
+          setDraftYear(nextYear);
+        }}
       >
         {years.map((yearOption) => (
           <option key={yearOption} value={yearOption}>

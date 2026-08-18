@@ -54,6 +54,13 @@ export function defaultSelectedMonth(): string {
   return currentMonth();
 }
 
+export function nextMonthValue(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  if (month === 12) return buildMonthValue(year + 1, 1);
+  return buildMonthValue(year, month + 1);
+}
+
 export function parseMonthValue(month: string): { year: number; month: number } {
   const [yearStr, monthStr] = month.split("-");
   return {
@@ -64,6 +71,28 @@ export function parseMonthValue(month: string): { year: number; month: number } 
 
 export function buildMonthValue(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+export function isoToMonthValue(iso: string): string {
+  const trimmed = iso.trim().slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(trimmed) ? trimmed : "";
+}
+
+export function monthValueToIsoDate(month: string): string | null {
+  const { year, month: monthNum } = parseMonthValue(month);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(monthNum) ||
+    monthNum < 1 ||
+    monthNum > 12
+  ) {
+    return null;
+  }
+  return `${buildMonthValue(year, monthNum)}-01`;
+}
+
+export function isValidMonthValue(month: string): boolean {
+  return monthValueToIsoDate(month) != null;
 }
 
 export function formatReportMonth(month: string): string {
