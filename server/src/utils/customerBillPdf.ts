@@ -29,9 +29,10 @@ function isRetryablePuppeteerError(error: unknown): boolean {
 }
 
 async function launchBrowser() {
+  const executablePath = resolveExecutablePath();
   return puppeteer.launch({
     headless: true,
-    executablePath: resolveExecutablePath(),
+    ...(executablePath ? { executablePath } : {}),
     args: LAUNCH_ARGS,
   });
 }

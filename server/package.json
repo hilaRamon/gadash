@@ -35,7 +35,7 @@
     "seed:customer-billing-example": "tsx scripts/seed-customer-billing-example.ts",
     "puppeteer:install": "puppeteer browsers install chrome"
   },
-  "postinstall": "puppeteer browsers install chrome || true",
+  "postinstall": "node scripts/install-chrome.cjs",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
