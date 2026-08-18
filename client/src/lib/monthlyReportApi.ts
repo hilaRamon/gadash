@@ -54,6 +54,13 @@ export function defaultSelectedMonth(): string {
   return currentMonth();
 }
 
+export function nextMonthValue(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  if (month === 12) return buildMonthValue(year + 1, 1);
+  return buildMonthValue(year, month + 1);
+}
+
 export function parseMonthValue(month: string): { year: number; month: number } {
   const [yearStr, monthStr] = month.split("-");
   return {

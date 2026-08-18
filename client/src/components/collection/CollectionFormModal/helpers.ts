@@ -9,6 +9,7 @@ import {
   isoToMonthValue,
   isValidMonthValue,
   monthValueToIsoDate,
+  nextMonthValue,
 } from "@/lib/monthlyReportApi";
 import {
   formatMobileDisplay,
@@ -110,7 +111,7 @@ export function getInitialValues(
 
     if (field.type === "month") {
       if (raw == null || raw === "") {
-        values[field.key] = "";
+        values[field.key] = row ? "" : nextMonthValue();
       } else {
         values[field.key] = isoToMonthValue(String(raw));
       }
