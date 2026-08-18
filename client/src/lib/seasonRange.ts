@@ -16,7 +16,7 @@ const SEASON_STORAGE_KEY = 'gadash:selectedSeason';
 export function getCurrentSeasonYear(date = new Date()): number {
   const month = date.getMonth() + 1;
   const year = date.getFullYear();
-  return month >= 8 ? year + 1 : year;
+  return month >= 9 ? year + 1 : year;
 }
 
 function startOfDay(date: Date): Date {
@@ -35,8 +35,8 @@ export function getSeasonDateRange(seasonYear: number): {
   startDate: Date;
   endDate: Date;
 } {
-  const startDate = startOfDay(new Date(seasonYear - 1, 7, 1));
-  const endDate = endOfDay(new Date(seasonYear, 6, 31));
+  const startDate = startOfDay(new Date(seasonYear - 1, 8, 1));
+  const endDate = endOfDay(new Date(seasonYear, 7, 31));
   return { startDate, endDate };
 }
 
