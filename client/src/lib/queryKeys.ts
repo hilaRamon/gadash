@@ -47,3 +47,9 @@ export const summaryKeys = {
   operations: (season: number) =>
     [...summaryKeys.all, 'operations', season] as const,
 }
+
+export const invoiceKeys = {
+  all: ['invoices'] as const,
+  monthlySummary: (month: string) =>
+    [...invoiceKeys.all, 'monthlySummary', month] as const,
+}

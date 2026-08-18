@@ -175,4 +175,38 @@ export const invoiceService = {
 
     await invoiceRepository.deleteMany(uniqueIds);
   },
+
+  async monthlySummary(month: string): Promise<{
+    month: string;
+    totalAmount: number;
+    paidAmount: number;
+    unpaidAmount: number;
+  }> {
+    const match = String(month ?? '').trim().match(/^(\d{4})-(\d{2})$/);
+    const year = match ? Number(match[1]) : NaN;
+    const monthNum = match ? Number(match[2]) : NaN;
+    if (
+      !match ||
+      !Number.isInteger(year) ||
+      !Number.isInteger(monthNum) ||
+      monthNum < 1 ||
+      monthNum > 12
+    ) {
+      throw new Error('חודש לא תקין');
+    }
+
+    const start = new Date(Date.UTC(year, monthNum - 1, 1));
+    const endExclusive = new Date(Date.UTC(year, monthNum, 1));
+    const { totalAmount, paidAmount } = await invoiceRepository.sumByDueMonth(
+      start,
+      endExclusive,
+    );
+
+    return {
+      month: `${year}-${String(monthNum).padStart(2, '0')}`,
+      totalAmount,
+      paidAmount,
+      unpaidAmount: totalAmount - paidAmount,
+    };
+  },
 };

@@ -33,4 +33,9 @@ export const invoiceController = {
     await invoiceService.removeMany(ids);
     res.status(204).send();
   }),
+
+  monthlySummary: asyncHandler(async (req: Request, res: Response) => {
+    const data = await invoiceService.monthlySummary(String(req.query.month ?? ''));
+    res.json(data);
+  }),
 };

@@ -44,4 +44,31 @@ export const invoiceRepository = {
   deleteMany(ids: string[]) {
     return InvoiceModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
   },
+
+  async sumByDueMonth(start: Date, endExclusive: Date) {
+    const [row] = await InvoiceModel.aggregate<{
+      totalAmount: number;
+      paidAmount: number;
+    }>([
+      {
+        $match: {
+          dueDate: { $gte: start, $lt: endExclusive },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$amount' },
+          paidAmount: {
+            $sum: { $cond: ['$paid', '$amount', 0] },
+          },
+        },
+      },
+    ]);
+
+    return {
+      totalAmount: Number(row?.totalAmount ?? 0),
+      paidAmount: Number(row?.paidAmount ?? 0),
+    };
+  },
 };
