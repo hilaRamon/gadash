@@ -1,5 +1,6 @@
 import type { ApiDocument } from '../types/apiDocument';
 import { TRANSPORT_CUSTOMER_BILLING } from '../models/TransportTracking';
+import { calcFinalPrice } from './transportTrackingPricing';
 import { transportTrackingToApiDocument } from './transportTrackingApiMapper';
 
 export const TRANSPORT_BILLING_ROW_SOURCE = 'transport';
@@ -11,6 +12,10 @@ export function transportTrackingToContractorBillingDocument(
   const hourlyRate = Number(doc.hourlyRate ?? 0);
   const hours = Number(doc.hours ?? 0);
   const finalPrice = Number(doc.finalPrice ?? 0);
+  const parsedCustomerRate = Number(doc.customerHourlyRate);
+  const customerHourlyRate = Number.isFinite(parsedCustomerRate)
+    ? parsedCustomerRate
+    : hourlyRate;
 
   return {
     ...base,
@@ -23,10 +28,10 @@ export function transportTrackingToContractorBillingDocument(
     operationName: 'הובלה',
     pricingForm: 'שעתי',
     unitPrice: hourlyRate,
-    unitCustomerPrice: hourlyRate,
+    unitCustomerPrice: customerHourlyRate,
     unitAmount: hours,
     finalPrice,
-    customerFinalPrice: finalPrice,
+    customerFinalPrice: calcFinalPrice(customerHourlyRate, hours),
     wasCharged: doc.wasCharged === true,
     billing: String(doc.billing ?? TRANSPORT_CUSTOMER_BILLING),
   };

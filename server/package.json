@@ -26,6 +26,7 @@
     "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts",
     "migrate:admin-operations-to-field-work": "tsx scripts/migrate-admin-operations-to-field-work.ts",
     "migrate:backfill-was-charged": "tsx scripts/backfill-was-charged.ts",
+    "migrate:transport-customer-hourly-rate": "tsx scripts/backfill-transport-customer-hourly-rate.ts",
     "migrate:bale-order-pricing-form": "tsx scripts/migrate-bale-order-pricing-form.ts",
     "migrate:contractor-pricing-form": "tsx scripts/migrate-contractor-pricing-form.ts",
     "migrate:customer-billing-statuses": "tsx scripts/migrate-customer-billing-statuses.ts",

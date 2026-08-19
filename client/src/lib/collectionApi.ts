@@ -42,7 +42,7 @@ import {
   calcFinalPrice as calcTransportFinalPrice,
   calcHoursBetween as calcTransportHours,
 } from "./transportTrackingPricing";
-import { DEFAULT_TRANSPORT_BILLING } from "./transportBilling";
+import { DEFAULT_TRANSPORT_BILLING, TRANSPORT_CUSTOMER_BILLING } from "./transportBilling";
 import { calcMaterialUsageAmount } from "./materialUsageAmount";
 import { roundQuantity } from "./quantityPrecision";
 import { enrichMaterialsWithGroupQuantity } from "./materialInventoryGroup";
@@ -355,6 +355,12 @@ function enrichTransportTrackingRow(
       String(row.endTime ?? ""),
     ) ?? Number(row.hours ?? 0);
   const hourlyRate = Number(row.hourlyRate ?? 0);
+  const billing = String(row.billing ?? DEFAULT_TRANSPORT_BILLING);
+  const parsedCustomerRate = Number(row.customerHourlyRate);
+  const customerHourlyRate =
+    billing === TRANSPORT_CUSTOMER_BILLING && Number.isFinite(parsedCustomerRate)
+      ? parsedCustomerRate
+      : hourlyRate;
   const finalPrice = calcTransportFinalPrice(hourlyRate, hours);
 
   return {
@@ -362,6 +368,8 @@ function enrichTransportTrackingRow(
     moverName: String(mover?.name ?? ""),
     customerName: String(customer?.name ?? ""),
     hours,
+    hourlyRate,
+    customerHourlyRate,
     finalPrice,
     billing: String(row.billing ?? DEFAULT_TRANSPORT_BILLING),
   };

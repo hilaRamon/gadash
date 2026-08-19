@@ -14,10 +14,18 @@ export function getTransportTrackingVisibleFields(
   const showCustomer = values.billing === TRANSPORT_CUSTOMER_BILLING;
 
   return fields
-    .filter((field) => field.key !== "customer" || showCustomer)
-    .map((field) =>
-      field.key === "customer" ? { ...field, required: true } : field,
-    );
+    .filter((field) => {
+      if (field.key === "customer" || field.key === "customerHourlyRate") {
+        return showCustomer;
+      }
+      return true;
+    })
+    .map((field) => {
+      if (field.key === "customer" || field.key === "customerHourlyRate") {
+        return { ...field, required: true };
+      }
+      return field;
+    });
 }
 
 export function applyTransportTrackingFieldChange(
@@ -28,14 +36,27 @@ export function applyTransportTrackingFieldChange(
 ): Record<string, string> {
   const next = { ...prev, [key]: value };
 
-  if (key === "billing" && value !== TRANSPORT_CUSTOMER_BILLING) {
-    next.customer = "";
+  if (key === "billing") {
+    if (value !== TRANSPORT_CUSTOMER_BILLING) {
+      next.customer = "";
+      next.customerHourlyRate = next.hourlyRate ?? "";
+    } else if (!String(next.customerHourlyRate ?? "").trim()) {
+      next.customerHourlyRate = next.hourlyRate ?? "";
+    }
   }
 
   if (key === "mover" && value) {
     const mover = movers.find((m) => String(m._id) === value);
     if (mover != null) {
       next.hourlyRate = String(mover.hourlyRate ?? "");
+    }
+  }
+
+  if (key === "mover" || key === "hourlyRate") {
+    const customerBilling = next.billing === TRANSPORT_CUSTOMER_BILLING;
+    const customerRateEmpty = !String(next.customerHourlyRate ?? "").trim();
+    if (!customerBilling || customerRateEmpty) {
+      next.customerHourlyRate = next.hourlyRate ?? "";
     }
   }
 
@@ -112,10 +133,21 @@ export function enrichTransportTrackingPayload(
     calcHoursBetween(values.startTime ?? "", values.endTime ?? "") ?? 0;
   const hourlyRate = Number(payload.hourlyRate);
   const customerBilling = values.billing === TRANSPORT_CUSTOMER_BILLING;
+  const rawCustomerRate = payload.customerHourlyRate;
+  const parsedCustomerRate =
+    rawCustomerRate == null || rawCustomerRate === ""
+      ? Number.NaN
+      : Number(rawCustomerRate);
+  const customerHourlyRate =
+    customerBilling && Number.isFinite(parsedCustomerRate)
+      ? parsedCustomerRate
+      : hourlyRate;
 
   return {
     ...payload,
     hours,
+    hourlyRate,
+    customerHourlyRate,
     finalPrice: calcFinalPrice(hourlyRate, hours),
     customer: customerBilling ? payload.customer : null,
   };
