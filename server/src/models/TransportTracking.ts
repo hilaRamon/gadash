@@ -16,6 +16,7 @@ const transportTrackingSchema = new Schema(
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
     hourlyRate: { type: Number, required: true, min: 0 },
+    customerHourlyRate: { type: Number, required: true, min: 0 },
     hours: { type: Number, required: true, min: 0 },
     finalPrice: { type: Number, required: true, min: 0 },
     billing: {

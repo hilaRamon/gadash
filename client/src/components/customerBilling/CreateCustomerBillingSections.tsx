@@ -58,6 +58,7 @@ export function CreateCustomerBillingSections({
 }: CreateCustomerBillingSectionsProps) {
   const queryClient = useQueryClient();
   const updateContractor = useUpdateDocument("contractorTrackings");
+  const updateTransport = useUpdateDocument("transportTrackings");
   const updateOperationTracking = useUpdateDocument("operationsTrackings");
   const updateMaterialUsage = useUpdateDocument("materialUsageTrackings");
   const updateBaleOrder = useUpdateDocument("baleOrderTrackings");
@@ -154,7 +155,18 @@ export function CreateCustomerBillingSections({
 
   const handleContractorCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
-      if (key !== "unitCustomerPrice" || isTransportBillingRow(row)) return;
+      if (key !== "unitCustomerPrice") return;
+      if (isTransportBillingRow(row)) {
+        await updateTransport.mutateAsync({
+          id: row._id,
+          body: { customerHourlyRate: value },
+        });
+        await refreshBillingPreviews();
+        await queryClient.invalidateQueries({
+          queryKey: collectionKeys.list("transportTrackings"),
+        });
+        return;
+      }
       await updateContractor.mutateAsync({
         id: row._id,
         body: { unitCustomerPrice: value },
@@ -164,7 +176,7 @@ export function CreateCustomerBillingSections({
         queryKey: collectionKeys.list("contractorTrackings"),
       });
     },
-    [queryClient, refreshBillingPreviews, updateContractor],
+    [queryClient, refreshBillingPreviews, updateContractor, updateTransport],
   );
 
   // Split server preview into four sections; each array becomes one DataTable.

@@ -234,6 +234,7 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
       str('notes'),
       str('billing'),
       num('hourlyRate'),
+      num('customerHourlyRate'),
       num('hours'),
       num('finalPrice'),
       bool('wasCharged'),
@@ -242,6 +243,7 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
     sortFields: {
       date: 'date',
       hourlyRate: 'hourlyRate',
+      customerHourlyRate: 'customerHourlyRate',
       hours: 'hours',
       finalPrice: 'finalPrice',
       billing: 'billing',

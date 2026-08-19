@@ -134,6 +134,16 @@ async function buildTrackingPatch(
   if (mustHave('hourlyRate')) {
     patch.hourlyRate = parsePositiveNumber(body.hourlyRate, 'מחיר לשעה');
   }
+  if (
+    Object.prototype.hasOwnProperty.call(body, 'customerHourlyRate') &&
+    body.customerHourlyRate != null &&
+    body.customerHourlyRate !== ''
+  ) {
+    patch.customerHourlyRate = parsePositiveNumber(
+      body.customerHourlyRate,
+      'מחיר לשעה ללקוח',
+    );
+  }
   if (mustHave('notes')) {
     patch.notes = parseNotes(body.notes);
   }
@@ -185,6 +195,10 @@ export const transportTrackingService = {
 
     const hours = resolveHours(patch.startTime, patch.endTime);
     const billing = patch.billing ?? DEFAULT_TRANSPORT_BILLING;
+    const customerHourlyRate =
+      billing === TRANSPORT_CUSTOMER_BILLING
+        ? (patch.customerHourlyRate ?? patch.hourlyRate)
+        : patch.hourlyRate;
 
     const input: TransportTrackingInput = {
       date: patch.date,
@@ -192,6 +206,7 @@ export const transportTrackingService = {
       startTime: patch.startTime,
       endTime: patch.endTime,
       hourlyRate: patch.hourlyRate,
+      customerHourlyRate,
       hours,
       finalPrice: calcFinalPrice(patch.hourlyRate, hours),
       billing,
@@ -243,8 +258,19 @@ export const transportTrackingService = {
       if (!effectiveCustomer) {
         throw new Error('לקוח נדרש');
       }
-    } else if (patch.billing != null || Object.prototype.hasOwnProperty.call(body, 'customer')) {
-      patch.customer = null;
+      if (patch.customerHourlyRate == null) {
+        const existingRate = Number(existing.customerHourlyRate);
+        if (!Number.isFinite(existingRate)) {
+          patch.customerHourlyRate = hourlyRate;
+        } else {
+          delete patch.customerHourlyRate;
+        }
+      }
+    } else {
+      patch.customerHourlyRate = hourlyRate;
+      if (patch.billing != null || Object.prototype.hasOwnProperty.call(body, 'customer')) {
+        patch.customer = null;
+      }
     }
 
     const updated = await transportTrackingRepository.update(id, patch);

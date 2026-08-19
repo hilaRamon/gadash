@@ -13,6 +13,7 @@ export type TransportTrackingInput = {
   startTime: string;
   endTime: string;
   hourlyRate: number;
+  customerHourlyRate: number;
   hours: number;
   finalPrice: number;
   billing: TransportBillingType;

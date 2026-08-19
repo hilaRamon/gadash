@@ -54,6 +54,14 @@ export const transportTrackingsSchema: CollectionSchema = {
       width: "7rem",
     },
     {
+      key: "customerHourlyRate",
+      label: "מחיר לשעה ללקוח",
+      type: "number",
+      sortable: true,
+      format: (value) => formatNumber(value),
+      width: "8rem",
+    },
+    {
       key: "hours",
       label: "כמות שעות",
       type: "number",
@@ -116,6 +124,7 @@ export const transportTrackingsSchema: CollectionSchema = {
       { key: "startTime", label: "שעת התחלה", type: "time", required: true },
       { key: "endTime", label: "שעת סיום", type: "time", required: true },
       { key: "hourlyRate", label: "מחיר לשעה", type: "number", required: true },
+      { key: "customerHourlyRate", label: "מחיר לשעה ללקוח", type: "number" },
       { key: "hours", label: "כמות שעות", type: "number" },
       { key: "finalPrice", label: "מחיר סופי", type: "number" },
       {

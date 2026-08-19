@@ -3,7 +3,6 @@ import { operationsTrackingsAllSchema } from "@/schema/collections/operationsTra
 import { materialUsageTrackingsSchema } from "@/schema/collections/materialUsageTrackingsSchema";
 import { baleOrderTrackingsSchema } from "@/schema/collections/baleOrderTrackingsSchema";
 import { contractorTrackingsSchema } from "@/schema/collections/contractorTrackingsSchema";
-import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
 import {
   BALE_ORDER_BY_UNIT,
   isByWeightPricing,
@@ -145,7 +144,7 @@ export const contractorPreviewSchema: CollectionSchema = buildBillingPreviewSche
     "unitAmount",
     "customerFinalPrice",
   ],
-  { unitCustomerPrice: (row) => !isTransportBillingRow(row) },
+  { unitCustomerPrice: true },
   { nullableKeys: ["unitCustomerPrice"] },
 );
 
