@@ -30,6 +30,12 @@ function roundPricePerDunam(value: number): number {
   return Number(value.toFixed(3));
 }
 
+export type GlobalTransportChargePreviewCustomer = {
+  customerName: string;
+  dunam: number;
+  price: number;
+};
+
 export type GlobalTransportChargePreview = {
   seasonYear: number;
   transportTotal: number;
@@ -38,6 +44,7 @@ export type GlobalTransportChargePreview = {
   pricePerDunam: number;
   plotCount: number;
   customerCount: number;
+  customers: GlobalTransportChargePreviewCustomer[];
 };
 
 export type GlobalTransportChargeResult = GlobalTransportChargePreview & {
@@ -163,6 +170,17 @@ function buildPreviewFromData(
   seasonYear: number,
   data: Awaited<ReturnType<typeof computeChargeData>>,
 ): GlobalTransportChargePreview {
+  const customers = data.customerGroups.map((group) => ({
+    customerName: group.customerName,
+    dunam: group.plots.reduce((sum, plot) => sum + Number(plot.dunam ?? 0), 0),
+    price: roundMoney(
+      group.plots.reduce(
+        (sum, plot) => sum + (data.plotLinePrices.get(String(plot._id)) ?? 0),
+        0,
+      ),
+    ),
+  }));
+
   return {
     seasonYear,
     transportTotal: data.transportTotal,
@@ -171,6 +189,7 @@ function buildPreviewFromData(
     pricePerDunam: data.pricePerDunam,
     plotCount: data.plots.length,
     customerCount: data.customerGroups.length,
+    customers,
   };
 }
 
