@@ -9,8 +9,9 @@ import type {
   GlobalTransportChargeResult,
 } from "./transportGlobalChargeApi";
 import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
-import { isFuelOperation } from "./unbilledTrackingFilters";
 import type { CollectionDocument } from "@/schema/types";
+
+const GLOBAL_TRANSPORT_CHARGE_OPERATIONS = ["זריעה", "זריעה+אי פליחה"];
 
 type PlotRow = {
   _id: string;
@@ -35,37 +36,41 @@ function toIdArray(value: unknown): string[] {
   return value.map((item) => String(item ?? "")).filter(Boolean);
 }
 
-async function findSeasonPlotsWithWork(seasonYear: number): Promise<PlotRow[]> {
-  const [operations, materials, contractors, plots, customers] = await Promise.all([
+async function findSeasonPlotsForGlobalCharge(
+  seasonYear: number,
+): Promise<PlotRow[]> {
+  const [trackings, plots, customers] = await Promise.all([
     listCollection("operationsTrackings", { season: seasonYear }),
-    listCollection("materialUsageTrackings", { season: seasonYear }),
-    listCollection("contractorTrackings", { season: seasonYear }),
     listCollection("plots"),
     listCollection("customers"),
   ]);
 
+  const dunamByPlotId = new Map<string, number>();
+  for (const row of trackings) {
+    if (
+      !GLOBAL_TRANSPORT_CHARGE_OPERATIONS.includes(
+        String(row.operationName ?? ""),
+      )
+    ) {
+      continue;
+    }
+    const plotId = String(row.plot ?? "").trim();
+    if (!plotId) continue;
+    const amount = Number(row.amount ?? 0);
+    if (!Number.isFinite(amount)) continue;
+    dunamByPlotId.set(plotId, (dunamByPlotId.get(plotId) ?? 0) + amount);
+  }
+
   const customerNameById = new Map(
     customers.map((row) => [String(row._id), String(row.name ?? "")]),
   );
-
-  const plotIdSet = new Set<string>();
-  for (const row of operations) {
-    if (isFuelOperation(row)) continue;
-    if (row.plot) plotIdSet.add(String(row.plot));
-  }
-  for (const row of materials) {
-    if (row.plot) plotIdSet.add(String(row.plot));
-  }
-  for (const row of contractors) {
-    if (row.plot) plotIdSet.add(String(row.plot));
-  }
-
   const plotById = new Map(
     [...plots, ...plotsSeedData].map((plot) => [String(plot._id), plot]),
   );
 
   const result: PlotRow[] = [];
-  for (const plotId of plotIdSet) {
+  for (const [plotId, dunam] of dunamByPlotId) {
+    if (dunam <= 0) continue;
     const plot = plotById.get(plotId);
     if (!plot) continue;
     const customerId = String(plot.customer ?? "");
@@ -74,7 +79,7 @@ async function findSeasonPlotsWithWork(seasonYear: number): Promise<PlotRow[]> {
       name: String(plot.name ?? ""),
       customer: customerId,
       customerName: customerNameById.get(customerId) ?? "",
-      dunam: Number(plot.dunam ?? 0),
+      dunam,
     });
   }
 
@@ -99,7 +104,7 @@ async function computeChargeData(seasonYear: number) {
     throw new Error("אין הובלות גלובליות לחיוב בעונה");
   }
 
-  const plots = await findSeasonPlotsWithWork(seasonYear);
+  const plots = await findSeasonPlotsForGlobalCharge(seasonYear);
   const totalDunam = plots.reduce((sum, plot) => sum + plot.dunam, 0);
   if (totalDunam <= 0) {
     throw new Error("אין דונמים לחלוקה");
