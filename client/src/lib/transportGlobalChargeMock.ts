@@ -239,6 +239,19 @@ export async function previewGlobalTransportChargeMock(
   seasonYear: number,
 ): Promise<GlobalTransportChargePreview> {
   const data = await computeChargeData(seasonYear);
+  const customers = [...data.customerGroups]
+    .sort((a, b) => a.customerName.localeCompare(b.customerName, "he"))
+    .map((group) => ({
+      customerName: group.customerName,
+      dunam: group.plots.reduce((sum, plot) => sum + plot.dunam, 0),
+      price: roundMoney(
+        group.plots.reduce(
+          (sum, plot) => sum + (data.plotLinePrices.get(plot._id) ?? 0),
+          0,
+        ),
+      ),
+    }));
+
   return {
     seasonYear,
     transportTotal: data.transportTotal,
@@ -247,6 +260,7 @@ export async function previewGlobalTransportChargeMock(
     pricePerDunam: data.pricePerDunam,
     plotCount: data.plotCount,
     customerCount: data.customerGroups.length,
+    customers,
   };
 }
 
