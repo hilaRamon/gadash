@@ -1,5 +1,11 @@
 import api from "./api";
 
+export type GlobalTransportChargePreviewCustomer = {
+  customerName: string;
+  dunam: number;
+  price: number;
+};
+
 export type GlobalTransportChargePreview = {
   seasonYear: number;
   transportTotal: number;
@@ -8,6 +14,7 @@ export type GlobalTransportChargePreview = {
   pricePerDunam: number;
   plotCount: number;
   customerCount: number;
+  customers: GlobalTransportChargePreviewCustomer[];
 };
 
 export type GlobalTransportChargeResult = GlobalTransportChargePreview & {

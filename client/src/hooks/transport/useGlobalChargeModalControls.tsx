@@ -9,7 +9,8 @@ import {
   sumTransportBillingTotals,
 } from "@/lib/transportTrackingPricing";
 import { listCollection } from "@/lib/collectionApi";
-import { collectionKeys } from "@/lib/queryKeys";
+import { collectionKeys, transportGlobalChargeKeys } from "@/lib/queryKeys";
+import { fetchGlobalTransportChargePreview } from "@/lib/transportGlobalChargeApi";
 
 export function useGlobalChargeModalControls(enabled = true) {
   const [chargeModalOpen, setChargeModalOpen] = useState(false);
@@ -23,6 +24,17 @@ export function useGlobalChargeModalControls(enabled = true) {
     queryFn: () =>
       listCollection("transportTrackings", { season: selectedSeasonYear }),
     enabled,
+  });
+
+  const {
+    data: preview,
+    isLoading: isPreviewLoading,
+    isError: isPreviewError,
+    error: previewError,
+  } = useQuery({
+    queryKey: transportGlobalChargeKeys.preview(selectedSeasonYear),
+    queryFn: () => fetchGlobalTransportChargePreview(selectedSeasonYear),
+    enabled: enabled && chargeModalOpen,
   });
 
   const billingTotals = useMemo(
@@ -49,20 +61,27 @@ export function useGlobalChargeModalControls(enabled = true) {
     });
   }, [executeCharge, selectedSeasonYear]);
 
+  const previewErrorMessage = isPreviewError
+    ? previewError instanceof Error
+      ? previewError.message
+      : "טעינת פרטי החיוב נכשלה"
+    : undefined;
+  const executeErrorMessage = executeCharge.isError
+    ? executeCharge.error instanceof Error
+      ? executeCharge.error.message
+      : "ביצוע החיוב נכשל"
+    : undefined;
+
   const chargeModal = (
     <TransportChargingModal
       open={chargeModalOpen}
       seasonYear={selectedSeasonYear}
       totalSum={unchargedGlobalTotal}
       rowCount={unchargedGlobalCount}
+      preview={preview}
+      isPreviewLoading={isPreviewLoading}
       isPending={executeCharge.isPending}
-      errorMessage={
-        executeCharge.isError
-          ? executeCharge.error instanceof Error
-            ? executeCharge.error.message
-            : "ביצוע החיוב נכשל"
-          : undefined
-      }
+      errorMessage={executeErrorMessage ?? previewErrorMessage}
       onConfirm={handleChargeConfirm}
       onClose={() => {
         if (!executeCharge.isPending) {
