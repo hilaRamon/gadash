@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { invoiceController } from '../controllers/invoiceController';
+import { invoiceController, invoiceUpload } from '../controllers/invoiceController';
 import { parseListQuery } from '../middleware/listQueryMiddleware';
 
 export const invoiceRouter = Router();
@@ -10,3 +10,7 @@ invoiceRouter.post('/', invoiceController.create);
 invoiceRouter.post('/bulk-delete', invoiceController.bulkRemove);
 invoiceRouter.put('/:id', invoiceController.update);
 invoiceRouter.delete('/:id', invoiceController.remove);
+
+invoiceRouter.post('/:id/file', invoiceUpload.single('file'), invoiceController.uploadFile);
+invoiceRouter.get('/:id/file', invoiceController.streamFile);
+invoiceRouter.delete('/:id/file', invoiceController.deleteFile);

@@ -31,6 +31,7 @@ import {
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { ModalPanel } from "@/components/ui/Modal";
 import { FormFieldControl } from "./FormFieldControl";
+import { InvoiceFileUploadField } from "@/components/invoices/InvoiceFileUploadField";
 import {
   useCollectionFormInitEffects,
   useCollectionFormUpdateEffects,
@@ -46,6 +47,7 @@ type CollectionFormModalProps = {
   error?: string | null;
   onClose: () => void;
   onSubmit: (values: Record<string, unknown> | Record<string, unknown>[]) => void;
+  onFileChange?: (file: File | null) => void;
 };
 
 const FormField = styled.div`
@@ -102,6 +104,7 @@ export function CollectionFormModal({
   error = null,
   onClose,
   onSubmit,
+  onFileChange,
 }: CollectionFormModalProps) {
   // Title: form state for editable field values.
   const [values, setValues] = useState<Record<string, string>>({});
@@ -109,7 +112,9 @@ export function CollectionFormModal({
   const [validationError, setValidationError] = useState<string | null>(null);
   // Title: helper errors shown under specific required fields.
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [amountRecalcNotice, setAmountRecalcNotice] = useState<string | null>(null);
+  const [amountRecalcNotice, setAmountRecalcNotice] = useState<string | null>(
+    null,
+  );
   const [materialUsageEntries, setMaterialUsageEntries] = useState<
     MaterialUsageLineEntry[]
   >([]);
@@ -125,6 +130,7 @@ export function CollectionFormModal({
   const isMaterialUsageForm = schema.collection === "materialUsageTrackings";
   const isMaterialUsageMultiCreate = isMaterialUsageForm && !editingRow;
   const isOperationTrackingForm = schema.collection === "operationsTrackings";
+  const isInvoiceForm = schema.collection === "invoices";
   const { data: bales = [] } = useCollectionList("bales");
   const { data: movers = [] } = useCollectionList("movers");
   const { data: materials = [] } = useCollectionList("materials");
@@ -151,14 +157,16 @@ export function CollectionFormModal({
   const isOperationTrackingMultiCreate =
     isOperationTrackingForm && !editingRow && !isAdminTrackingForm;
   const operationFormField = schema.form.fields.find(
-    (field) => field.key === "operation" && field.referenceCollection === "operations",
+    (field) =>
+      field.key === "operation" && field.referenceCollection === "operations",
   );
 
   const adminFormKeysToHide = new Set(["operation", "plot", "billable"]);
   const visibleFields = (() => {
     const base = schema.form.fields.filter((field) => {
       if (field.hidden) return false;
-      if (isAdminTrackingForm && adminFormKeysToHide.has(field.key)) return false;
+      if (isAdminTrackingForm && adminFormKeysToHide.has(field.key))
+        return false;
       return true;
     });
     if (isContractorTrackingForm) {
@@ -171,10 +179,14 @@ export function CollectionFormModal({
       return getTransportTrackingVisibleFields(base, values);
     }
     if (isMaterialUsageMultiCreate) {
-      return base.filter((field) => field.key !== "material" && field.key !== "amount");
+      return base.filter(
+        (field) => field.key !== "material" && field.key !== "amount",
+      );
     }
     if (isOperationTrackingMultiCreate) {
-      return base.filter((field) => field.key !== "operation" && field.key !== "amount");
+      return base.filter(
+        (field) => field.key !== "operation" && field.key !== "amount",
+      );
     }
     return base;
   })();
@@ -370,7 +382,9 @@ export function CollectionFormModal({
                       (field.key === "hours" || field.key === "finalPrice"))
                   }
                   booleanLabels={
-                    field.type === "boolean" ? getBooleanLabels(field.key) : undefined
+                    field.type === "boolean"
+                      ? getBooleanLabels(field.key)
+                      : undefined
                   }
                 />
                 {fieldErrors[field.key] && (
@@ -395,12 +409,26 @@ export function CollectionFormModal({
                   entries={operationTrackingEntries}
                   fieldErrors={fieldErrors}
                   operationFilter={operationFormField?.referenceFilter}
-                  onToggleOperation={operationTrackingHandlers.onToggleOperation}
+                  onToggleOperation={
+                    operationTrackingHandlers.onToggleOperation
+                  }
                   onUpdateLine={operationTrackingHandlers.onUpdateLine}
                 />
               )}
             </div>
           ))}
+
+          {isInvoiceForm && (
+            <InvoiceFileUploadField
+              hasExistingFile={editingRow?.hasFile === true}
+              existingFileName={
+                editingRow?.fileName != null
+                  ? String(editingRow.fileName)
+                  : null
+              }
+              onFileChange={onFileChange}
+            />
+          )}
 
           {(validationError || error) && (
             <ErrorMessage>{validationError ?? error}</ErrorMessage>

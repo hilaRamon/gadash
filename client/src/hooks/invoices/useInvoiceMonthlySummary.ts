@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoiceMonthlySummary } from "@/lib/invoiceMonthlySummaryApi";
+import { fetchInvoiceMonthlySummary } from "@/lib/invoiceApi";
 import { invoiceKeys } from "@/lib/queryKeys";
 
 export function useInvoiceMonthlySummary(month: string) {

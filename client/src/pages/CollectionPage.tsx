@@ -29,8 +29,12 @@ import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
 import { TransportTrackingPageExtras } from "@/components/transport/TransportTrackingPageExtras";
 import { TransportGlobalChargePageExtras } from "@/components/transport/TransportGlobalChargePageExtras";
 import { InvoiceMonthlySummary } from "@/components/invoices/InvoiceMonthlySummary";
+import { InvoiceViewModal } from "@/components/invoices/InvoiceViewModal";
 import { GlobalTransportChargeViewModal } from "@/components/transport/GlobalTransportChargeViewModal";
 import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
+import { uploadInvoiceFile } from "@/lib/invoiceApi";
+import { useQueryClient } from "@tanstack/react-query";
+import { collectionKeys } from "@/lib/queryKeys";
 import { useGlobalChargeModalControls } from "@/hooks/transport/useGlobalChargeModalControls";
 import {
   GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP,
@@ -106,6 +110,7 @@ function CollectionPageContent({
   collectionId: string;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { selectedSeasonYear } = useSeason();
   const tableQuery = useTableQueryState(schema);
 
@@ -122,6 +127,9 @@ function CollectionPageContent({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [viewingInvoiceRow, setViewingInvoiceRow] =
+    useState<CollectionDocument | null>(null);
+  const [pendingInvoiceFile, setPendingInvoiceFile] = useState<File | null>(null);
 
   const queryParams = useMemo(
     () => toQueryParams(tableQuery.state),
@@ -223,6 +231,7 @@ function CollectionPageContent({
     setModalOpen(false);
     setEditingRow(null);
     setFormError(null);
+    setPendingInvoiceFile(null);
   }, []);
 
   const handleFormSubmit = useCallback(
@@ -233,24 +242,33 @@ function CollectionPageContent({
         return;
       }
       try {
+        let savedDoc: CollectionDocument | null = null;
         if (editingRow) {
-          await updateMutation.mutateAsync({
+          savedDoc = await updateMutation.mutateAsync({
             id: editingRow._id,
             body: values as Record<string, unknown>,
           });
         } else if (Array.isArray(values)) {
           for (const payload of values) {
-            await createMutation.mutateAsync(payload);
+            savedDoc = await createMutation.mutateAsync(payload);
           }
         } else {
-          await createMutation.mutateAsync(values);
+          savedDoc = await createMutation.mutateAsync(values);
         }
+
+        if (isInvoicesPage && pendingInvoiceFile && savedDoc) {
+          await uploadInvoiceFile(savedDoc._id, pendingInvoiceFile);
+          await queryClient.invalidateQueries({
+            queryKey: collectionKeys.list(schema.collection),
+          });
+        }
+
         closeModal();
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "שגיאה בשמירה");
       }
     },
-    [editingRow, updateMutation, createMutation, closeModal],
+    [editingRow, updateMutation, createMutation, closeModal, isInvoicesPage, pendingInvoiceFile, queryClient, schema.collection],
   );
 
   const handleCellChange = useCallback(
@@ -382,6 +400,14 @@ function CollectionPageContent({
     setViewingGlobalChargeId(null);
   }, []);
 
+  const openViewInvoice = useCallback((row: CollectionDocument) => {
+    setViewingInvoiceRow(row);
+  }, []);
+
+  const closeViewInvoice = useCallback(() => {
+    setViewingInvoiceRow(null);
+  }, []);
+
   const handleRowAction =
     isCustomerBillingPage && schema.rowAction === "view"
       ? openViewBilling
@@ -390,6 +416,7 @@ function CollectionPageContent({
         : schema.rowAction === "view"
           ? () => {}
           : openEdit;
+
   const isFormPending = createMutation.isPending || updateMutation.isPending;
   const isDeletePending =
     deleteMutation.isPending || bulkDeleteMutation.isPending;
@@ -503,6 +530,12 @@ function CollectionPageContent({
           onToggleSelect={tableQuery.toggleSelected}
           onToggleSelectAll={tableQuery.toggleSelectAll}
           onEdit={handleRowAction}
+          onView={isInvoicesPage ? openViewInvoice : undefined}
+          canViewRow={
+            isInvoicesPage
+              ? (row) => row.hasFile === true
+              : undefined
+          }
           rowAction={rowAction}
           canEditRow={canEditChargedTrackingRow}
           canDeleteRow={canDeleteRow}
@@ -530,6 +563,7 @@ function CollectionPageContent({
         error={formError}
         onClose={closeModal}
         onSubmit={handleFormSubmit}
+        onFileChange={isInvoicesPage ? setPendingInvoiceFile : undefined}
       />
 
       <ConfirmDialog
@@ -545,6 +579,14 @@ function CollectionPageContent({
           setDeleteError(null);
         }}
       />
+
+      {isInvoicesPage && (
+        <InvoiceViewModal
+          open={viewingInvoiceRow !== null}
+          invoice={viewingInvoiceRow}
+          onClose={closeViewInvoice}
+        />
+      )}
 
       {isCustomerBillingPage && (
         <CustomerBillingViewModal

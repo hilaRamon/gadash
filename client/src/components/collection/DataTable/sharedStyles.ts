@@ -36,6 +36,13 @@ export const tableActionEditButton = css`
   color: var(--color-table-action-edit-icon);
 `
 
+export const tableActionViewButton = css`
+  ${buttonIconStyles};
+  background: var(--color-table-action-view-bg);
+  border-color: transparent;
+  color: var(--color-table-action-view-icon);
+`
+
 export const tableActionDeleteButton = css`
   ${buttonIconStyles};
   background: var(--color-table-action-delete-bg);

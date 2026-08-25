@@ -11,6 +11,9 @@ export type InvoiceInput = {
   dueDate?: Date | null;
   paid?: boolean;
   notes?: string;
+  fileKey?: string | null;
+  fileName?: string | null;
+  contentType?: string | null;
 };
 
 export const invoiceRepository = {

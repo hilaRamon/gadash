@@ -20,6 +20,8 @@ export function invoiceToApiDocument(doc: Record<string, unknown>): ApiDocument 
     dueDate: toIsoDate(doc.dueDate),
     paid: doc.paid === true,
     notes: String(doc.notes ?? ''),
+    hasFile: doc.fileKey != null && doc.fileKey !== '',
+    fileName: doc.fileName != null ? String(doc.fileName) : null,
   };
 }
 
