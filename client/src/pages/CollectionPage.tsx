@@ -130,6 +130,7 @@ function CollectionPageContent({
   const [viewingInvoiceRow, setViewingInvoiceRow] =
     useState<CollectionDocument | null>(null);
   const [pendingInvoiceFile, setPendingInvoiceFile] = useState<File | null>(null);
+  const [isSavingForm, setIsSavingForm] = useState(false);
 
   const queryParams = useMemo(
     () => toQueryParams(tableQuery.state),
@@ -241,6 +242,7 @@ function CollectionPageContent({
         setFormError(CHARGED_TRACKING_EDIT_ERROR);
         return;
       }
+      setIsSavingForm(true);
       try {
         let savedDoc: CollectionDocument | null = null;
         if (editingRow) {
@@ -266,6 +268,8 @@ function CollectionPageContent({
         closeModal();
       } catch (err) {
         setFormError(err instanceof Error ? err.message : "שגיאה בשמירה");
+      } finally {
+        setIsSavingForm(false);
       }
     },
     [editingRow, updateMutation, createMutation, closeModal, isInvoicesPage, pendingInvoiceFile, queryClient, schema.collection],
@@ -417,7 +421,8 @@ function CollectionPageContent({
           ? () => {}
           : openEdit;
 
-  const isFormPending = createMutation.isPending || updateMutation.isPending;
+  const isFormPending =
+    isSavingForm || createMutation.isPending || updateMutation.isPending;
   const isDeletePending =
     deleteMutation.isPending || bulkDeleteMutation.isPending;
 
