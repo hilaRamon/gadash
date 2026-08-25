@@ -52,4 +52,5 @@ export const invoiceKeys = {
   all: ['invoices'] as const,
   monthlySummary: (month: string) =>
     [...invoiceKeys.all, 'monthlySummary', month] as const,
+  file: (id: string) => [...invoiceKeys.all, 'file', id] as const,
 }

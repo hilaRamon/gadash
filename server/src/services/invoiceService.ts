@@ -7,6 +7,9 @@ import {
   invoiceToApiDocument,
   invoiceToApiDocuments,
 } from '../utils/invoiceApiMapper';
+import { r2StorageService } from './r2StorageService';
+import { HttpError } from '../utils/httpError';
+import type { Readable } from 'stream';
 
 function parseDate(value: unknown, label: string): Date {
   if (value == null || value === '') return new Date();
@@ -154,10 +157,14 @@ export const invoiceService = {
   },
 
   async remove(id: string): Promise<void> {
-    const result = await invoiceRepository.delete(id);
-    if (!result) {
+    const existing = await invoiceRepository.findById(id);
+    if (!existing) {
       throw new Error('לא נמצא');
     }
+    if (existing.fileKey) {
+      await r2StorageService.deleteObject(existing.fileKey).catch(() => undefined);
+    }
+    await invoiceRepository.delete(id);
   },
 
   async removeMany(ids: string[]): Promise<void> {
@@ -173,7 +180,67 @@ export const invoiceService = {
       throw new Error('לא נמצא');
     }
 
+    await Promise.all(
+      rows
+        .filter((row) => row?.fileKey)
+        .map((row) => r2StorageService.deleteObject(row!.fileKey!).catch(() => undefined)),
+    );
+
     await invoiceRepository.deleteMany(uniqueIds);
+  },
+
+  async attachFile(
+    id: string,
+    file: { buffer: Buffer; originalName: string; mimeType: string },
+  ): Promise<ApiDocument> {
+    const existing = await invoiceRepository.findById(id);
+    if (!existing) throw new HttpError(404, 'לא נמצא');
+
+    const key = `invoices/${id}`;
+
+    if (existing.fileKey) {
+      await r2StorageService.deleteObject(existing.fileKey).catch(() => undefined);
+    }
+
+    await r2StorageService.putObject({
+      key,
+      body: file.buffer,
+      contentType: file.mimeType,
+    });
+
+    const updated = await invoiceRepository.update(id, {
+      fileKey: key,
+      fileName: file.originalName,
+      contentType: file.mimeType,
+    });
+    if (!updated) throw new HttpError(404, 'לא נמצא');
+    return invoiceToApiDocument(updated as Record<string, unknown>);
+  },
+
+  async getFile(id: string): Promise<{
+    body: Readable;
+    contentType: string;
+    contentLength?: number;
+    fileName: string;
+  }> {
+    const existing = await invoiceRepository.findById(id);
+    if (!existing) throw new HttpError(404, 'לא נמצא');
+    if (!existing.fileKey) throw new HttpError(404, 'לא קיים קובץ לחשבונית זו');
+
+    const result = await r2StorageService.getObject(existing.fileKey);
+    return {
+      ...result,
+      fileName: existing.fileName ?? 'invoice',
+    };
+  },
+
+  async detachFile(id: string): Promise<void> {
+    const existing = await invoiceRepository.findById(id);
+    if (!existing) throw new HttpError(404, 'לא נמצא');
+    if (!existing.fileKey) throw new HttpError(404, 'לא קיים קובץ לחשבונית זו');
+
+    await r2StorageService.deleteObject(existing.fileKey).catch(() => undefined);
+    await invoiceRepository.update(id, { fileKey: null, fileName: null, contentType: null });
   },
 
   async monthlySummary(month: string): Promise<{

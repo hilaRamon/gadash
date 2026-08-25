@@ -9,6 +9,9 @@ const invoiceSchema = new Schema(
     dueDate: { type: Date, default: null },
     paid: { type: Boolean, default: false },
     notes: { type: String, default: '' },
+    fileKey: { type: String, default: null },
+    fileName: { type: String, default: null },
+    contentType: { type: String, default: null },
   },
   { timestamps: true, versionKey: false },
 );

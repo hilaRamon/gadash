@@ -83,6 +83,8 @@
    * ------------------------------------------------------------------------- */
   --color-table-action-edit-bg: rgba(37, 99, 235, 0.04);
   --color-table-action-edit-icon: #2563eb;
+  --color-table-action-view-bg: rgba(13, 148, 136, 0.08);
+  --color-table-action-view-icon: #0d9488;
   --color-table-action-delete-bg: rgba(248, 113, 113, 0.04);
   --color-table-action-delete-icon: #f56565;
 

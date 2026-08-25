@@ -8,7 +8,11 @@ import type {
 import type { TableQueryState } from "@/schema/tableQuery";
 import { formatCell, getCellValue, isNegativeNumberValue } from "@/lib/tableQuery";
 import { EditIcon, ViewIcon, DeleteIcon } from "../Icons";
-import { tableActionDeleteButton, tableActionEditButton } from "./sharedStyles";
+import {
+  tableActionDeleteButton,
+  tableActionEditButton,
+  tableActionViewButton,
+} from "./sharedStyles";
 import { ColumnFilterControl } from "./ColumnFilterControl";
 import { EditableBooleanCell } from "./EditableBooleanCell";
 import { EditableDiscreteCell } from "./EditableDiscreteCell";
@@ -139,7 +143,7 @@ const ActionsCol = styled.th`
 `;
 
 const ActionsCell = styled.td`
-  width: 5.5rem;
+  width: 7.5rem;
   white-space: nowrap;
 `;
 
@@ -151,6 +155,10 @@ const ActionsInner = styled.div`
 
 const EditActionButton = styled.button`
   ${tableActionEditButton};
+`;
+
+const ViewActionButton = styled.button`
+  ${tableActionViewButton};
 `;
 
 const DeleteActionButton = styled.button`
@@ -186,9 +194,12 @@ export type DataTableProps = {
   onToggleSelectAll: (visibleIds: string[]) => void;
   onEdit: (row: CollectionDocument) => void;
   onDelete: (row: CollectionDocument) => void;
+  /** Optional secondary view action shown alongside edit (e.g. invoice file). */
+  onView?: (row: CollectionDocument) => void;
   canDeleteRow?: (row: CollectionDocument) => boolean;
   deleteDisabledTooltip?: (row: CollectionDocument) => string | undefined;
   canEditRow?: (row: CollectionDocument) => boolean;
+  canViewRow?: (row: CollectionDocument) => boolean;
   rowAction?: "edit" | "view";
   /** Hides row actions and column filter row. */
   previewMode?: boolean;
@@ -213,9 +224,11 @@ export function DataTable({
   onToggleSelectAll,
   onEdit,
   onDelete,
+  onView,
   canDeleteRow,
   deleteDisabledTooltip,
   canEditRow,
+  canViewRow,
   rowAction = "edit",
   previewMode = false,
   previewIncludeSelection,
@@ -449,6 +462,18 @@ export function DataTable({
                   {!previewMode && (
                     <ActionsCell>
                       <ActionsInner>
+                        {onView != null &&
+                          (canViewRow == null || canViewRow(row)) && (
+                            <ActionTooltip text="צפייה">
+                              <ViewActionButton
+                                type="button"
+                                onClick={() => onView(row)}
+                                aria-label="צפייה"
+                              >
+                                <ViewIcon />
+                              </ViewActionButton>
+                            </ActionTooltip>
+                          )}
                         <ActionTooltip
                           text={
                             canEditRow != null && !canEditRow(row)
@@ -458,17 +483,31 @@ export function DataTable({
                                 : "עריכה"
                           }
                         >
-                          <EditActionButton
-                            type="button"
-                            onClick={() => onEdit(row)}
-                            disabled={canEditRow != null && !canEditRow(row)}
-                            aria-label={rowAction === "view" ? "צפייה" : "עריכה"}
-                            aria-disabled={
-                              canEditRow != null && !canEditRow(row)
-                            }
-                          >
-                            {rowAction === "view" ? <ViewIcon /> : <EditIcon />}
-                          </EditActionButton>
+                          {rowAction === "view" ? (
+                            <ViewActionButton
+                              type="button"
+                              onClick={() => onEdit(row)}
+                              disabled={canEditRow != null && !canEditRow(row)}
+                              aria-label="צפייה"
+                              aria-disabled={
+                                canEditRow != null && !canEditRow(row)
+                              }
+                            >
+                              <ViewIcon />
+                            </ViewActionButton>
+                          ) : (
+                            <EditActionButton
+                              type="button"
+                              onClick={() => onEdit(row)}
+                              disabled={canEditRow != null && !canEditRow(row)}
+                              aria-label="עריכה"
+                              aria-disabled={
+                                canEditRow != null && !canEditRow(row)
+                              }
+                            >
+                              <EditIcon />
+                            </EditActionButton>
+                          )}
                         </ActionTooltip>
                         <ActionTooltip
                           text={
