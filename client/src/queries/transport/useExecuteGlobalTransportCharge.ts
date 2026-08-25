@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { executeGlobalTransportCharge } from "@/lib/transportGlobalChargeApi"
-import { collectionKeys, customerBillingKeys, transportGlobalChargeKeys } from "@/lib/queryKeys"
+import { executeGlobalTransportCharge } from "@/api/transportGlobalChargeApi"
+import { collectionKeys, customerBillingKeys, transportGlobalChargeKeys } from "@/queries/queryKeys"
 
 export function useExecuteGlobalTransportCharge() {
   const queryClient = useQueryClient()

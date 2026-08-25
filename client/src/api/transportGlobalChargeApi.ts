@@ -48,7 +48,7 @@ export async function fetchGlobalTransportChargePreview(
 ): Promise<GlobalTransportChargePreview> {
   if (useMock) {
     const { previewGlobalTransportChargeMock } = await import(
-      "./transportGlobalChargeMock"
+      "@/lib/transportGlobalChargeMock"
     );
     return previewGlobalTransportChargeMock(seasonYear);
   }
@@ -64,7 +64,7 @@ export async function executeGlobalTransportCharge(
 ): Promise<GlobalTransportChargeResult> {
   if (useMock) {
     const { executeGlobalTransportChargeMock } = await import(
-      "./transportGlobalChargeMock"
+      "@/lib/transportGlobalChargeMock"
     );
     return executeGlobalTransportChargeMock(seasonYear);
   }
@@ -80,7 +80,7 @@ export async function listTransportGlobalCharges(
 ): Promise<Record<string, unknown>[]> {
   if (useMock) {
     const { listTransportGlobalChargesMock } = await import(
-      "./transportGlobalChargeMock"
+      "@/lib/transportGlobalChargeMock"
     );
     return listTransportGlobalChargesMock(seasonYear);
   }
@@ -96,7 +96,7 @@ export async function fetchTransportGlobalChargeDetail(
 ): Promise<GlobalTransportChargeDetail> {
   if (useMock) {
     const { fetchTransportGlobalChargeDetailMock } = await import(
-      "./transportGlobalChargeMock"
+      "@/lib/transportGlobalChargeMock"
     );
     return fetchTransportGlobalChargeDetailMock(id);
   }
@@ -109,7 +109,7 @@ export async function fetchTransportGlobalChargeDetail(
 export async function cancelTransportGlobalCharge(id: string): Promise<void> {
   if (useMock) {
     const { cancelTransportGlobalChargeMock } = await import(
-      "./transportGlobalChargeMock"
+      "@/lib/transportGlobalChargeMock"
     );
     return cancelTransportGlobalChargeMock(id);
   }

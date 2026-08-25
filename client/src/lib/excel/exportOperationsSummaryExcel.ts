@@ -1,5 +1,5 @@
 import { exportExcelRows } from './excelExport';
-import type { OperationsSummaryRow } from '../operationsSummaryApi';
+import type { OperationsSummaryRow } from '@/api/operationsSummaryApi';
 
 export function exportOperationsSummaryExcel(
   rows: OperationsSummaryRow[],

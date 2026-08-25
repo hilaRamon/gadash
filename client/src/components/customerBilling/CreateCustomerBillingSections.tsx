@@ -8,11 +8,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useQueryClient } from "@tanstack/react-query";
-import { useUpdateDocument } from "@/hooks/collections/useCollectionMutations";
-import { useCollectionList } from "@/hooks/collections/useCollectionList";
-import { collectionKeys, customerBillingKeys } from "@/lib/queryKeys";
+import { useUpdateDocument } from "@/queries/collections/useCollectionMutations";
+import { useCollectionList } from "@/queries/collections/useCollectionList";
+import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 import type { CollectionDocument, CollectionSchema } from "@/schema/types";
-import { countCustomerPlots, type UnbilledPreview } from "@/lib/customerBillingApi";
+import { countCustomerPlots, type UnbilledPreview } from "@/api/customerBillingApi";
 import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
 import { CustomerBillPaper } from "./CustomerBillPaper";
 import { PreviewSection, type PreviewSectionProps } from "./PreviewSection";

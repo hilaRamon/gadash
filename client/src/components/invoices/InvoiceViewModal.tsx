@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { ModalPanel } from "@/components/ui/Modal";
 import type { CollectionDocument } from "@/schema/types";
-import { fetchInvoiceFileBlobUrl } from "@/lib/invoiceApi";
+import { fetchInvoiceFileBlobUrl } from "@/api/invoiceApi";
 
 type InvoiceViewModalProps = {
   open: boolean;

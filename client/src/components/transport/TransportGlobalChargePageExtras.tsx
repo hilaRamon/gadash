@@ -8,9 +8,9 @@ import {
   countUnchargedGlobalTransports,
   sumTransportBillingTotals,
 } from "@/lib/transportTrackingPricing";
-import { useCollectionList } from "@/hooks/collections/useCollectionList";
-import { fetchGlobalTransportChargePreview } from "@/lib/transportGlobalChargeApi";
-import { transportGlobalChargeKeys } from "@/lib/queryKeys";
+import { useCollectionList } from "@/queries/collections/useCollectionList";
+import { fetchGlobalTransportChargePreview } from "@/api/transportGlobalChargeApi";
+import { transportGlobalChargeKeys } from "@/queries/queryKeys";
 
 const ExtrasRow = styled.div`
   display: flex;

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchSavedBillingBillPreview } from "@/lib/customerBillingApi";
-import { customerBillingKeys } from "@/lib/queryKeys";
+import { fetchSavedBillingBillPreview } from "@/api/customerBillingApi";
+import { customerBillingKeys } from "@/queries/queryKeys";
 import type { CollectionDocument } from "@/schema/types";
 
 type UseSavedBillingBillPreviewOptions = {

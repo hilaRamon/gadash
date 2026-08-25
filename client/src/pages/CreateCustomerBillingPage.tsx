@@ -11,8 +11,8 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { CreateCustomerBillingSections } from "@/components/customerBilling/CreateCustomerBillingSections";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
-import { useCustomersWithUnbilled } from "@/hooks/customerBilling/useCustomersWithUnbilled";
-import { useUnbilledPreview } from "@/hooks/customerBilling/useUnbilledPreview";
+import { useCustomersWithUnbilled } from "@/queries/customerBilling/useCustomersWithUnbilled";
+import { useUnbilledPreview } from "@/queries/customerBilling/useUnbilledPreview";
 import "./Page.css";
 
 export function CreateCustomerBillingPage() {

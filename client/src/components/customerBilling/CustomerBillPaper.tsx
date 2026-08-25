@@ -14,9 +14,9 @@ import {
   downloadCustomerBillPdf,
   hasIncludedBillItems,
   type UnbilledPreview,
-} from "@/lib/customerBillingApi";
-import { useCustomerBillPreview } from "@/hooks/customerBilling/useCustomerBillPreview";
-import { collectionKeys, customerBillingKeys } from "@/lib/queryKeys";
+} from "@/api/customerBillingApi";
+import { useCustomerBillPreview } from "@/queries/customerBilling/useCustomerBillPreview";
+import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 

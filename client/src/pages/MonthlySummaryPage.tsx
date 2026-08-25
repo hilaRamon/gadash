@@ -7,8 +7,8 @@ import { exportMonthlyReportExcel } from "@/lib/excel/exportMonthlyReportExcel";
 import {
   defaultSelectedMonth,
   formatHours,
-} from "@/lib/monthlyReportApi";
-import { useMonthlySummary } from "@/hooks/monthlyReport/useMonthlyReport";
+} from "@/api/monthlyReportApi";
+import { useMonthlySummary } from "@/queries/monthlyReport/useMonthlyReport";
 import "./Page.css";
 
 export function MonthlySummaryPage() {

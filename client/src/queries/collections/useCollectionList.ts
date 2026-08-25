@@ -3,12 +3,12 @@ import {
   useQuery,
   type UseQueryResult,
 } from '@tanstack/react-query'
-import { listCollection } from "@/lib/collectionApi"
-import { collectionKeys } from "@/lib/queryKeys"
+import { listCollection } from "@/api/collectionApi"
+import { collectionKeys } from "@/queries/queryKeys"
 import type {
   ListCollectionParams,
   PaginatedResult,
-} from "@/lib/listCollectionParams"
+} from "@/api/listCollectionParams"
 import type { CollectionDocument } from "@/schema/types"
 
 type PaginatedParams = ListCollectionParams & {

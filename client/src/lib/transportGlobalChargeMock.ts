@@ -1,4 +1,4 @@
-import { createDocument, deleteCustomerBillingForGlobalChargeCancelMock, listCollection, updateDocument } from "./collectionApi";
+import { createDocument, deleteCustomerBillingForGlobalChargeCancelMock, listCollection, updateDocument } from "@/api/collectionApi";
 import { buildGlobalTransportBillDocument } from "./customerBill/buildCustomerBillData";
 import { plotsSeedData } from "@/data/plotsSeed";
 import { isDateInSeason } from "./seasonRange";
@@ -7,7 +7,7 @@ import type {
   GlobalTransportChargeDetail,
   GlobalTransportChargePreview,
   GlobalTransportChargeResult,
-} from "./transportGlobalChargeApi";
+} from "@/api/transportGlobalChargeApi";
 import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
 import type { CollectionDocument } from "@/schema/types";
 

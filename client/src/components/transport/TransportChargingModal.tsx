@@ -3,7 +3,7 @@ import { ModalOverlay } from '@/components/ui/ModalOverlay'
 import { ModalPanel } from '@/components/ui/Modal'
 import { formatNumber } from "@/lib/formatNumber"
 import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles"
-import type { GlobalTransportChargePreview } from "@/lib/transportGlobalChargeApi"
+import type { GlobalTransportChargePreview } from "@/api/transportGlobalChargeApi"
 
 type TransportChargingModalProps = {
   open: boolean
