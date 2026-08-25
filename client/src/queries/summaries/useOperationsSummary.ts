@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchOperationsSummary } from "@/lib/operationsSummaryApi";
-import { summaryKeys } from "@/lib/queryKeys";
+import { fetchOperationsSummary } from "@/api/operationsSummaryApi";
+import { summaryKeys } from "@/queries/queryKeys";
 
 export function useOperationsSummary(season: number) {
   return useQuery({

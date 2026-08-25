@@ -7,8 +7,8 @@ import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
   fetchTransportGlobalChargeDetail,
   type GlobalTransportChargeDetail,
-} from "@/lib/transportGlobalChargeApi";
-import { transportGlobalChargeKeys } from "@/lib/queryKeys";
+} from "@/api/transportGlobalChargeApi";
+import { transportGlobalChargeKeys } from "@/queries/queryKeys";
 import type { CollectionDocument } from "@/schema/types";
 import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
 import { buttonBase, buttonHoverLighten } from "@/styles/buttonStyles";

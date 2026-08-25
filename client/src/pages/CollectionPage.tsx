@@ -5,17 +5,17 @@ import { getCollectionSchema } from "@/schema/registry";
 import type { CollectionSchema } from "@/schema/types";
 import { getDocumentLabel } from "@/lib/documentLabel";
 import { exportCollectionToExcel } from "@/lib/excel/exportCollectionExcel";
-import { listCollectionAllForExport } from "@/lib/collectionApi";
+import { listCollectionAllForExport } from "@/api/collectionApi";
 import { useTableQueryState } from "@/hooks/useTableQueryState";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useCollectionList } from "@/hooks/collections/useCollectionList";
+import { useCollectionList } from "@/queries/collections/useCollectionList";
 import { useSeason } from "@/context/SeasonContext";
 import {
   useCreateDocument,
   useUpdateDocument,
   useDeleteDocument,
   useBulkDeleteDocuments,
-} from "@/hooks/collections/useCollectionMutations";
+} from "@/queries/collections/useCollectionMutations";
 import { CollectionToolbar } from "@/components/collection/CollectionToolbar";
 import {
   PageHeader,
@@ -32,9 +32,9 @@ import { InvoiceMonthlySummary } from "@/components/invoices/InvoiceMonthlySumma
 import { InvoiceViewModal } from "@/components/invoices/InvoiceViewModal";
 import { GlobalTransportChargeViewModal } from "@/components/transport/GlobalTransportChargeViewModal";
 import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
-import { uploadInvoiceFile } from "@/lib/invoiceApi";
+import { uploadInvoiceFile } from "@/api/invoiceApi";
 import { useQueryClient } from "@tanstack/react-query";
-import { collectionKeys } from "@/lib/queryKeys";
+import { collectionKeys } from "@/queries/queryKeys";
 import { useGlobalChargeModalControls } from "@/hooks/transport/useGlobalChargeModalControls";
 import {
   GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP,
@@ -47,7 +47,7 @@ import {
   CHARGED_TRACKING_EDIT_ERROR,
 } from "@/lib/chargedTrackingErrors";
 import { toQueryParams } from "@/schema/tableQuery";
-import type { ListCollectionParams } from "@/lib/listCollectionParams";
+import type { ListCollectionParams } from "@/api/listCollectionParams";
 import { collectionHasDateField } from "@/lib/seasonRange";
 import type { CollectionDocument } from "@/schema/types";
 import "./Page.css";

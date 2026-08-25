@@ -4,8 +4,8 @@ import {
   getInitialValues,
   getRequiredFieldErrors,
 } from "@/components/collection/CollectionFormModal/helpers"
-import { useCollectionList } from "@/hooks/collections/useCollectionList"
-import { useCreateDocument } from "@/hooks/collections/useCollectionMutations"
+import { useCollectionList } from "@/queries/collections/useCollectionList"
+import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
 import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import { fuelOperationsTrackingsSchema } from "@/schema/collections/fuelOperationsTrackingsSchema"

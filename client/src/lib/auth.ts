@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/api/api'
 import { clearAuthToken, getAuthToken, setAuthToken } from './tokenStorage'
 
 export type AuthRole = 'employee' | 'admin'

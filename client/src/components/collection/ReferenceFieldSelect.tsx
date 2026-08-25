@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { SearchableSelect } from "@/components/ui/SearchableSelect"
-import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useCollectionList } from "@/queries/collections/useCollectionList"
 import type { CollectionDocument } from "@/schema/types"
 
 type ReferenceFieldSelectProps = {

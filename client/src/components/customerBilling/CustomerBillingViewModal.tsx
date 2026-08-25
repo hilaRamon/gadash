@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { ModalPanel } from "@/components/ui/Modal";
 import type { CollectionDocument } from "@/schema/types";
-import { useSavedBillingBillPreview } from "@/hooks/customerBilling/useSavedBillingBillPreview";
+import { useSavedBillingBillPreview } from "@/queries/customerBilling/useSavedBillingBillPreview";
 
 type CustomerBillingViewModalProps = {
   open: boolean;

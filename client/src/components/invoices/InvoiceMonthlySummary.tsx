@@ -1,9 +1,9 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
-import { useInvoiceMonthlySummary } from "@/hooks/invoices/useInvoiceMonthlySummary";
+import { useInvoiceMonthlySummary } from "@/queries/invoices/useInvoiceMonthlySummary";
 import { formatNumber2 } from "@/lib/formatNumber";
-import { defaultSelectedMonth } from "@/lib/monthlyReportApi";
+import { defaultSelectedMonth } from "@/api/monthlyReportApi";
 
 export function InvoiceMonthlySummary() {
   const [month, setMonth] = useState(defaultSelectedMonth);

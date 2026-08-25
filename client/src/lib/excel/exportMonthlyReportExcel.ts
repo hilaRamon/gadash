@@ -2,12 +2,12 @@ import { exportExcelRows } from "./excelExport";
 import type {
   EmployeeMonthlyReport,
   MonthlySummaryRow,
-} from "../monthlyReportApi";
+} from "@/api/monthlyReportApi";
 import {
   formatHours,
   formatReportDate,
   formatReportMonth,
-} from "../monthlyReportApi";
+} from "@/api/monthlyReportApi";
 
 export function exportMonthlyReportExcel(
   rows: MonthlySummaryRow[],

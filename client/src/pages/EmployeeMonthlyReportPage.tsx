@@ -6,7 +6,7 @@ import {
   useEmployeeMonthlyReport,
   useMonthlySummary,
   useUpdateMonthlyAbsence,
-} from "@/hooks/monthlyReport/useMonthlyReport";
+} from "@/queries/monthlyReport/useMonthlyReport";
 import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { exportEmployeeMonthlyReportExcel } from "@/lib/excel/exportMonthlyReportExcel";
@@ -15,7 +15,7 @@ import {
   formatHours,
   formatReportDate,
   type AbsenceDays,
-} from "@/lib/monthlyReportApi";
+} from "@/api/monthlyReportApi";
 import "./Page.css";
 
 export function EmployeeMonthlyReportPage() {

@@ -5,7 +5,7 @@ import type {
   CollectionDocument,
   CollectionSchema,
 } from "@/schema/types";
-import { useCollectionList } from "@/hooks/collections/useCollectionList";
+import { useCollectionList } from "@/queries/collections/useCollectionList";
 import {
   applyBaleOrderFieldChange,
   getBaleOrderVisibleFields,

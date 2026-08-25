@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { notifyUnauthorized } from './authSession';
-import { clearAuthToken, getAuthToken } from './tokenStorage';
+import { notifyUnauthorized } from '@/lib/authSession';
+import { clearAuthToken, getAuthToken } from '@/lib/tokenStorage';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3001',

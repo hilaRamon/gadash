@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { useCollectionList } from "@/hooks/collections/useCollectionList"
+import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useSeason } from "@/context/SeasonContext"
 import { getCurrentSeasonYear } from "@/lib/seasonRange"
 import { SearchableSelect } from "@/components/ui/SearchableSelect"

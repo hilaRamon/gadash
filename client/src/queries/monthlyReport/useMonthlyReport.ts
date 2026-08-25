@@ -4,8 +4,8 @@ import {
   fetchMonthlySummary,
   updateMonthlyAbsenceDays,
   type AbsenceDays,
-} from "@/lib/monthlyReportApi";
-import { monthlyReportKeys } from "@/lib/queryKeys";
+} from "@/api/monthlyReportApi";
+import { monthlyReportKeys } from "@/queries/queryKeys";
 
 export function useEmployeeMonthlyReport(employeeId: string, month: string) {
   return useQuery({
