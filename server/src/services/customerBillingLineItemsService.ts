@@ -4,6 +4,7 @@ import { contractorTrackingRepository } from '../repositories/contractorTracking
 import { materialUsageTrackingRepository } from '../repositories/materialUsageTrackingRepository';
 import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
 import { transportTrackingRepository } from '../repositories/transportTrackingRepository';
+import { transportGlobalAllocationRepository } from '../repositories/transportGlobalAllocationRepository';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 
 function toObjectIdArray(value: unknown): Types.ObjectId[] {
@@ -34,6 +35,9 @@ export async function unchargeBillingLineItems(
     ),
     transportTrackingRepository.markUncharged(
       toObjectIdArray(doc.transportTrackingIds),
+    ),
+    transportGlobalAllocationRepository.markUncharged(
+      toObjectIdArray(doc.globalTransportAllocationIds),
     ),
   ]);
 }

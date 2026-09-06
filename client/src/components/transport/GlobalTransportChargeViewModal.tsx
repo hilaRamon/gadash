@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import styled from "styled-components";
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { ModalPanel } from "@/components/ui/Modal";
@@ -9,9 +9,6 @@ import {
   type GlobalTransportChargeDetail,
 } from "@/api/transportGlobalChargeApi";
 import { transportGlobalChargeKeys } from "@/queries/queryKeys";
-import type { CollectionDocument } from "@/schema/types";
-import { CustomerBillingViewModal } from "@/components/customerBilling/CustomerBillingViewModal";
-import { buttonBase, buttonHoverLighten } from "@/styles/buttonStyles";
 
 type GlobalTransportChargeViewModalProps = {
   open: boolean;
@@ -30,9 +27,6 @@ export function GlobalTransportChargeViewModal({
   chargeId,
   onClose,
 }: GlobalTransportChargeViewModalProps) {
-  const [viewingBilling, setViewingBilling] =
-    useState<CollectionDocument | null>(null);
-
   const { data, isLoading, isError, error } = useQuery({
     queryKey: transportGlobalChargeKeys.detail(chargeId ?? ""),
     queryFn: () => fetchTransportGlobalChargeDetail(chargeId!),
@@ -40,57 +34,41 @@ export function GlobalTransportChargeViewModal({
   });
 
   useEffect(() => {
-    if (!open) {
-      setViewingBilling(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && viewingBilling == null) onClose();
+      if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose, viewingBilling]);
+  }, [open, onClose]);
 
   if (!open || !chargeId) return null;
 
   return (
-    <>
-      <ModalOverlay open={open} onClose={onClose} layout="scrollable">
-        <ModalPanel
-          title="פרטי חיוב גלובלי"
-          onClose={onClose}
-          maxWidth="min(720px, 100%)"
-        >
-          {isLoading ? (
-            <StatusText>טוען פרטים...</StatusText>
-          ) : isError ? (
-            <ErrorText role="alert">
-              {error instanceof Error ? error.message : "שגיאה בטעינת הפרטים"}
-            </ErrorText>
-          ) : data ? (
-            <ChargeDetailContent detail={data} onViewBill={setViewingBilling} />
-          ) : null}
-        </ModalPanel>
-      </ModalOverlay>
-
-      <CustomerBillingViewModal
-        open={viewingBilling !== null}
-        billing={viewingBilling}
-        onClose={() => setViewingBilling(null)}
-      />
-    </>
+    <ModalOverlay open={open} onClose={onClose} layout="scrollable">
+      <ModalPanel
+        title="פרטי חיוב גלובלי"
+        onClose={onClose}
+        maxWidth="min(720px, 100%)"
+      >
+        {isLoading ? (
+          <StatusText>טוען פרטים...</StatusText>
+        ) : isError ? (
+          <ErrorText role="alert">
+            {error instanceof Error ? error.message : "שגיאה בטעינת הפרטים"}
+          </ErrorText>
+        ) : data ? (
+          <ChargeDetailContent detail={data} />
+        ) : null}
+      </ModalPanel>
+    </ModalOverlay>
   );
 }
 
 function ChargeDetailContent({
   detail,
-  onViewBill,
 }: {
   detail: GlobalTransportChargeDetail;
-  onViewBill: (billing: CollectionDocument) => void;
 }) {
   return (
     <>
@@ -107,48 +85,39 @@ function ChargeDetailContent({
         <dd>{formatNumber(detail.totalDunam)}</dd>
         <dt>מספר הובלות</dt>
         <dd>{detail.transportRowCount}</dd>
-        <dt>מספר חשבונות</dt>
+        <dt>לקוחות שחויבו</dt>
         <dd>{detail.billsCount}</dd>
       </SummaryGrid>
 
-      <BillsSection>
-        <BillsTitle>חשבונות לקוחות</BillsTitle>
-        {detail.customerBillings.length === 0 ? (
-          <StatusText>אין חשבונות מקושרים</StatusText>
+      <AllocationsSection>
+        <AllocationsTitle>לקוחות</AllocationsTitle>
+        {detail.allocations.length === 0 ? (
+          <StatusText>אין לקוחות בחיוב זה</StatusText>
         ) : (
-          <BillsTable>
+          <AllocationsTable>
             <thead>
               <tr>
                 <th>לקוח</th>
+                <th>דונם</th>
+                <th>מחיר לדונם</th>
                 <th>סכום</th>
-                <th>סטטוס</th>
-                <th>שולם</th>
-                <th />
+                <th>חויב</th>
               </tr>
             </thead>
             <tbody>
-              {detail.customerBillings.map((billing) => (
-                <tr key={billing._id}>
-                  <td>{billing.customerName ?? "—"}</td>
-                  <td>{formatWholeNumber(billing.finalPrice ?? 0)}</td>
-                  <td>{billing.status ?? "—"}</td>
-                  <td>{billing.paid === true ? "כן" : "לא"}</td>
-                  <td>
-                    <ViewBillButton
-                      type="button"
-                      onClick={() =>
-                        onViewBill(billing as CollectionDocument)
-                      }
-                    >
-                      צפה בחשבונית
-                    </ViewBillButton>
-                  </td>
+              {detail.allocations.map((allocation) => (
+                <tr key={allocation._id}>
+                  <td>{allocation.customerName || "—"}</td>
+                  <td>{formatNumber(allocation.dunam)}</td>
+                  <td>{formatNumber(allocation.pricePerDunam)}</td>
+                  <td>{formatWholeNumber(allocation.finalPrice)}</td>
+                  <td>{allocation.wasCharged ? "כן" : "לא"}</td>
                 </tr>
               ))}
             </tbody>
-          </BillsTable>
+          </AllocationsTable>
         )}
-      </BillsSection>
+      </AllocationsSection>
     </>
   );
 }
@@ -172,17 +141,17 @@ const SummaryGrid = styled.dl`
   }
 `;
 
-const BillsSection = styled.section`
+const AllocationsSection = styled.section`
   margin-top: 0.5rem;
 `;
 
-const BillsTitle = styled.h3`
+const AllocationsTitle = styled.h3`
   margin: 0 0 0.75rem;
   font-size: 1rem;
   font-weight: 700;
 `;
 
-const BillsTable = styled.table`
+const AllocationsTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
@@ -198,16 +167,6 @@ const BillsTable = styled.table`
     color: var(--text-secondary);
     font-weight: 600;
   }
-`;
-
-const ViewBillButton = styled.button`
-  ${buttonBase};
-  font-size: 0.8125rem;
-  padding: 0.25rem 0.5rem;
-  background: transparent;
-  color: var(--accent);
-
-  ${buttonHoverLighten};
 `;
 
 const StatusText = styled.p`

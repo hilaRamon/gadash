@@ -19,8 +19,17 @@ export type GlobalTransportChargePreview = {
 
 export type GlobalTransportChargeResult = GlobalTransportChargePreview & {
   globalChargeId: string;
-  billsCreated: number;
-  customerBillingIds: string[];
+  allocationsCreated: number;
+};
+
+export type GlobalTransportAllocationDetail = {
+  _id: string;
+  customer: string;
+  customerName: string;
+  dunam: number;
+  pricePerDunam: number;
+  finalPrice: number;
+  wasCharged: boolean;
 };
 
 export type GlobalTransportChargeDetail = {
@@ -32,13 +41,7 @@ export type GlobalTransportChargeDetail = {
   pricePerDunam: number;
   transportRowCount: number;
   billsCount: number;
-  customerBillings: Array<{
-    _id: string;
-    customerName?: string;
-    finalPrice?: number;
-    status?: string;
-    paid?: boolean;
-  }>;
+  allocations: GlobalTransportAllocationDetail[];
 };
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";

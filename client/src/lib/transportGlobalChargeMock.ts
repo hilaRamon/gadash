@@ -1,5 +1,4 @@
-import { createDocument, deleteCustomerBillingForGlobalChargeCancelMock, listCollection, updateDocument } from "@/api/collectionApi";
-import { buildGlobalTransportBillDocument } from "./customerBill/buildCustomerBillData";
+import { createDocument, deleteDocument, listCollection, updateDocument } from "@/api/collectionApi";
 import { plotsSeedData } from "@/data/plotsSeed";
 import { isDateInSeason } from "./seasonRange";
 import { DEFAULT_TRANSPORT_BILLING } from "./transportBilling";
@@ -8,7 +7,7 @@ import type {
   GlobalTransportChargePreview,
   GlobalTransportChargeResult,
 } from "@/api/transportGlobalChargeApi";
-import { PAID_BILLING_DELETE_ERROR } from "./customerBillingErrors";
+import { GLOBAL_TRANSPORT_CHARGE_ALREADY_BILLED_ERROR } from "./customerBillingErrors";
 import type { CollectionDocument } from "@/schema/types";
 
 const GLOBAL_TRANSPORT_CHARGE_OPERATIONS = ["זריעה", "זריעה+אי פליחה"];
@@ -151,20 +150,42 @@ async function computeChargeData(seasonYear: number) {
   };
 }
 
-function batchToListRow(batch: CollectionDocument): CollectionDocument {
+function batchToListRow(
+  batch: CollectionDocument,
+  chargedCount: number,
+): CollectionDocument {
   const transportTrackingIds = toIdArray(batch.transportTrackingIds);
-  const customerBillingIds = toIdArray(batch.customerBillingIds);
   return {
     ...batch,
     transportRowCount: transportTrackingIds.length,
-    billsCount: customerBillingIds.length,
+    billsCount: chargedCount,
   };
+}
+
+async function allocationsForCharge(chargeId: string) {
+  const allocations = await listCollection("transportGlobalAllocations");
+  return allocations.filter(
+    (row) => String(row.globalTransportChargeId ?? "") === chargeId,
+  );
 }
 
 export async function listTransportGlobalChargesMock(
   seasonYear?: number,
 ): Promise<CollectionDocument[]> {
-  const rows = globalChargeStore.map(batchToListRow);
+  const allocations = await listCollection("transportGlobalAllocations");
+  const chargedCountByCharge = new Map<string, number>();
+  for (const row of allocations) {
+    if (row.wasCharged !== true) continue;
+    const chargeId = String(row.globalTransportChargeId ?? "");
+    chargedCountByCharge.set(
+      chargeId,
+      (chargedCountByCharge.get(chargeId) ?? 0) + 1,
+    );
+  }
+
+  const rows = globalChargeStore.map((batch) =>
+    batchToListRow(batch, chargedCountByCharge.get(String(batch._id)) ?? 0),
+  );
   if (seasonYear == null) return rows;
   return rows.filter((row) => Number(row.seasonYear) === seasonYear);
 }
@@ -177,30 +198,41 @@ export async function fetchTransportGlobalChargeDetailMock(
     throw new Error("לא נמצא");
   }
 
-  const billingIds = toIdArray(batch.customerBillingIds);
-  const billings = await listCollection("customerBillingTrackings");
-  const customerBillings = billingIds
-    .map((billingId) => billings.find((row) => row._id === billingId))
-    .filter((row): row is CollectionDocument => row != null)
-    .map((billing) => ({
-      ...billing,
-      customerName: String(billing.customerName ?? ""),
-      finalPrice: Number(billing.finalPrice ?? 0),
-      status: String(billing.status ?? ""),
-      paid: billing.paid === true,
-    }));
+  const [allocations, customers] = await Promise.all([
+    allocationsForCharge(id),
+    listCollection("customers"),
+  ]);
+  const customerNameById = new Map(
+    customers.map((row) => [String(row._id), String(row.name ?? "")]),
+  );
+  const pricePerDunam = Number(batch.pricePerDunam ?? 0);
+  const chargedCount = allocations.filter((row) => row.wasCharged === true).length;
+  const listRow = batchToListRow(batch, chargedCount);
 
-  const listRow = batchToListRow(batch);
   return {
     _id: String(batch._id),
     seasonYear: Number(batch.seasonYear ?? 0),
     executedAt: String(batch.executedAt ?? ""),
     transportTotal: Number(batch.transportTotal ?? 0),
     totalDunam: Number(batch.totalDunam ?? 0),
-    pricePerDunam: Number(batch.pricePerDunam ?? 0),
+    pricePerDunam,
     transportRowCount: Number(listRow.transportRowCount ?? 0),
-    billsCount: Number(listRow.billsCount ?? 0),
-    customerBillings,
+    billsCount: chargedCount,
+    allocations: allocations.map((row) => {
+      const customerId = String(row.customer ?? "");
+      return {
+        _id: String(row._id),
+        customer: customerId,
+        customerName:
+          String(row.customerName ?? "") ||
+          customerNameById.get(customerId) ||
+          "",
+        dunam: Number(row.dunam ?? 0),
+        pricePerDunam,
+        finalPrice: Number(row.finalPrice ?? 0),
+        wasCharged: row.wasCharged === true,
+      };
+    }),
   };
 }
 
@@ -211,14 +243,9 @@ export async function cancelTransportGlobalChargeMock(id: string): Promise<void>
   }
 
   const batch = globalChargeStore[index];
-  const billingIds = toIdArray(batch.customerBillingIds);
-  const billings = await listCollection("customerBillingTrackings");
-
-  for (const billingId of billingIds) {
-    const billing = billings.find((row) => row._id === billingId);
-    if (billing?.paid === true) {
-      throw new Error(PAID_BILLING_DELETE_ERROR);
-    }
+  const allocations = await allocationsForCharge(id);
+  if (allocations.some((row) => row.wasCharged === true)) {
+    throw new Error(GLOBAL_TRANSPORT_CHARGE_ALREADY_BILLED_ERROR);
   }
 
   const transportIds = toIdArray(batch.transportTrackingIds);
@@ -228,8 +255,8 @@ export async function cancelTransportGlobalChargeMock(id: string): Promise<void>
     });
   }
 
-  for (const billingId of billingIds) {
-    await deleteCustomerBillingForGlobalChargeCancelMock(billingId);
+  for (const allocation of allocations) {
+    await deleteDocument("transportGlobalAllocations", allocation._id);
   }
 
   globalChargeStore.splice(index, 1);
@@ -270,47 +297,7 @@ export async function executeGlobalTransportChargeMock(
   const preview = await previewGlobalTransportChargeMock(seasonYear);
   const data = await computeChargeData(seasonYear);
   const executedAt = new Date();
-  const billDate = executedAt.toLocaleDateString("he-IL");
-  const customerBillingIds: string[] = [];
   const transportTrackingIds = data.transportRows.map((row) => String(row._id));
-
-  for (const group of data.customerGroups) {
-    const plotLines = group.plots.map((plot) => ({
-      plotName: plot.name,
-      dunam: plot.dunam,
-      linePrice: data.plotLinePrices.get(plot._id) ?? 0,
-    }));
-
-    const storedBillDocument = buildGlobalTransportBillDocument({
-      customerName: group.customerName,
-      billDate,
-      pricePerDunam: data.pricePerDunam,
-      plotLines,
-    });
-
-    const created = await createDocument("customerBillingTrackings", {
-      date: executedAt.toISOString().slice(0, 10),
-      customer: group.customerId,
-      billKind: "globalTransport",
-      storedBillDocument,
-      notes: "",
-      status: "לא אושר כלל",
-      paid: false,
-      finalPrice: storedBillDocument.total,
-      operationsTrackingIds: [],
-      materialUsageTrackingIds: [],
-      contractorTrackingIds: [],
-      baleOrderTrackingIds: [],
-      transportTrackingIds: [],
-    });
-    customerBillingIds.push(String(created._id));
-  }
-
-  for (const row of data.transportRows) {
-    await updateDocument("transportTrackings", String(row._id), {
-      wasCharged: true,
-    });
-  }
 
   const batchId = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
   globalChargeStore.push({
@@ -321,13 +308,34 @@ export async function executeGlobalTransportChargeMock(
     totalDunam: data.totalDunam,
     pricePerDunam: data.pricePerDunam,
     transportTrackingIds,
-    customerBillingIds,
+    customerBillingIds: [],
   });
+
+  for (const group of data.customerGroups) {
+    await createDocument("transportGlobalAllocations", {
+      globalTransportChargeId: batchId,
+      customer: group.customerId,
+      customerName: group.customerName,
+      dunam: group.plots.reduce((sum, plot) => sum + plot.dunam, 0),
+      finalPrice: roundMoney(
+        group.plots.reduce(
+          (sum, plot) => sum + (data.plotLinePrices.get(plot._id) ?? 0),
+          0,
+        ),
+      ),
+      wasCharged: false,
+    });
+  }
+
+  for (const row of data.transportRows) {
+    await updateDocument("transportTrackings", String(row._id), {
+      wasCharged: true,
+    });
+  }
 
   return {
     ...preview,
     globalChargeId: batchId,
-    billsCreated: customerBillingIds.length,
-    customerBillingIds,
+    allocationsCreated: data.customerGroups.length,
   };
 }

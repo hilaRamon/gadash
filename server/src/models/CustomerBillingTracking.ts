@@ -55,6 +55,10 @@ const customerBillingTrackingSchema = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: 'TransportTracking' }],
       default: [],
     },
+    globalTransportAllocationIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'TransportGlobalAllocation' }],
+      default: [],
+    },
   },
   { timestamps: true, versionKey: false },
 );

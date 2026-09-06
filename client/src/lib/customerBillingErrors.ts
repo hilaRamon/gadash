@@ -7,3 +7,6 @@ export const GLOBAL_TRANSPORT_BILLING_DELETE_ERROR =
 
 export const GLOBAL_TRANSPORT_BILLING_DELETE_TOOLTIP =
   "יש לבטל חיוב גלובלי ממעקב חיובים גלובליים";
+
+export const GLOBAL_TRANSPORT_CHARGE_ALREADY_BILLED_ERROR =
+  "לא ניתן לבטל חיוב גלובלי — חלק מהלקוחות כבר חויבו";

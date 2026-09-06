@@ -9,6 +9,7 @@ import {
 } from "@/lib/baleOrderPricing";
 import { operationPricingFormOptions } from "@/lib/operationTrackingPricing";
 import { formatNumber } from "@/lib/formatNumber";
+import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
 
 type EditableRule = boolean | ((row: CollectionDocument) => boolean);
 
@@ -144,7 +145,9 @@ export const contractorPreviewSchema: CollectionSchema = buildBillingPreviewSche
     "unitAmount",
     "customerFinalPrice",
   ],
-  { unitCustomerPrice: true },
+  {
+    unitCustomerPrice: (row) => !isGlobalTransportAllocationRow(row),
+  },
   { nullableKeys: ["unitCustomerPrice"] },
 );
 

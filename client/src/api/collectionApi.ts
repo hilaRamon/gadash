@@ -101,6 +101,9 @@ function seedMockData(collection: string): CollectionDocument[] {
   if (collection === "customerBillingTrackings") {
     return seedCustomerBillingTrackings();
   }
+  if (collection === "transportGlobalAllocations") {
+    return [];
+  }
 
   const labels: Record<string, string> = {
     employees: "עובד",
@@ -306,6 +309,7 @@ function seedCustomerBillingTrackings(): CollectionDocument[] {
       contractorTrackingIds: [],
       transportTrackingIds: [],
       baleOrderTrackingIds: [],
+      globalTransportAllocationIds: [],
     };
   });
 }
@@ -336,6 +340,9 @@ function enrichCustomerBillingTrackingRow(
       : [],
     baleOrderTrackingIds: Array.isArray(row.baleOrderTrackingIds)
       ? row.baleOrderTrackingIds.map(String)
+      : [],
+    globalTransportAllocationIds: Array.isArray(row.globalTransportAllocationIds)
+      ? row.globalTransportAllocationIds.map(String)
       : [],
   };
 }
@@ -840,6 +847,10 @@ function unchargeCustomerBillingLineItemsMock(billing: CollectionDocument): void
     {
       collection: "baleOrderTrackings",
       ids: toIdArray(billing.baleOrderTrackingIds),
+    },
+    {
+      collection: "transportGlobalAllocations",
+      ids: toIdArray(billing.globalTransportAllocationIds),
     },
   ];
 

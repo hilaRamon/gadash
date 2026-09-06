@@ -7,6 +7,7 @@ import { OperationTrackingModel } from '../models/OperationTracking';
 import { PlotModel } from '../models/Plot';
 import { TransportTrackingModel } from '../models/TransportTracking';
 import { customerBillingTrackingRepository } from '../repositories/customerBillingTrackingRepository';
+import { transportGlobalAllocationRepository } from '../repositories/transportGlobalAllocationRepository';
 import type { CustomerBillDocument, CustomerBillRequest } from '../types/customerBill';
 import { baleOrderTrackingToApiDocuments } from '../utils/baleOrderTrackingApiMapper';
 import { contractorTrackingToApiDocuments } from '../utils/contractorTrackingApiMapper';
@@ -16,8 +17,13 @@ import {
   isValidContractorForBill,
   isValidMaterialForBill,
   isValidOperationForBill,
+  isValidGlobalTransportAllocationForBill,
   isValidTransportForBill,
 } from '../utils/customerBillDataBuilder';
+import {
+  isGlobalTransportAllocationRow,
+  transportGlobalAllocationToContractorBillingDocuments,
+} from '../utils/transportGlobalAllocationBillingMapper';
 import { transportTrackingToContractorBillingDocuments } from '../utils/transportTrackingBillingMapper';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import { materialUsageTrackingToApiDocuments } from '../utils/materialUsageTrackingApiMapper';
@@ -94,6 +100,7 @@ export type ValidatedBillSelection = {
   materialUsageTrackingIds: Types.ObjectId[];
   baleOrderTrackingIds: Types.ObjectId[];
   transportTrackingIds: Types.ObjectId[];
+  globalTransportAllocationIds: Types.ObjectId[];
 };
 
 function assertValidatedCount(
@@ -120,8 +127,9 @@ async function fetchTrackingRowsByIds(ids: {
   materialIds: Types.ObjectId[];
   baleIds: Types.ObjectId[];
   transportIds: Types.ObjectId[];
+  allocationIds: Types.ObjectId[];
 }) {
-  const [operationRows, contractorRows, materialRows, baleRows, transportRows] = await Promise.all([
+  const [operationRows, contractorRows, materialRows, baleRows, transportRows, allocationRows] = await Promise.all([
     ids.operationIds.length > 0
       ? OperationTrackingModel.find({ _id: { $in: ids.operationIds } })
           .populate(operationPopulate)
@@ -155,6 +163,7 @@ async function fetchTrackingRowsByIds(ids: {
           .populate(transportCustomerPopulate)
           .lean()
       : [],
+    transportGlobalAllocationRepository.findByIds(ids.allocationIds),
   ]);
 
   return {
@@ -167,6 +176,9 @@ async function fetchTrackingRowsByIds(ids: {
       ),
       ...transportTrackingToContractorBillingDocuments(
         transportRows as Record<string, unknown>[],
+      ),
+      ...transportGlobalAllocationToContractorBillingDocuments(
+        allocationRows as Record<string, unknown>[],
       ),
     ],
     materialUsage: materialUsageTrackingToApiDocuments(
@@ -218,6 +230,10 @@ async function loadBillFromBillingTracking(
     billing.transportTrackingIds,
     'מעקבי הובלות',
   );
+  const allocationIds = parseObjectIdArray(
+    billing.globalTransportAllocationIds,
+    'חיוב הובלות גלובלי',
+  );
 
   const [rows, showPlots] = await Promise.all([
     fetchTrackingRowsByIds({
@@ -226,6 +242,7 @@ async function loadBillFromBillingTracking(
       materialIds,
       baleIds,
       transportIds,
+      allocationIds,
     }),
     customerHasMultiplePlots(String(billing.customer ?? '')),
   ]);
@@ -260,13 +277,18 @@ export async function loadValidatedSelection(
   );
   const baleIds = parseObjectIdArray(body.baleOrderTrackingIds, 'מעקבי הזמנות חבילות');
   const transportIds = parseObjectIdArray(body.transportTrackingIds, 'מעקבי הובלות');
+  const allocationIds = parseObjectIdArray(
+    body.globalTransportAllocationIds,
+    'חיוב הובלות גלובלי',
+  );
 
   const totalItems =
     operationIds.length +
     contractorIds.length +
     materialIds.length +
     baleIds.length +
-    transportIds.length;
+    transportIds.length +
+    allocationIds.length;
   if (totalItems === 0) {
     throw new Error('יש לבחור לפחות פריט אחד לחיוב');
   }
@@ -278,6 +300,7 @@ export async function loadValidatedSelection(
       materialIds,
       baleIds,
       transportIds,
+      allocationIds,
     }),
     customerHasMultiplePlots(customerId),
   ]);
@@ -290,14 +313,22 @@ export async function loadValidatedSelection(
     if (row.billingRowSource === 'transport') {
       return isValidTransportForBill(row, customerId);
     }
+    if (isGlobalTransportAllocationRow(row)) {
+      return isValidGlobalTransportAllocationForBill(row, customerId);
+    }
     return isValidContractorForBill(row, customerId);
   });
 
   const validatedContractorCount = contractors.filter(
-    (row) => row.billingRowSource !== 'transport',
+    (row) =>
+      row.billingRowSource !== 'transport' &&
+      !isGlobalTransportAllocationRow(row),
   ).length;
   const validatedTransportCount = contractors.filter(
     (row) => row.billingRowSource === 'transport',
+  ).length;
+  const validatedAllocationCount = contractors.filter((row) =>
+    isGlobalTransportAllocationRow(row),
   ).length;
 
   const materialUsage = fetched.materialUsage.filter((row) =>
@@ -311,6 +342,11 @@ export async function loadValidatedSelection(
   assertValidatedCount(operationIds, operations.length, 'מעקבי פעולות');
   assertValidatedCount(contractorIds, validatedContractorCount, 'מעקבי קבלנים');
   assertValidatedCount(transportIds, validatedTransportCount, 'מעקבי הובלות');
+  assertValidatedCount(
+    allocationIds,
+    validatedAllocationCount,
+    'חיוב הובלות גלובלי',
+  );
   assertValidatedCount(materialIds, materialUsage.length, 'מעקבי שימוש בחומרים');
   assertValidatedCount(baleIds, baleOrders.length, 'מעקבי הזמנות חבילות');
 
@@ -331,6 +367,7 @@ export async function loadValidatedSelection(
     materialUsageTrackingIds: materialIds,
     baleOrderTrackingIds: baleIds,
     transportTrackingIds: transportIds,
+    globalTransportAllocationIds: allocationIds,
   };
 }
 

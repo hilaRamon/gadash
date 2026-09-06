@@ -14,6 +14,7 @@ import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 import type { CollectionDocument, CollectionSchema } from "@/schema/types";
 import { countCustomerPlots, type UnbilledPreview } from "@/api/customerBillingApi";
 import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
+import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
 import { CustomerBillPaper } from "./CustomerBillPaper";
 import { PreviewSection, type PreviewSectionProps } from "./PreviewSection";
 import {
@@ -156,6 +157,7 @@ export function CreateCustomerBillingSections({
   const handleContractorCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
       if (key !== "unitCustomerPrice") return;
+      if (isGlobalTransportAllocationRow(row)) return;
       if (isTransportBillingRow(row)) {
         await updateTransport.mutateAsync({
           id: row._id,

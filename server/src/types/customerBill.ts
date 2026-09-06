@@ -36,4 +36,5 @@ export type CustomerBillRequest = {
   materialUsageTrackingIds?: unknown;
   baleOrderTrackingIds?: unknown;
   transportTrackingIds?: unknown;
+  globalTransportAllocationIds?: unknown;
 };
