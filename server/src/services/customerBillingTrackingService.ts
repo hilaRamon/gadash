@@ -140,6 +140,12 @@ async function buildTrackingPatch(
       'מעקבי הובלות',
     );
   }
+  if (mustHave('globalTransportAllocationIds')) {
+    patch.globalTransportAllocationIds = parseObjectIdArray(
+      body.globalTransportAllocationIds,
+      'חיוב הובלות גלובלי',
+    );
+  }
 
   return patch;
 }
@@ -183,6 +189,7 @@ export const customerBillingTrackingService = {
       contractorTrackingIds: patch.contractorTrackingIds ?? [],
       baleOrderTrackingIds: patch.baleOrderTrackingIds ?? [],
       transportTrackingIds: patch.transportTrackingIds ?? [],
+      globalTransportAllocationIds: patch.globalTransportAllocationIds ?? [],
     };
 
     const created = await customerBillingTrackingRepository.create(input);

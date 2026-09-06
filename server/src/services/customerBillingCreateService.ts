@@ -9,6 +9,7 @@ import { contractorTrackingRepository } from '../repositories/contractorTracking
 import { materialUsageTrackingRepository } from '../repositories/materialUsageTrackingRepository';
 import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
 import { transportTrackingRepository } from '../repositories/transportTrackingRepository';
+import { transportGlobalAllocationRepository } from '../repositories/transportGlobalAllocationRepository';
 import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import { loadValidatedSelection } from './customerBillService';
 
@@ -21,6 +22,9 @@ async function markTrackingsCharged(
     materialUsageTrackingRepository.markCharged(selection.materialUsageTrackingIds),
     baleOrderTrackingRepository.markCharged(selection.baleOrderTrackingIds),
     transportTrackingRepository.markCharged(selection.transportTrackingIds),
+    transportGlobalAllocationRepository.markCharged(
+      selection.globalTransportAllocationIds,
+    ),
   ]);
 }
 
@@ -40,6 +44,7 @@ export const customerBillingCreateService = {
       contractorTrackingIds: selection.contractorTrackingIds,
       baleOrderTrackingIds: selection.baleOrderTrackingIds,
       transportTrackingIds: selection.transportTrackingIds,
+      globalTransportAllocationIds: selection.globalTransportAllocationIds,
     };
 
     const created = await customerBillingTrackingRepository.create(input);

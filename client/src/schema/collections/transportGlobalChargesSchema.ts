@@ -54,7 +54,7 @@ export const transportGlobalChargesSchema: CollectionSchema = {
     },
     {
       key: "billsCount",
-      label: "מספר חשבונות",
+      label: "לקוחות שחויבו",
       type: "number",
       sortable: true,
       width: "7rem",

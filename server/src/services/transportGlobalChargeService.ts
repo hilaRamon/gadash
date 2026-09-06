@@ -1,22 +1,13 @@
 import mongoose, { Types } from 'mongoose';
-import {
-  CustomerBillingTrackingModel,
-  type CustomerBillingStatus,
-} from '../models/CustomerBillingTracking';
+import { GLOBAL_TRANSPORT_CHARGE_ALREADY_BILLED_ERROR } from '../lib/customerBillingErrors';
+import { transportGlobalAllocationRepository } from '../repositories/transportGlobalAllocationRepository';
 import { transportGlobalChargeRepository } from '../repositories/transportGlobalChargeRepository';
 import { transportTrackingRepository } from '../repositories/transportTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
-import type { CustomerBillDocument } from '../types/customerBill';
-import { PAID_BILLING_DELETE_ERROR } from '../lib/customerBillingErrors';
-import {
-  buildGlobalTransportBillDocument,
-  type GlobalTransportPlotLine,
-} from '../utils/customerBillDataBuilder';
 import {
   transportGlobalChargeToApiDocument,
   transportGlobalChargeToApiDocuments,
 } from '../utils/transportGlobalChargeApiMapper';
-import { customerBillingTrackingToApiDocument } from '../utils/customerBillingTrackingApiMapper';
 import {
   findSeasonPlotsForGlobalCharge,
   type SeasonPlotRow,
@@ -49,12 +40,21 @@ export type GlobalTransportChargePreview = {
 
 export type GlobalTransportChargeResult = GlobalTransportChargePreview & {
   globalChargeId: string;
-  billsCreated: number;
-  customerBillingIds: string[];
+  allocationsCreated: number;
+};
+
+export type GlobalTransportAllocationDetail = {
+  _id: string;
+  customer: string;
+  customerName: string;
+  dunam: number;
+  pricePerDunam: number;
+  finalPrice: number;
+  wasCharged: boolean;
 };
 
 export type GlobalTransportChargeDetail = ApiDocument & {
-  customerBillings: ApiDocument[];
+  allocations: GlobalTransportAllocationDetail[];
 };
 
 function toObjectIdArray(value: unknown): Types.ObjectId[] {
@@ -193,18 +193,45 @@ function buildPreviewFromData(
   };
 }
 
+function toCustomerParts(value: unknown): { id: string; name: string } {
+  if (value != null && typeof value === 'object' && '_id' in value) {
+    const ref = value as { _id?: unknown; name?: unknown };
+    return {
+      id: String(ref._id ?? ''),
+      name: String(ref.name ?? ''),
+    };
+  }
+  return { id: value == null ? '' : String(value), name: '' };
+}
+
+async function billsCountByChargeIds(
+  rows: { _id?: unknown }[],
+): Promise<Map<string, number>> {
+  const chargeIds = rows
+    .map((row) => String(row._id ?? ''))
+    .filter((id) => Types.ObjectId.isValid(id))
+    .map((id) => new Types.ObjectId(id));
+  return transportGlobalAllocationRepository.countChargedByChargeIds(chargeIds);
+}
+
 export const transportGlobalChargeService = {
   async list(seasonYear?: number): Promise<ApiDocument[]> {
     const rows = await transportGlobalChargeRepository.findAll(seasonYear);
-    return transportGlobalChargeToApiDocuments(rows as Record<string, unknown>[]);
+    const counts = await billsCountByChargeIds(rows);
+    return transportGlobalChargeToApiDocuments(
+      rows as Record<string, unknown>[],
+      counts,
+    );
   },
 
   async listPaginated(listQuery: import('../utils/listQuery').ListQuery) {
     const result = await transportGlobalChargeRepository.findPaginated(listQuery);
+    const counts = await billsCountByChargeIds(result.items);
     return {
       ...result,
       items: transportGlobalChargeToApiDocuments(
         result.items as Record<string, unknown>[],
+        counts,
       ),
     };
   },
@@ -215,20 +242,32 @@ export const transportGlobalChargeService = {
       throw new Error('לא נמצא');
     }
 
-    const billingIds = toObjectIdArray(row.customerBillingIds);
-    const billings =
-      billingIds.length === 0
-        ? []
-        : await CustomerBillingTrackingModel.find({ _id: { $in: billingIds } })
-            .populate({ path: 'customer', select: '_id name' })
-            .lean();
+    const allocations = await transportGlobalAllocationRepository.findByChargeId(
+      id,
+    );
+    const chargedCount = allocations.filter(
+      (allocation) => allocation.wasCharged === true,
+    ).length;
+    const pricePerDunam = Number(row.pricePerDunam ?? 0);
+    const batch = transportGlobalChargeToApiDocument(
+      row as Record<string, unknown>,
+      chargedCount,
+    );
 
-    const batch = transportGlobalChargeToApiDocument(row as Record<string, unknown>);
     return {
       ...batch,
-      customerBillings: billings.map((billing) =>
-        customerBillingTrackingToApiDocument(billing as Record<string, unknown>),
-      ),
+      allocations: allocations.map((allocation) => {
+        const customer = toCustomerParts(allocation.customer);
+        return {
+          _id: String(allocation._id),
+          customer: customer.id,
+          customerName: customer.name,
+          dunam: Number(allocation.dunam ?? 0),
+          pricePerDunam,
+          finalPrice: Number(allocation.finalPrice ?? 0),
+          wasCharged: allocation.wasCharged === true,
+        };
+      }),
     };
   },
 
@@ -241,23 +280,13 @@ export const transportGlobalChargeService = {
           throw new Error('לא נמצא');
         }
 
-        const billingIds = toObjectIdArray(batch.customerBillingIds);
-        if (billingIds.length > 0) {
-          const billings = await CustomerBillingTrackingModel.find({
-            _id: { $in: billingIds },
-          })
-            .session(session)
-            .lean();
-
-          if (billings.some((billing) => billing.paid === true)) {
-            throw new Error(PAID_BILLING_DELETE_ERROR);
-          }
-
-          await CustomerBillingTrackingModel.deleteMany(
-            { _id: { $in: billingIds } },
-            { session },
-          );
+        const allocations =
+          await transportGlobalAllocationRepository.findByChargeId(id, session);
+        if (allocations.some((allocation) => allocation.wasCharged === true)) {
+          throw new Error(GLOBAL_TRANSPORT_CHARGE_ALREADY_BILLED_ERROR);
         }
+
+        await transportGlobalAllocationRepository.deleteByChargeId(id, session);
 
         const transportIds = toObjectIdArray(batch.transportTrackingIds);
         await transportTrackingRepository.markUncharged(transportIds, session);
@@ -279,7 +308,7 @@ export const transportGlobalChargeService = {
     try {
       let globalChargeId = '';
       let resolvedPreview: GlobalTransportChargePreview | undefined;
-      const customerBillingIds: Types.ObjectId[] = [];
+      let allocationsCreated = 0;
 
       await session.withTransaction(async () => {
         const data = await computeChargeData(seasonYear, session);
@@ -289,7 +318,6 @@ export const transportGlobalChargeService = {
           new Types.ObjectId(String(row._id)),
         );
         const executedAt = new Date();
-        const billDate = executedAt.toLocaleDateString('he-IL');
 
         const [batch] = await transportGlobalChargeRepository.create(
           {
@@ -306,51 +334,28 @@ export const transportGlobalChargeService = {
 
         globalChargeId = String(batch._id);
 
-        for (const group of data.customerGroups) {
-          const plotLines: GlobalTransportPlotLine[] = group.plots.map((plot) => ({
-            plotName: plot.name,
-            dunam: plot.dunam,
-            linePrice: data.plotLinePrices.get(String(plot._id)) ?? 0,
-          }));
+        const allocations = data.customerGroups.map((group) => ({
+          globalTransportChargeId: batch._id as Types.ObjectId,
+          customer: group.customerId,
+          dunam: group.plots.reduce(
+            (sum, plot) => sum + Number(plot.dunam ?? 0),
+            0,
+          ),
+          finalPrice: roundMoney(
+            group.plots.reduce(
+              (sum, plot) =>
+                sum + (data.plotLinePrices.get(String(plot._id)) ?? 0),
+              0,
+            ),
+          ),
+          wasCharged: false,
+        }));
 
-          const storedBillDocument: CustomerBillDocument =
-            buildGlobalTransportBillDocument({
-              customerName: group.customerName,
-              billDate,
-              pricePerDunam: data.pricePerDunam,
-              plotLines,
-            });
-
-          const [billing] = await CustomerBillingTrackingModel.create(
-            [
-              {
-                date: executedAt,
-                customer: group.customerId,
-                billKind: 'globalTransport',
-                globalTransportChargeId: batch._id,
-                storedBillDocument,
-                notes: '',
-                status: 'לא אושר כלל' satisfies CustomerBillingStatus,
-                paid: false,
-                finalPrice: storedBillDocument.total,
-                operationsTrackingIds: [],
-                materialUsageTrackingIds: [],
-                contractorTrackingIds: [],
-                baleOrderTrackingIds: [],
-                transportTrackingIds: [],
-              },
-            ],
-            { session },
-          );
-
-          customerBillingIds.push(billing._id as Types.ObjectId);
-        }
-
-        await transportGlobalChargeRepository.updateCustomerBillingIds(
-          batch._id as Types.ObjectId,
-          customerBillingIds,
+        await transportGlobalAllocationRepository.createMany(
+          allocations,
           session,
         );
+        allocationsCreated = allocations.length;
 
         await transportTrackingRepository.markCharged(transportTrackingIds, session);
       });
@@ -362,8 +367,7 @@ export const transportGlobalChargeService = {
       return {
         ...resolvedPreview,
         globalChargeId,
-        billsCreated: customerBillingIds.length,
-        customerBillingIds: customerBillingIds.map(String),
+        allocationsCreated,
       };
     } finally {
       await session.endSession();

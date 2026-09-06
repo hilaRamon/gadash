@@ -55,6 +55,7 @@ export function customerBillingTrackingToApiDocument(
     contractorTrackingIds: toIdArray(doc.contractorTrackingIds),
     baleOrderTrackingIds: toIdArray(doc.baleOrderTrackingIds),
     transportTrackingIds: toIdArray(doc.transportTrackingIds),
+    globalTransportAllocationIds: toIdArray(doc.globalTransportAllocationIds),
     billKind: String(doc.billKind ?? 'selection'),
     globalTransportChargeId:
       doc.globalTransportChargeId == null

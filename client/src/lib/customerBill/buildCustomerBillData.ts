@@ -18,6 +18,10 @@ import {
   isTransportBillingRow,
   isUnbilledTransportForCustomer,
 } from "../transportTrackingBilling";
+import {
+  isGlobalTransportAllocationRow,
+  isUnbilledGlobalTransportAllocationForCustomer,
+} from "../transportGlobalAllocationBilling";
 
 function formatBillDate(value: unknown): string {
   const date = new Date(String(value ?? ""));
@@ -231,6 +235,9 @@ export function buildCustomerBillDocumentFromPreview(input: {
   const contractors = input.contractors.filter((row) => {
     if (isTransportBillingRow(row)) {
       return isUnbilledTransportForCustomer(row, customerId);
+    }
+    if (isGlobalTransportAllocationRow(row)) {
+      return isUnbilledGlobalTransportAllocationForCustomer(row, customerId);
     }
     return isUnbilledContractorForCustomer(row, customerId);
   });

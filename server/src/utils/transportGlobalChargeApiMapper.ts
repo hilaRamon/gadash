@@ -16,11 +16,17 @@ function toIdArray(value: unknown): string[] {
 
 export function transportGlobalChargeToApiDocument(
   doc: Record<string, unknown>,
+  billsCount?: number,
 ): ApiDocument {
   const base = toApiDocument(doc);
   const executedAt = doc.executedAt == null ? new Date() : new Date(String(doc.executedAt));
   const transportTrackingIds = toIdArray(doc.transportTrackingIds);
   const customerBillingIds = toIdArray(doc.customerBillingIds);
+  const resolvedBillsCount =
+    billsCount ??
+    (Number.isFinite(Number(doc.billsCount))
+      ? Number(doc.billsCount)
+      : customerBillingIds.length);
 
   return {
     ...base,
@@ -34,7 +40,7 @@ export function transportGlobalChargeToApiDocument(
     transportTrackingIds,
     customerBillingIds,
     transportRowCount: transportTrackingIds.length,
-    billsCount: customerBillingIds.length,
+    billsCount: resolvedBillsCount,
     transportTotalFormatted: formatNumber(doc.transportTotal ?? 0),
     pricePerDunamFormatted: formatNumber(doc.pricePerDunam ?? 0),
     totalDunamFormatted: formatNumber(doc.totalDunam ?? 0),
@@ -43,6 +49,12 @@ export function transportGlobalChargeToApiDocument(
 
 export function transportGlobalChargeToApiDocuments(
   docs: Record<string, unknown>[],
+  billsCountById?: Map<string, number>,
 ): ApiDocument[] {
-  return docs.map(transportGlobalChargeToApiDocument);
+  return docs.map((doc) =>
+    transportGlobalChargeToApiDocument(
+      doc,
+      billsCountById?.get(String(doc._id)) ?? 0,
+    ),
+  );
 }

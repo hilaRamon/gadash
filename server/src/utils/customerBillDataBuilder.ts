@@ -254,6 +254,15 @@ export function isValidTransportForBill(
   );
 }
 
+export function isValidGlobalTransportAllocationForBill(
+  row: ApiDocument,
+  customerId: string,
+): boolean {
+  return (
+    row.wasCharged !== true && String(row.customer ?? "") === customerId
+  );
+}
+
 export type GlobalTransportPlotLine = {
   plotName: string;
   dunam: number;

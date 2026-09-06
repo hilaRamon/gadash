@@ -13,6 +13,7 @@ import { MaterialUsageTrackingModel } from '../models/MaterialUsageTracking';
 import { OperationTrackingModel } from '../models/OperationTracking';
 import { PlotModel } from '../models/Plot';
 import { TransportTrackingModel, TRANSPORT_CUSTOMER_BILLING } from '../models/TransportTracking';
+import { transportGlobalAllocationRepository } from '../repositories/transportGlobalAllocationRepository';
 import type { ApiDocument } from '../types/apiDocument';
 import { baleOrderTrackingToApiDocuments } from '../utils/baleOrderTrackingApiMapper';
 import { contractorTrackingToApiDocuments } from '../utils/contractorTrackingApiMapper';
@@ -27,6 +28,7 @@ import {
   unchargedFilter,
   unchargedTransportBillingsByCustomerFilter,
 } from '../utils/unbilledTrackingFilters';
+import { transportGlobalAllocationToContractorBillingDocuments } from '../utils/transportGlobalAllocationBillingMapper';
 import { transportTrackingToContractorBillingDocuments } from '../utils/transportTrackingBillingMapper';
 
 const operationPopulate = {
@@ -87,7 +89,14 @@ async function distinctPlotIdsFromUnbilledOperations(): Promise<Types.ObjectId[]
 }
 
 async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
-  const [baleCustomerIds, operationPlotIds, materialPlotIds, contractorPlotIds, transportCustomerIds] =
+  const [
+    baleCustomerIds,
+    operationPlotIds,
+    materialPlotIds,
+    contractorPlotIds,
+    transportCustomerIds,
+    allocationCustomerIds,
+  ] =
     await Promise.all([
       BaleOrderTrackingModel.distinct('customer', unchargedFilter),
       distinctPlotIdsFromUnbilledOperations(),
@@ -100,6 +109,7 @@ async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
         ...unchargedFilter,
         billing: TRANSPORT_CUSTOMER_BILLING,
       }),
+      transportGlobalAllocationRepository.distinctUnchargedCustomerIds(),
     ]);
 
   const plotIdSet = new Set<string>([
@@ -120,6 +130,7 @@ async function collectCustomerIdsWithUnbilled(): Promise<Types.ObjectId[]> {
     ...baleCustomerIds.map(String),
     ...plotCustomerIds.map(String),
     ...transportCustomerIds.map(String),
+    ...allocationCustomerIds.map(String),
   ]);
 
   return [...allIds]
@@ -159,7 +170,7 @@ export const customerBillingUnbilledService = {
     const customerObjectId = await resolveCustomerId(customerId);
     const plotIds = await loadPlotIdsForCustomer(customerObjectId);
 
-    const [operationRows, materialRows, contractorRows, baleRows, transportRows] = await Promise.all([
+    const [operationRows, materialRows, contractorRows, baleRows, transportRows, allocationRows] = await Promise.all([
       plotIds.length > 0
         ? OperationTrackingModel.find(
             unchargedBillableOperationsByPlotIdsFilter(plotIds),
@@ -198,6 +209,9 @@ export const customerBillingUnbilledService = {
         .populate(transportCustomerPopulate)
         .sort({ date: -1 })
         .lean(),
+      transportGlobalAllocationRepository.findUnchargedByCustomer(
+        customerObjectId,
+      ),
     ]);
 
     const operations = operationTrackingToApiDocuments(
@@ -219,6 +233,9 @@ export const customerBillingUnbilledService = {
         ),
         ...transportTrackingToContractorBillingDocuments(
           transportRows as Record<string, unknown>[],
+        ),
+        ...transportGlobalAllocationToContractorBillingDocuments(
+          allocationRows as Record<string, unknown>[],
         ),
       ],
     };

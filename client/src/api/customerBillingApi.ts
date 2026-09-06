@@ -31,25 +31,38 @@ import {
   isUnbilledTransportForCustomer,
   transportTrackingToContractorBillingRow,
 } from "@/lib/transportTrackingBilling";
+import {
+  isGlobalTransportAllocationRow,
+  isUnbilledGlobalTransportAllocationForCustomer,
+  transportGlobalAllocationToContractorBillingRow,
+} from "@/lib/transportGlobalAllocationBilling";
 
 const useMock = import.meta.env.VITE_USE_MOCK !== "false";
 
 function splitIncludedContractorRows(rows: CollectionDocument[]): {
   contractorTrackingIds: string[];
   transportTrackingIds: string[];
+  globalTransportAllocationIds: string[];
 } {
   const contractorTrackingIds: string[] = [];
   const transportTrackingIds: string[] = [];
+  const globalTransportAllocationIds: string[] = [];
 
   for (const row of rows) {
     if (isTransportBillingRow(row)) {
       transportTrackingIds.push(row._id);
+    } else if (isGlobalTransportAllocationRow(row)) {
+      globalTransportAllocationIds.push(row._id);
     } else {
       contractorTrackingIds.push(row._id);
     }
   }
 
-  return { contractorTrackingIds, transportTrackingIds };
+  return {
+    contractorTrackingIds,
+    transportTrackingIds,
+    globalTransportAllocationIds,
+  };
 }
 
 export function countCustomerPlots(
@@ -78,6 +91,30 @@ export type UnbilledPreview = {
   contractors: CollectionDocument[];
 };
 
+async function loadAllocationBillingRows(
+  allocationIds?: string[],
+): Promise<CollectionDocument[]> {
+  const [allocations, charges] = await Promise.all([
+    listCollection("transportGlobalAllocations"),
+    listCollection("transportGlobalCharges"),
+  ]);
+  const chargeById = new Map(
+    charges.map((charge) => [String(charge._id), charge]),
+  );
+  const idSet = allocationIds ? new Set(allocationIds) : null;
+
+  return allocations
+    .filter((row) => (idSet == null ? true : idSet.has(row._id)))
+    .map((row) => {
+      const charge = chargeById.get(String(row.globalTransportChargeId ?? ""));
+      return transportGlobalAllocationToContractorBillingRow(
+        row,
+        Number(charge?.pricePerDunam ?? 0),
+        charge?.executedAt,
+      );
+    });
+}
+
 /** Mock: load all trackings from in-memory store and filter by customer + uncharged rules. */
 async function fetchUnbilledPreviewMock(
   customerId: string,
@@ -94,6 +131,9 @@ async function fetchUnbilledPreviewMock(
   const transportRows = transportTrackings
     .filter((row) => isUnbilledTransportForCustomer(row, customerId))
     .map(transportTrackingToContractorBillingRow);
+  const allocationRows = (await loadAllocationBillingRows()).filter((row) =>
+    isUnbilledGlobalTransportAllocationForCustomer(row, customerId),
+  );
 
   return {
     operations: operations.filter((row) =>
@@ -110,18 +150,20 @@ async function fetchUnbilledPreviewMock(
         isUnbilledContractorForCustomer(row, customerId),
       ),
       ...transportRows,
+      ...allocationRows,
     ],
   };
 }
 
 async function fetchCustomersWithUnbilledMock(): Promise<CustomerWithUnbilled[]> {
-  const [operations, materialUsage, baleOrders, contractors, transportTrackings, customers] =
+  const [operations, materialUsage, baleOrders, contractors, transportTrackings, allocations, customers] =
     await Promise.all([
       listCollection("operationsTrackings"),
       listCollection("materialUsageTrackings"),
       listCollection("baleOrderTrackings"),
       listCollection("contractorTrackings"),
       listCollection("transportTrackings"),
+      listCollection("transportGlobalAllocations"),
       listCollection("customers"),
     ]);
 
@@ -169,6 +211,12 @@ async function fetchCustomersWithUnbilledMock(): Promise<CustomerWithUnbilled[]>
     }
   }
 
+  for (const row of allocations) {
+    if (isUncharged(row) && row.customer) {
+      customerIds.add(String(row.customer));
+    }
+  }
+
   return customers
     .filter((c) => customerIds.has(c._id))
     .map((c) => ({ _id: c._id, name: String(c.name ?? "") }))
@@ -212,7 +260,7 @@ export function buildCustomerBillRequest(
   const includedContractors = preview.contractors.filter((row) =>
     includedIds.has(row._id),
   );
-  const { contractorTrackingIds, transportTrackingIds } =
+  const { contractorTrackingIds, transportTrackingIds, globalTransportAllocationIds } =
     splitIncludedContractorRows(includedContractors);
 
   return {
@@ -228,6 +276,7 @@ export function buildCustomerBillRequest(
       .filter((row) => includedIds.has(row._id))
       .map((row) => row._id),
     transportTrackingIds,
+    globalTransportAllocationIds,
   };
 }
 
@@ -237,7 +286,8 @@ export function hasIncludedBillItems(request: CustomerBillRequest): boolean {
       request.contractorTrackingIds.length +
       request.materialUsageTrackingIds.length +
       request.baleOrderTrackingIds.length +
-      request.transportTrackingIds.length >
+      request.transportTrackingIds.length +
+      request.globalTransportAllocationIds.length >
     0
   );
 }
@@ -270,6 +320,9 @@ async function fetchCustomerBillPreviewMock(
     transportTrackings,
     request.transportTrackingIds,
   ).map(transportTrackingToContractorBillingRow);
+  const allocationRows = await loadAllocationBillingRows(
+    request.globalTransportAllocationIds,
+  );
 
   const bill = buildCustomerBillDocumentFromRows({
     customerName,
@@ -278,6 +331,7 @@ async function fetchCustomerBillPreviewMock(
     contractors: [
       ...pickRowsByIds(contractors, request.contractorTrackingIds),
       ...transportRows,
+      ...allocationRows,
     ],
     materialUsage: pickRowsByIds(
       materialUsage,
@@ -318,6 +372,9 @@ async function fetchSavedBillingBillPreviewMock(
     transportTrackings,
     toIdArray(billing.transportTrackingIds),
   ).map(transportTrackingToContractorBillingRow);
+  const allocationRows = await loadAllocationBillingRows(
+    toIdArray(billing.globalTransportAllocationIds),
+  );
 
   const showPlots = await customerHasMultiplePlotsMock(
     String(billing.customer ?? ""),
@@ -330,6 +387,7 @@ async function fetchSavedBillingBillPreviewMock(
     contractors: [
       ...pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
       ...transportRows,
+      ...allocationRows,
     ],
     materialUsage: pickRowsByIds(
       materialUsage,
@@ -394,8 +452,11 @@ async function createCustomerBillingMock(
     operations: preview.operations.filter((row) =>
       request.operationsTrackingIds.includes(row._id),
     ),
-    contractors: preview.contractors.filter((row) =>
-      request.contractorTrackingIds.includes(row._id),
+    contractors: preview.contractors.filter(
+      (row) =>
+        request.contractorTrackingIds.includes(row._id) ||
+        request.transportTrackingIds.includes(row._id) ||
+        request.globalTransportAllocationIds.includes(row._id),
     ),
     materialUsage: preview.materialUsage.filter((row) =>
       request.materialUsageTrackingIds.includes(row._id),
@@ -417,6 +478,7 @@ async function createCustomerBillingMock(
     contractorTrackingIds: request.contractorTrackingIds,
     baleOrderTrackingIds: request.baleOrderTrackingIds,
     transportTrackingIds: request.transportTrackingIds,
+    globalTransportAllocationIds: request.globalTransportAllocationIds,
   });
 
   await Promise.all([
@@ -434,6 +496,9 @@ async function createCustomerBillingMock(
     ),
     ...request.transportTrackingIds.map((id) =>
       updateDocument("transportTrackings", id, { wasCharged: true }),
+    ),
+    ...request.globalTransportAllocationIds.map((id) =>
+      updateDocument("transportGlobalAllocations", id, { wasCharged: true }),
     ),
   ]);
 
