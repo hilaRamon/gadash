@@ -71,6 +71,14 @@ export const transportTrackingRepository = {
     return TransportTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
   },
 
+  insertMany(rows: TransportTrackingInput[]) {
+    return TransportTrackingModel.insertMany(rows);
+  },
+
+  deleteAll() {
+    return TransportTrackingModel.deleteMany({});
+  },
+
   markCharged(ids: Types.ObjectId[], session?: unknown) {
     if (ids.length === 0) return Promise.resolve(null);
     return TransportTrackingModel.updateMany(

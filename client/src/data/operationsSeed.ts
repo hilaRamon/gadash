@@ -1,5 +1,6 @@
 import { mockObjectId } from "@/lib/mockObjectId"
 import type { CollectionDocument } from "@/schema/types"
+import { toDevName } from './devSeedName'
 
 const SEED_EFFECTIVE_FROM = '2025-01-01T00:00:00.000Z'
 
@@ -44,7 +45,7 @@ const operations: OperationSeedRow[] = [
 
 export const operationsSeedData: CollectionDocument[] = operations.map((row, index) => ({
   _id: mockObjectId(`operation-${index}`),
-  name: row.name,
+  name: toDevName(row.name),
   pricingForm: row.pricingForm,
   operationType: row.operationType,
   currentCost: row.currentCost,

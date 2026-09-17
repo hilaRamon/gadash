@@ -1,5 +1,6 @@
 import { mockObjectId } from "@/lib/mockObjectId"
 import type { CollectionDocument } from "@/schema/types"
+import { toDevName } from './devSeedName'
 
 type EmployeeSeed = {
   name: string
@@ -28,7 +29,7 @@ const employees: EmployeeSeed[] = [
   { name: 'הילה' },
   { name: 'יוליוס', mobile: '0546522906' },
   { name: 'אורי נעם', mobile: '0507405556' },
-  { name: 'אבי סיטון', formOfPayment: 'גלובלי', role: 'admin' },
+  { name: 'אבי סיטון', mobile: '0500000001', formOfPayment: 'גלובלי', role: 'admin' },
   { name: 'יצחק סקלי', mobile: '0526071701' },
   { name: 'עובד חיצוני' },
   { name: 'פנחס' },
@@ -40,7 +41,7 @@ const employees: EmployeeSeed[] = [
 
 export const employeesSeedData: CollectionDocument[] = employees.map((row, index) => ({
   _id: mockObjectId(`employee-${index + 1}`),
-  name: row.name,
+  name: toDevName(row.name),
   email: row.email ?? '',
   mobile: row.mobile ?? '',
   notes: row.notes ?? '',

@@ -1,24 +1,7 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import { Types } from 'mongoose';
 import { materialUsageTrackingRepository } from '../src/repositories/materialUsageTrackingRepository';
-import type { MaterialUsageTrackingInput } from '../src/repositories/materialUsageTrackingRepository';
-import { loadMaterialUsageTrackingsSeed } from './loadSeedData';
-import { toSeedInput } from './seed-utils';
-
-function toTrackingRows(
-  rows: ReturnType<typeof loadMaterialUsageTrackingsSeed>,
-): MaterialUsageTrackingInput[] {
-  return toSeedInput<Record<string, unknown>>(rows).map((row) => ({
-    date: new Date(String(row.date ?? '')),
-    material: new Types.ObjectId(String(row.material)),
-    plot: new Types.ObjectId(String(row.plot)),
-    employee: new Types.ObjectId(String(row.employee)),
-    amount: Number(row.amount),
-    notes: String(row.notes ?? ''),
-    billable: row.billable === false ? false : true,
-  }));
-}
+import { resolveMaterialUsageTrackings } from './seed-material-trackings-lib';
 
 async function seedMaterialUsageTrackings() {
   const uri = process.env.MONGODB_URI;
@@ -28,8 +11,7 @@ async function seedMaterialUsageTrackings() {
 
   await mongoose.connect(uri);
 
-  const seedData = loadMaterialUsageTrackingsSeed();
-  const rows = toTrackingRows(seedData);
+  const rows = await resolveMaterialUsageTrackings();
   await materialUsageTrackingRepository.deleteAll();
   await materialUsageTrackingRepository.insertMany(rows);
 

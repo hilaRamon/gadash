@@ -16,6 +16,11 @@ import { TractorModel } from '../src/models/Tractor';
 import { SupplierModel } from '../src/models/Supplier';
 import { MaterialPurchaseTrackingModel } from '../src/models/MaterialPurchaseTracking';
 import { MaterialUsageTrackingModel } from '../src/models/MaterialUsageTracking';
+import { OperationTrackingModel } from '../src/models/OperationTracking';
+import { ContractorTrackingModel } from '../src/models/ContractorTracking';
+import { TransportTrackingModel } from '../src/models/TransportTracking';
+import { BaleOrderTrackingModel } from '../src/models/BaleOrderTracking';
+import { FuelOperationTrackingModel } from '../src/models/FuelOperationTracking';
 import { agriculturalSeasonRepository } from '../src/repositories/agriculturalSeasonRepository';
 import type { AgriculturalSeasonInput } from '../src/repositories/agriculturalSeasonRepository';
 import { contractorRepository } from '../src/repositories/contractorRepository';
@@ -37,9 +42,7 @@ import type { TractorInput } from '../src/repositories/tractorRepository';
 import { supplierRepository } from '../src/repositories/supplierRepository';
 import type { SupplierInput } from '../src/repositories/supplierRepository';
 import { materialPurchaseTrackingRepository } from '../src/repositories/materialPurchaseTrackingRepository';
-import type { MaterialPurchaseTrackingInput } from '../src/repositories/materialPurchaseTrackingRepository';
 import { materialUsageTrackingRepository } from '../src/repositories/materialUsageTrackingRepository';
-import type { MaterialUsageTrackingInput } from '../src/repositories/materialUsageTrackingRepository';
 import {
   loadContractorsSeed,
   loadMoversSeed,
@@ -52,11 +55,14 @@ import {
   loadOperationsSeed,
   loadTractorsSeed,
   loadSuppliersSeed,
-  loadMaterialPurchaseTrackingsSeed,
-  loadMaterialUsageTrackingsSeed,
 } from './loadSeedData';
 import { seedPlotsIntoDb } from './seed-plots-lib';
 import { toSeedInput } from './seed-utils';
+import {
+  resolveMaterialPurchaseTrackings,
+  resolveMaterialUsageTrackings,
+} from './seed-material-trackings-lib';
+import { seedDevTrackingsIntoDb } from './seed-dev-trackings';
 
 async function seedAll() {
   const uri = process.env.MONGODB_URI;
@@ -78,6 +84,11 @@ async function seedAll() {
     SupplierModel.syncIndexes(),
     MaterialPurchaseTrackingModel.syncIndexes(),
     MaterialUsageTrackingModel.syncIndexes(),
+    OperationTrackingModel.syncIndexes(),
+    ContractorTrackingModel.syncIndexes(),
+    TransportTrackingModel.syncIndexes(),
+    BaleOrderTrackingModel.syncIndexes(),
+    FuelOperationTrackingModel.syncIndexes(),
     PlotModel.syncIndexes(),
     AgriculturalSeasonModel.syncIndexes(),
     FuelTankModel.syncIndexes(),
@@ -170,34 +181,22 @@ async function seedAll() {
   await fuelTankRepository.insertMany(fuelTanks);
   console.log(`Seeded ${fuelTanks.length} fuel tanks`);
 
-  const materialPurchaseTrackings = toSeedInput<Record<string, unknown>>(
-    loadMaterialPurchaseTrackingsSeed(),
-  ).map((row) => ({
-    date: new Date(String(row.date ?? '')),
-    material: row.material as MaterialPurchaseTrackingInput['material'],
-    supplier: row.supplier as MaterialPurchaseTrackingInput['supplier'],
-    unitPrice: Number(row.unitPrice),
-    amount: Number(row.amount),
-    finalPrice: Number(row.finalPrice),
-  }));
+  const materialPurchaseTrackings = await resolveMaterialPurchaseTrackings();
   await materialPurchaseTrackingRepository.deleteAll();
   await materialPurchaseTrackingRepository.insertMany(materialPurchaseTrackings);
   console.log(`Seeded ${materialPurchaseTrackings.length} material purchase trackings`);
 
-  const materialUsageTrackings = toSeedInput<Record<string, unknown>>(
-    loadMaterialUsageTrackingsSeed(),
-  ).map((row) => ({
-    date: new Date(String(row.date ?? '')),
-    material: row.material as MaterialUsageTrackingInput['material'],
-    plot: row.plot as MaterialUsageTrackingInput['plot'],
-    employee: row.employee as MaterialUsageTrackingInput['employee'],
-    amount: Number(row.amount),
-    notes: String(row.notes ?? ''),
-    billable: row.billable === false ? false : true,
-  }));
+  const materialUsageTrackings = await resolveMaterialUsageTrackings();
   await materialUsageTrackingRepository.deleteAll();
   await materialUsageTrackingRepository.insertMany(materialUsageTrackings);
   console.log(`Seeded ${materialUsageTrackings.length} material usage trackings`);
+
+  const trackings = await seedDevTrackingsIntoDb();
+  console.log(`Seeded ${trackings.operations} operation trackings`);
+  console.log(`Seeded ${trackings.contractors} contractor trackings`);
+  console.log(`Seeded ${trackings.transports} transport trackings`);
+  console.log(`Seeded ${trackings.baleOrders} bale order trackings`);
+  console.log(`Seeded ${trackings.fuel} fuel operation trackings`);
 
   await mongoose.disconnect();
   console.log('Done');

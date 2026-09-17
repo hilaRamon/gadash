@@ -1,6 +1,7 @@
 import { mockObjectId } from "@/lib/mockObjectId"
 import { customersSeedData } from './customersSeed'
 import { resolvePlotCustomerName } from './plotCustomerAliases'
+import { toDevName } from './devSeedName'
 import type { CollectionDocument } from "@/schema/types"
 
 export type PlotSeedRow = {
@@ -11,7 +12,7 @@ export type PlotSeedRow = {
   active: boolean
 }
 
-export const plotsSeedRows: PlotSeedRow[] = [
+const plotsSeedRowsRaw: PlotSeedRow[] = [
   { name: 'אביחי ינון', customerName: 'אביחי (אליה) ינון', dunam: 50, plotType: 'בקעה', active: true },
   { name: 'אביתר קארו', customerName: 'אביתר קארו', dunam: 1, plotType: 'הר', active: true },
   { name: 'אברהם דורי', customerName: 'אברהם דורי', dunam: 20, plotType: 'בקעה', active: true },
@@ -106,6 +107,12 @@ export const plotsSeedRows: PlotSeedRow[] = [
   { name: 'תום קצח קינואה', customerName: 'תום חמרה (משק שוורץ)', dunam: 100, plotType: 'בקעה', active: true },
   { name: 'תומר פניני', customerName: 'תומר פניני', dunam: 70, plotType: 'בקעה', active: true },
 ]
+
+export const plotsSeedRows: PlotSeedRow[] = plotsSeedRowsRaw.map((row) => ({
+  ...row,
+  name: toDevName(row.name),
+  customerName: toDevName(row.customerName),
+}))
 
 function findCustomerIdByName(customerName: string): string {
   const resolved = resolvePlotCustomerName(customerName)

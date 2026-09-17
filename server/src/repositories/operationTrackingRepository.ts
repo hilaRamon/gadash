@@ -81,6 +81,14 @@ export const operationTrackingRepository = {
     return OperationTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
   },
 
+  insertMany(rows: OperationTrackingInput[]) {
+    return OperationTrackingModel.insertMany(rows);
+  },
+
+  deleteAll() {
+    return OperationTrackingModel.deleteMany({});
+  },
+
   markCharged(ids: Types.ObjectId[]) {
     if (ids.length === 0) return Promise.resolve(null);
     return OperationTrackingModel.updateMany(

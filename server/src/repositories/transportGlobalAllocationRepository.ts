@@ -23,6 +23,7 @@ export const transportGlobalAllocationRepository = {
     if (data.length === 0) return Promise.resolve([]);
     return TransportGlobalAllocationModel.create(data, {
       session: session as never,
+      ordered: true,
     });
   },
 
