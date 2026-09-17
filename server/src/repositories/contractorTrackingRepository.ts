@@ -80,6 +80,14 @@ export const contractorTrackingRepository = {
     return ContractorTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
   },
 
+  insertMany(rows: ContractorTrackingInput[]) {
+    return ContractorTrackingModel.insertMany(rows);
+  },
+
+  deleteAll() {
+    return ContractorTrackingModel.deleteMany({});
+  },
+
   markCharged(ids: Types.ObjectId[]) {
     if (ids.length === 0) return Promise.resolve(null);
     return ContractorTrackingModel.updateMany(

@@ -1,5 +1,6 @@
 import { mockObjectId } from "@/lib/mockObjectId"
 import type { CollectionDocument } from "@/schema/types"
+import { toDevName } from './devSeedName'
 
 type ContractorSeed = {
   name: string
@@ -26,7 +27,7 @@ const contractors: ContractorSeed[] = [
 
 export const contractorsSeedData: CollectionDocument[] = contractors.map((row, index) => ({
   _id: mockObjectId(`contractor-${index + 1}`),
-  name: row.name,
+  name: toDevName(row.name),
   mobile: row.mobile ?? '',
   email: row.email ?? '',
   notes: row.notes ?? '',

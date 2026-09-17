@@ -76,4 +76,12 @@ export const fuelOperationTrackingRepository = {
   deleteMany(ids: string[]) {
     return FuelOperationTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
   },
+
+  insertMany(rows: FuelOperationTrackingInput[]) {
+    return FuelOperationTrackingModel.insertMany(rows);
+  },
+
+  deleteAll() {
+    return FuelOperationTrackingModel.deleteMany({});
+  },
 };
