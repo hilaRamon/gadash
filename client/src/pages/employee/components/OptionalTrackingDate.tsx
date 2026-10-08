@@ -1,52 +1,56 @@
 import { useState } from 'react'
-import { DateField } from "@/components/collection/CollectionFormModal/DateField"
-import { LogoutIcon } from "@/components/collection/Icons"
-import {
-  isoToDateDisplay,
-  parseDateDisplayToIso,
-} from "@/lib/dateFieldFormat"
+import styled from 'styled-components'
 import { useEmployee } from "@/pages/employee/context/EmployeeContext"
 import {
   EmployeeActionsRow,
+  EmployeeSubtitle,
   FormField,
   FormLabel,
   TextButton,
 } from '../employeeStyles'
 
-type OptionalTrackingDateProps = {
-  onLogout: () => void
-}
+const PickerInput = styled.input`
+  width: 100%;
+  min-height: 48px;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 16px;
+  box-sizing: border-box;
 
-export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+`
+
+export function OptionalTrackingDate() {
   const { trackingDate, isCustomDate, setTrackingDate } = useEmployee()
   const [showPicker, setShowPicker] = useState(false)
-  const [dateDisplay, setDateDisplay] = useState(() =>
-    isoToDateDisplay(trackingDate),
-  )
 
-  const handleDateChange = (value: string) => {
-    setTrackingDate(value)
-    setShowPicker(false)
-  }
-
-  const openPicker = () => {
-    setDateDisplay(isoToDateDisplay(trackingDate))
-    setShowPicker(true)
-  }
+  const dateLabel = isCustomDate
+    ? `תאריך: ${new Date(`${trackingDate}T00:00:00`).toLocaleDateString('he-IL')}`
+    : 'תאריך: היום'
 
   return (
     <>
+      <EmployeeSubtitle>{dateLabel}</EmployeeSubtitle>
+
       {showPicker ? (
         <FormField>
           <FormLabel htmlFor="tracking-date">תאריך</FormLabel>
-          <DateField
+          <PickerInput
             id="tracking-date"
-            value={dateDisplay}
-            onChange={(display) => {
-              setDateDisplay(display)
-              const iso = parseDateDisplayToIso(display)
-              if (iso) handleDateChange(iso)
+            type="date"
+            value={trackingDate}
+            onChange={(event) => {
+              const iso = event.target.value
+              if (iso) setTrackingDate(iso)
             }}
+            onBlur={() => setShowPicker(false)}
           />
         </FormField>
       ) : null}
@@ -57,14 +61,10 @@ export function OptionalTrackingDate({ onLogout }: OptionalTrackingDateProps) {
             ביטול
           </TextButton>
         ) : (
-          <TextButton type="button" onClick={openPicker}>
+          <TextButton type="button" onClick={() => setShowPicker(true)}>
             {isCustomDate ? 'שנה תאריך' : 'דווח לתאריך אחר'}
           </TextButton>
         )}
-        <TextButton type="button" onClick={onLogout}>
-          <LogoutIcon size={18} />
-          התנתק
-        </TextButton>
       </EmployeeActionsRow>
     </>
   )

@@ -35,9 +35,14 @@ function operationFormField(
 function buildOperationsTrackingForm(
   operationFilter: (row: CollectionDocument) => boolean,
   titles: { createTitle: string; editTitle: string },
-  options?: { hideOperation?: boolean; hidePlotAndBillable?: boolean },
+  options?: {
+    hideOperation?: boolean;
+    hidePlotAndBillable?: boolean;
+    hideAmount?: boolean;
+  },
 ): FormSchema {
   const hidePlotAndBillable = options?.hidePlotAndBillable === true;
+  const hideAmount = options?.hideAmount === true;
 
   return {
     ...titles,
@@ -62,7 +67,7 @@ function buildOperationsTrackingForm(
       },
       { key: "startTime", label: "שעת התחלה", type: "time", required: true },
       { key: "endTime", label: "שעת סיום", type: "time", required: true },
-      { key: "amount", label: "כמות", type: "number" },
+      { key: "amount", label: "כמות", type: "number", hidden: hideAmount },
       {
         key: "billable",
         label: "לחיוב",
@@ -193,7 +198,9 @@ const fieldWorkColumns: CollectionSchema["columns"] = [
 
 const adminColumns = baseColumns.filter(
   (column) =>
-    !["customer", "plot", "billable", "finalPrice"].includes(column.key),
+    !["customer", "plot", "billable", "finalPrice", "amount"].includes(
+      column.key,
+    ),
 );
 
 export const operationsTrackingsAllSchema: CollectionSchema = {
@@ -232,6 +239,6 @@ export const operationsTrackingsAdminSchema: CollectionSchema = {
       createTitle: "הוספת משימת מנהלה",
       editTitle: "עריכת משימת מנהלה",
     },
-    { hideOperation: true, hidePlotAndBillable: true },
+    { hideOperation: true, hidePlotAndBillable: true, hideAmount: true },
   ),
 };

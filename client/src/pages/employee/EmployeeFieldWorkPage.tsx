@@ -10,7 +10,7 @@ import {
   updatePlotTrackingLine,
   type PlotTrackingLineEntry,
 } from "@/components/collection/CollectionFormModal/operationTrackingForm"
-import { PlotMultiCreateFields } from "@/components/collection/CollectionFormModal/PlotMultiCreateFields"
+import { TrackingMultiCreateFields } from "@/components/TrackingMultiCreateFields"
 import {
   buildPayload,
   getInitialValues,
@@ -330,12 +330,29 @@ export function EmployeeFieldWorkPage() {
         ) : (
           <>
             {isMultiPlotMode ? (
-              <PlotMultiCreateFields
-                plots={plots}
-                entries={plotEntries}
+              <TrackingMultiCreateFields
+                sectionLabel='חלקות *'
+                selectionErrorKey='plots'
+                referenceCollection='plots'
+                referenceFieldLabel='חלקה'
+                amountLabel='דונם'
+                items={plots}
+                entries={plotEntries.map((entry) => ({
+                  itemId: entry.plotId,
+                  amount: entry.amount,
+                }))}
                 fieldErrors={fieldErrors}
-                onTogglePlot={handleTogglePlot}
-                onUpdateLine={handleUpdatePlotLine}
+                getItemLabel={(itemId) => {
+                  const plot = plots.find((row) => String(row._id) === itemId)
+                  return typeof plot?.name === 'string' ? plot.name : itemId
+                }}
+                onToggleItem={handleTogglePlot}
+                onUpdateLine={(itemId, patch) =>
+                  handleUpdatePlotLine(itemId, {
+                    plotId: patch.itemId,
+                    amount: patch.amount,
+                  })
+                }
               />
             ) : (
               <EmployeeFormField
