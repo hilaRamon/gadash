@@ -18,8 +18,7 @@ import {
   applyMaterialUsageFieldChange,
   type MaterialUsageLineEntry,
 } from "./materialUsageTrackingForm";
-import { MaterialUsageMultiCreateFields } from "./MaterialUsageMultiCreateFields";
-import { OperationTrackingMultiCreateFields } from "./OperationTrackingMultiCreateFields";
+import { TrackingMultiCreateFields } from "@/components/TrackingMultiCreateFields";
 import {
   applyOperationTrackingFieldChange,
   type OperationTrackingLineEntry,
@@ -95,6 +94,11 @@ const InfoMessage = styled.p`
   color: var(--color-info);
   font-size: 0.875rem;
 `;
+
+function documentName(rows: CollectionDocument[], itemId: string): string {
+  const row = rows.find((item) => String(item._id) === itemId);
+  return typeof row?.name === "string" ? row.name : itemId;
+}
 
 export function CollectionFormModal({
   open,
@@ -393,26 +397,56 @@ export function CollectionFormModal({
               </FormField>
 
               {isMaterialUsageMultiCreate && field.key === "plot" && (
-                <MaterialUsageMultiCreateFields
-                  materials={materials}
-                  entries={materialUsageEntries}
+                <TrackingMultiCreateFields
+                  sectionLabel="חומרים *"
+                  selectionErrorKey="materials"
+                  referenceCollection="materials"
+                  referenceFieldLabel="חומר"
+                  amountLabel="כמות"
+                  items={materials}
+                  entries={materialUsageEntries.map((entry) => ({
+                    itemId: entry.materialId,
+                    amount: entry.amount,
+                  }))}
                   fieldErrors={fieldErrors}
-                  plotId={values.plot ?? ""}
-                  onToggleMaterial={materialUsageHandlers.onToggleMaterial}
-                  onUpdateLine={materialUsageHandlers.onUpdateLine}
+                  amountDisabled={!values.plot}
+                  getItemLabel={(itemId) => documentName(materials, itemId)}
+                  onToggleItem={materialUsageHandlers.onToggleMaterial}
+                  onUpdateLine={(itemId, patch) =>
+                    materialUsageHandlers.onUpdateLine(itemId, {
+                      materialId: patch.itemId,
+                      amount: patch.amount,
+                    })
+                  }
                 />
               )}
 
               {isOperationTrackingMultiCreate && field.key === "endTime" && (
-                <OperationTrackingMultiCreateFields
-                  operations={operations}
-                  entries={operationTrackingEntries}
-                  fieldErrors={fieldErrors}
-                  operationFilter={operationFormField?.referenceFilter}
-                  onToggleOperation={
-                    operationTrackingHandlers.onToggleOperation
+                <TrackingMultiCreateFields
+                  sectionLabel="פעולות *"
+                  selectionErrorKey="operations"
+                  referenceCollection="operations"
+                  referenceFieldLabel="פעולה"
+                  amountLabel="כמות"
+                  items={
+                    operationFormField?.referenceFilter
+                      ? operations.filter(operationFormField.referenceFilter)
+                      : operations
                   }
-                  onUpdateLine={operationTrackingHandlers.onUpdateLine}
+                  entries={operationTrackingEntries.map((entry) => ({
+                    itemId: entry.operationId,
+                    amount: entry.amount,
+                  }))}
+                  fieldErrors={fieldErrors}
+                  referenceFilter={operationFormField?.referenceFilter}
+                  getItemLabel={(itemId) => documentName(operations, itemId)}
+                  onToggleItem={operationTrackingHandlers.onToggleOperation}
+                  onUpdateLine={(itemId, patch) =>
+                    operationTrackingHandlers.onUpdateLine(itemId, {
+                      operationId: patch.itemId,
+                      amount: patch.amount,
+                    })
+                  }
                 />
               )}
             </div>

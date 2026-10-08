@@ -1,7 +1,8 @@
+import { useState } from "react";
 import styled from "styled-components";
+import { ReferenceFieldSelect } from "@/components/collection/ReferenceFieldSelect";
+import { fieldControlStyles } from "@/components/collection/CollectionFormModal/sharedStyles";
 import type { CollectionDocument } from "@/schema/types";
-import { ReferenceFieldSelect } from "../ReferenceFieldSelect";
-import { fieldControlStyles } from "./sharedStyles";
 
 export type TrackingMultiCreateEntry = {
   itemId: string;
@@ -40,6 +41,17 @@ const SectionLabel = styled.div`
 const FieldLabel = styled.label`
   display: block;
   margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+`;
+
+const SearchInput = styled.input`
+  ${fieldControlStyles}
+  margin-bottom: 0.5rem;
+`;
+
+const EmptyMessage = styled.p`
+  margin: 0;
   font-size: 0.875rem;
   color: var(--text-secondary);
 `;
@@ -111,25 +123,43 @@ export function TrackingMultiCreateFields({
   onToggleItem,
   onUpdateLine,
 }: TrackingMultiCreateFieldsProps) {
+  const [search, setSearch] = useState("");
   const selectedIds = new Set(entries.map((entry) => entry.itemId));
+  const query = search.trim().toLowerCase();
+  const visibleItems = query
+    ? items.filter((item) =>
+        getItemLabel(String(item._id)).toLowerCase().includes(query),
+      )
+    : items;
 
   return (
     <Section>
       <SectionLabel>{sectionLabel}</SectionLabel>
+      <SearchInput
+        type="search"
+        value={search}
+        placeholder="חיפוש..."
+        aria-label={`חיפוש ב${sectionLabel.replace(/ \*$/, "")}`}
+        onChange={(event) => setSearch(event.target.value)}
+      />
       <CheckboxList>
-        {items.map((item) => {
-          const itemId = String(item._id);
-          return (
-            <CheckboxRow key={itemId}>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(itemId)}
-                onChange={(e) => onToggleItem(itemId, e.target.checked)}
-              />
-              <span>{getItemLabel(itemId)}</span>
-            </CheckboxRow>
-          );
-        })}
+        {visibleItems.length === 0 ? (
+          <EmptyMessage>אין תוצאות</EmptyMessage>
+        ) : (
+          visibleItems.map((item) => {
+            const itemId = String(item._id);
+            return (
+              <CheckboxRow key={itemId}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(itemId)}
+                  onChange={(e) => onToggleItem(itemId, e.target.checked)}
+                />
+                <span>{getItemLabel(itemId)}</span>
+              </CheckboxRow>
+            );
+          })
+        )}
       </CheckboxList>
       {fieldErrors[selectionErrorKey] && (
         <FieldErrorMessage>{fieldErrors[selectionErrorKey]}</FieldErrorMessage>
