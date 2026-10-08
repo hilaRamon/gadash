@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { OptionalTrackingDate } from "./OptionalTrackingDate";
 import {
   BackButton,
   EmployeeContent,
@@ -37,11 +38,12 @@ export function EmployeeFormShell({
     <>
       <EmployeeContent>
         <EmployeeHeader>
-          <div>
+          <div style={{ width: "100%" }}>
             <BackButton type="button" onClick={() => navigate("/employee")}>
               → חזרה
             </BackButton>
             <EmployeeTitle>{title}</EmployeeTitle>
+            <OptionalTrackingDate />
           </div>
         </EmployeeHeader>
 

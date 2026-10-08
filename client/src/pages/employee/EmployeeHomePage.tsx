@@ -1,20 +1,22 @@
 import { useNavigate } from 'react-router-dom'
+import { LogoutIcon } from "@/components/collection/Icons"
 import { useAuth } from "@/context/AuthContext"
 import { EmployeeActionMenu } from './components/EmployeeActionMenu'
-import { OptionalTrackingDate } from './components/OptionalTrackingDate'
 import { useEmployee } from './context/EmployeeContext'
 import {
+  EmployeeActionsRow,
   EmployeeCenteredContent,
   EmployeeCenteredShell,
   EmployeeHeader,
   EmployeeSubtitle,
   EmployeeTitle,
+  TextButton,
 } from './employeeStyles'
 
 export function EmployeeHomePage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { employeeName, isCustomDate, trackingDate, isReady } = useEmployee()
+  const { employeeName, isReady } = useEmployee()
 
   const handleLogout = () => {
     logout()
@@ -37,17 +39,18 @@ export function EmployeeHomePage() {
         <EmployeeHeader>
           <div>
             <EmployeeTitle>שלום, {employeeName ?? 'עובד'}</EmployeeTitle>
-            <EmployeeSubtitle>
-              {isCustomDate
-                ? `תאריך: ${new Date(`${trackingDate}T00:00:00`).toLocaleDateString('he-IL')}`
-                : 'תאריך: היום · מה תרצו לדווח?'}
-            </EmployeeSubtitle>
+            <EmployeeSubtitle>מה תרצו לדווח?</EmployeeSubtitle>
           </div>
         </EmployeeHeader>
 
         <EmployeeActionMenu />
 
-        <OptionalTrackingDate onLogout={handleLogout} />
+        <EmployeeActionsRow>
+          <TextButton type="button" onClick={handleLogout}>
+            <LogoutIcon size={18} />
+            התנתק
+          </TextButton>
+        </EmployeeActionsRow>
       </EmployeeCenteredContent>
     </EmployeeCenteredShell>
   )
