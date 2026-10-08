@@ -456,7 +456,12 @@ export function getOperationTrackingRequiredErrors(
     }
   }
 
-  if (pricingForm === OPERATION_PRICING_BY_UNIT && !String(values.amount ?? "").trim()) {
+  const amountFieldVisible = visibleFields.some((field) => field.key === "amount");
+  if (
+    amountFieldVisible &&
+    pricingForm === OPERATION_PRICING_BY_UNIT &&
+    !String(values.amount ?? "").trim()
+  ) {
     errors.amount = "שדה חובה";
   }
 
