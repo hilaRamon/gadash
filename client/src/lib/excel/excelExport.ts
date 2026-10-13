@@ -7,6 +7,13 @@ const DEFAULT_HEBREW_TITLE = 'דוח'
 export type ExcelCell = string | number | boolean | null | undefined
 export type ExcelRow = ExcelCell[]
 
+/** Finite numbers stay numeric in Excel. Empty or non-numeric values stay blank. */
+export function toExcelNumber(value: unknown): number | '' {
+  if (value == null || value === '') return ''
+  const amount = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(amount) ? amount : ''
+}
+
 function sanitizeFilenamePart(value: string): string {
   return value
     .trim()

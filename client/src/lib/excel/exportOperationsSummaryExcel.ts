@@ -1,4 +1,4 @@
-import { exportExcelRows } from './excelExport';
+import { exportExcelRows, toExcelNumber } from './excelExport';
 import type { OperationsSummaryRow } from '@/api/operationsSummaryApi';
 
 export function exportOperationsSummaryExcel(
@@ -16,9 +16,9 @@ export function exportOperationsSummaryExcel(
   const data = rows.map((row) => [
     row.operationName,
     row.pricingForm ?? '',
-    row.currentCost,
-    `${row.totalAmount} ${row.amountUnit}`,
-    row.totalCharge,
+    toExcelNumber(row.currentCost),
+    toExcelNumber(row.totalAmount),
+    toExcelNumber(row.totalCharge),
   ]);
 
   exportExcelRows({
