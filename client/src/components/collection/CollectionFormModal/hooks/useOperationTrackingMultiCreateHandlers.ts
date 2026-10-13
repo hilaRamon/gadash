@@ -44,7 +44,9 @@ export function useOperationTrackingMultiCreateHandlers({
 
   const onUpdateLine = (
     operationId: string,
-    patch: Partial<Pick<OperationTrackingLineEntry, "operationId" | "amount">>,
+    patch: Partial<
+      Pick<OperationTrackingLineEntry, "operationId" | "amount" | "unitCost">
+    >,
   ) => {
     setOperationTrackingEntries((entries) =>
       updateOperationTrackingLine(entries, operationId, patch, context),

@@ -46,7 +46,7 @@ import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsFieldWorkSchema.form.fields
 const adminFormFields = operationsTrackingsAdminSchema.form.fields
-const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
+const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged', 'unitCost'])
 
 function getField(key: string): FormFieldDef {
   const field = formFields.find((item) => item.key === key)
@@ -262,13 +262,15 @@ export function EmployeeFieldWorkPage() {
     const payloadValues = isMultiPlotMode
       ? { ...values, plot: '', amount: '' }
       : values
-    const payloadFields = isMultiPlotMode
-      ? submitFormFields.map((field) =>
-          field.key === 'plot' || field.key === 'amount'
-            ? { ...field, required: false }
-            : field,
-        )
-      : submitFormFields
+    const payloadFields = (
+      isMultiPlotMode
+        ? submitFormFields.map((field) =>
+            field.key === 'plot' || field.key === 'amount'
+              ? { ...field, required: false }
+              : field,
+          )
+        : submitFormFields
+    ).filter((field) => field.key !== 'unitCost')
     const payloadResult = buildPayload(payloadFields, payloadValues)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')

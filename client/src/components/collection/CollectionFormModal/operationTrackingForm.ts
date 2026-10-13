@@ -13,6 +13,7 @@ import {
 export type OperationTrackingLineEntry = {
   operationId: string;
   amount: string;
+  unitCost: string;
 };
 
 type OperationTrackingFormContext = {
@@ -42,6 +43,17 @@ function findPlot(
   plotId: string,
 ): CollectionDocument | undefined {
   return plots.find((row) => String(row._id) === String(plotId));
+}
+
+function operationUnitCostFormValue(
+  operationId: string,
+  operations: CollectionDocument[],
+): string {
+  const operation = findOperation(operations, operationId.trim());
+  if (!operation) return "";
+  const unitCost = Number(operation.currentCost ?? 0);
+  if (!Number.isFinite(unitCost) || unitCost < 0) return "";
+  return String(unitCost);
 }
 
 export function calcOperationTrackingAmountForLine(
@@ -84,6 +96,7 @@ export function toggleOperationTrackingLine(
     {
       operationId,
       amount: calcOperationTrackingAmountForLine(operationId, context),
+      unitCost: operationUnitCostFormValue(operationId, context.operations),
     },
   ];
 }
@@ -91,19 +104,24 @@ export function toggleOperationTrackingLine(
 export function updateOperationTrackingLine(
   entries: OperationTrackingLineEntry[],
   operationId: string,
-  patch: Partial<Pick<OperationTrackingLineEntry, "operationId" | "amount">>,
+  patch: Partial<
+    Pick<OperationTrackingLineEntry, "operationId" | "amount" | "unitCost">
+  >,
   context: OperationAmountContext,
 ): OperationTrackingLineEntry[] {
   return entries.map((entry) => {
     if (entry.operationId !== operationId) return entry;
     const nextOperationId = patch.operationId ?? entry.operationId;
-    const shouldRecalcAmount =
+    const operationChanged =
       patch.operationId != null && patch.operationId !== entry.operationId;
     return {
       operationId: nextOperationId,
-      amount: shouldRecalcAmount
+      amount: operationChanged
         ? calcOperationTrackingAmountForLine(nextOperationId, context)
         : (patch.amount ?? entry.amount),
+      unitCost: operationChanged
+        ? operationUnitCostFormValue(nextOperationId, context.operations)
+        : (patch.unitCost ?? entry.unitCost),
     };
   });
 }
@@ -151,6 +169,15 @@ export function getOperationTrackingMultiCreateErrors(
     const amount = Number(entry.amount);
     if (!Number.isFinite(amount) || amount < 0) {
       errors[entry.operationId] = "כמות לא תקינה";
+      continue;
+    }
+    if (!entry.unitCost.trim()) {
+      errors[entry.operationId] = "יש להזין מחיר ליחידה";
+      continue;
+    }
+    const unitCost = Number(entry.unitCost);
+    if (!Number.isFinite(unitCost) || unitCost < 0) {
+      errors[entry.operationId] = "מחיר ליחידה לא תקין";
     }
   }
 
@@ -169,8 +196,14 @@ export function buildOperationTrackingCreatePayloads(
         ...basePayload,
         operation: entry.operationId,
         amount: entry.amount === "" ? "" : Number(entry.amount),
+        unitCost: entry.unitCost === "" ? "" : Number(entry.unitCost),
       },
-      { ...values, operation: entry.operationId, amount: entry.amount },
+      {
+        ...values,
+        operation: entry.operationId,
+        amount: entry.amount,
+        unitCost: entry.unitCost,
+      },
       context.operations,
       context.plots,
     ),
@@ -330,7 +363,12 @@ function resolvePricingFromSelections(
 
   const plot = findPlot(context.plots, values.plot ?? "");
   const pricingForm = String(operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM);
-  const unitCost = Number(operation.currentCost ?? 0);
+  const explicitUnitCost = String(values.unitCost ?? "").trim();
+  const parsedUnitCost = Number(explicitUnitCost);
+  const unitCost =
+    explicitUnitCost !== "" && Number.isFinite(parsedUnitCost)
+      ? parsedUnitCost
+      : Number(operation.currentCost ?? 0);
   const amount = resolveOperationAmount(pricingForm, {
     startTime: values.startTime,
     endTime: values.endTime,
@@ -382,21 +420,26 @@ export function applyOperationTrackingFieldChange(
     key === "operation" ||
     key === "plot" ||
     key === "startTime" ||
-    key === "endTime"
+    key === "endTime" ||
+    key === "unitCost"
   ) {
     if (key === "operation" && pricingForm === OPERATION_PRICING_BY_UNIT) {
       next.amount = "";
     }
 
-    const suggested = suggestAmountValue(next, context);
+    const suggested =
+      key === "unitCost" ? null : suggestAmountValue(next, context);
     if (suggested != null) {
       next.amount = suggested;
     }
 
     if (key === "operation") {
-      const unitCost = Number(operation?.currentCost ?? 0);
-      if (Number.isFinite(unitCost)) {
-        parts.push(`מחיר ליחידה יעודכן לפי הפעולה החדשה (${formatNumber(unitCost)})`);
+      const unitCost = operationUnitCostFormValue(value, context.operations);
+      if (unitCost !== "") {
+        next.unitCost = unitCost;
+        parts.push(
+          `מחיר ליחידה יעודכן לפי הפעולה החדשה (${formatNumber(Number(unitCost))})`,
+        );
       }
     }
 
@@ -463,6 +506,15 @@ export function getOperationTrackingRequiredErrors(
     !String(values.amount ?? "").trim()
   ) {
     errors.amount = "שדה חובה";
+  }
+
+  const unitCostFieldVisible = visibleFields.some((field) => field.key === "unitCost");
+  const unitCostRaw = String(values.unitCost ?? "").trim();
+  if (unitCostFieldVisible && unitCostRaw) {
+    const unitCost = Number(unitCostRaw);
+    if (!Number.isFinite(unitCost) || unitCost < 0) {
+      errors.unitCost = "מחיר ליחידה לא תקין";
+    }
   }
 
   return errors;

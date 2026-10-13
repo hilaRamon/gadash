@@ -59,6 +59,15 @@ export function useCollectionFormInitEffects({
       if (schema.collection === "baleOrderTrackings") {
         initial.pricingForm = inferBaleOrderPricingForm(editingRow);
       }
+      if (
+        schema.collection === "operationsTrackings" &&
+        editingRow?.unitCost != null &&
+        editingRow.unitCost !== "" &&
+        Number(editingRow.unitCost) === 0 &&
+        schema.form.fields.some((field) => field.key === "unitCost")
+      ) {
+        initial.unitCost = "0";
+      }
       setValues(initial);
       setValidationError(null);
       setFieldErrors({});

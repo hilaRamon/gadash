@@ -92,7 +92,10 @@ export function submitCollectionForm({
         )
       : isOperationTrackingMultiCreate
         ? schema.form.fields.filter(
-            (field) => field.key !== "operation" && field.key !== "amount",
+            (field) =>
+              field.key !== "operation" &&
+              field.key !== "amount" &&
+              field.key !== "unitCost",
           )
       : schema.form.fields;
 

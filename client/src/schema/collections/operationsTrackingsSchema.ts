@@ -68,6 +68,15 @@ function buildOperationsTrackingForm(
       { key: "startTime", label: "שעת התחלה", type: "time", required: true },
       { key: "endTime", label: "שעת סיום", type: "time", required: true },
       { key: "amount", label: "כמות", type: "number", hidden: hideAmount },
+      ...(hideAmount
+        ? []
+        : [
+            {
+              key: "unitCost" as const,
+              label: "מחיר ליחידה",
+              type: "number" as const,
+            },
+          ]),
       {
         key: "billable",
         label: "לחיוב",
@@ -154,6 +163,15 @@ const baseColumns: CollectionSchema["columns"] = [
     inlineEditable: (row) => String(row.operationType ?? "") !== "מנהלה",
   },
   {
+    key: "unitCost",
+    label: "מחיר ליחידה",
+    type: "number",
+    sortable: true,
+    format: (value) => formatNumber(value),
+    width: "8rem",
+    inlineEditable: (row) => String(row.operationType ?? "") !== "מנהלה",
+  },
+  {
     key: "finalPrice",
     label: "מחיר סופי",
     type: "number",
@@ -178,27 +196,9 @@ const baseColumns: CollectionSchema["columns"] = [
   },
 ];
 
-const unitCostColumn: CollectionSchema["columns"][number] = {
-  key: "unitCost",
-  label: "מחיר ליחידה",
-  type: "number",
-  sortable: true,
-  format: (value) => formatNumber(value),
-  width: "8rem",
-};
-
-const finalPriceColumnIndex = baseColumns.findIndex(
-  (column) => column.key === "finalPrice",
-);
-const fieldWorkColumns: CollectionSchema["columns"] = [
-  ...baseColumns.slice(0, finalPriceColumnIndex),
-  unitCostColumn,
-  ...baseColumns.slice(finalPriceColumnIndex),
-];
-
 const adminColumns = baseColumns.filter(
   (column) =>
-    !["customer", "plot", "billable", "finalPrice", "amount"].includes(
+    !["customer", "plot", "billable", "finalPrice", "amount", "unitCost"].includes(
       column.key,
     ),
 );
@@ -219,7 +219,7 @@ export const operationsTrackingsFieldWorkSchema: CollectionSchema = {
   id: "operations-trackings-field-work",
   collection: "operationsTrackings",
   label: "משימות - עיבודים",
-  columns: fieldWorkColumns,
+  columns: baseColumns,
   defaultSort: { field: "date", direction: "desc" },
   form: buildOperationsTrackingForm(operationReportFilter, {
     createTitle: "הוספת משימת עיבוד",
