@@ -4,6 +4,7 @@ import type {
   FormFieldDef,
   FormSchema,
 } from "../types";
+import { formatTableDate } from "@/lib/dateFieldFormat";
 import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 
 const nonFuelOperationFilter = (row: CollectionDocument) =>
@@ -96,19 +97,13 @@ function buildOperationsTrackingForm(
   };
 }
 
-function formatDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("he-IL");
-}
-
 const baseColumns: CollectionSchema["columns"] = [
   {
     key: "date",
     label: "תאריך",
     type: "date",
     sortable: true,
-    format: (value) => formatDate(value),
+    format: (value) => formatTableDate(value),
     width: "8rem",
   },
   {

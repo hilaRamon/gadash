@@ -1,10 +1,5 @@
+import { formatTableDate } from "@/lib/dateFieldFormat";
 import type { CollectionSchema } from "../types";
-
-function formatDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("he-IL");
-}
 
 export const fuelOperationsTrackingsSchema: CollectionSchema = {
   id: "fuel-operations-trackings",
@@ -16,7 +11,7 @@ export const fuelOperationsTrackingsSchema: CollectionSchema = {
       label: "תאריך",
       type: "date",
       sortable: true,
-      format: (value) => formatDate(value),
+      format: (value) => formatTableDate(value),
       width: "8rem",
     },
     {

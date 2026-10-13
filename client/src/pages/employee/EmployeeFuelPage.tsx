@@ -7,7 +7,6 @@ import {
 import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import { fuelOperationsTrackingsSchema } from "@/schema/collections/fuelOperationsTrackingsSchema"
 import type { FormFieldDef } from "@/schema/types"
 import { EmployeeFormField } from './components/EmployeeFormField'
@@ -49,7 +48,7 @@ export function EmployeeFuelPage() {
 
   useEffect(() => {
     if (employeeId) {
-      setValues((prev) => ({ ...prev, employee: employeeId, date: isoToDateDisplay(trackingDate) }))
+      setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
     }
   }, [employeeId, trackingDate])
 

@@ -1,12 +1,7 @@
 import type { CollectionSchema } from "../types";
 import { customerBillingStatusOptions } from "@/lib/customerBillingStatuses";
+import { formatTableDate } from "@/lib/dateFieldFormat";
 import { formatWholeNumber } from "@/lib/formatNumber";
-
-function formatDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("he-IL");
-}
 
 export const customerBillingTrackingsSchema: CollectionSchema = {
   id: "customer-billing-trackings",
@@ -19,7 +14,7 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
       label: "תאריך",
       type: "date",
       sortable: true,
-      format: (value) => formatDate(value),
+      format: (value) => formatTableDate(value),
       width: "8rem",
     },
     {

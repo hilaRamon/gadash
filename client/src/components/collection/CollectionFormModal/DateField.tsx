@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { formatDateInput } from "@/lib/dateFieldFormat";
 import { fieldControlStyles } from "./sharedStyles";
 
 type DateFieldProps = {
@@ -24,14 +23,10 @@ export function DateField({
   return (
     <Input
       id={id}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      placeholder="dd/mm/yy"
-      dir="ltr"
+      type="date"
       value={value}
       disabled={disabled}
-      onChange={(e) => onChange(formatDateInput(e.target.value))}
+      onChange={(event) => onChange(event.target.value)}
       required={required}
     />
   );

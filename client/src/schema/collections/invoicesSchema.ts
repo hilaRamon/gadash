@@ -1,21 +1,7 @@
 import { formatNumber2 } from '@/lib/formatNumber'
+import { formatTableDate } from '@/lib/dateFieldFormat'
 import { getCurrentSeasonYear } from '@/lib/seasonRange'
 import type { CollectionSchema } from '../types'
-
-function formatDate(value: unknown): string {
-  if (value == null || value === '') return ''
-  const date = new Date(String(value))
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('he-IL')
-}
-
-function formatDueDate(value: unknown): string {
-  if (value == null || value === '') return ''
-  const iso = String(value).slice(0, 10)
-  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return formatDate(value)
-  return `${Number(match[3])}.${Number(match[2])}.${match[1]}`
-}
 
 function seasonYearFromDate(value: unknown): string | number {
   if (value == null || value === '') return ''
@@ -44,7 +30,7 @@ export const invoicesSchema: CollectionSchema = {
       label: 'תאריך',
       type: 'date',
       sortable: true,
-      format: (value) => formatDate(value),
+      format: (value) => formatTableDate(value),
       width: '8rem',
     },
     {
@@ -72,7 +58,7 @@ export const invoicesSchema: CollectionSchema = {
       label: 'תאריך לתשלום',
       type: 'date',
       sortable: true,
-      format: (value) => formatDueDate(value),
+      format: (value) => formatTableDate(value),
       width: '8rem',
     },
     {

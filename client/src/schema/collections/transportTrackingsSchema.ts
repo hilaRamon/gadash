@@ -1,4 +1,5 @@
 import type { CollectionSchema } from "../types";
+import { formatTableDate } from "@/lib/dateFieldFormat";
 import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import { TRANSPORT_BILLING_TYPES } from "@/lib/transportBilling";
 
@@ -6,12 +7,6 @@ const billingOptions = TRANSPORT_BILLING_TYPES.map((value) => ({
   value,
   label: value,
 }));
-
-function formatDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("he-IL");
-}
 
 export const transportTrackingsSchema: CollectionSchema = {
   id: "transport-trackings",
@@ -23,7 +18,7 @@ export const transportTrackingsSchema: CollectionSchema = {
       label: "תאריך",
       type: "date",
       sortable: true,
-      format: (value) => formatDate(value),
+      format: (value) => formatTableDate(value),
       width: "8rem",
     },
     {

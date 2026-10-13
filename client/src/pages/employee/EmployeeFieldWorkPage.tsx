@@ -18,7 +18,6 @@ import {
 import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import {
   OPERATION_PRICING_BY_DUNAM,
   OPERATION_PRICING_BY_UNIT,
@@ -76,7 +75,7 @@ export function EmployeeFieldWorkPage() {
       setValues((prev) => ({
         ...prev,
         employee: employeeId,
-        date: isoToDateDisplay(trackingDate),
+        date: trackingDate,
       }))
     }
   }, [employeeId, trackingDate])
