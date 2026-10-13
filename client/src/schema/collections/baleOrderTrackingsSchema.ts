@@ -1,4 +1,5 @@
 import type { CollectionDocument, CollectionSchema } from "../types";
+import { formatTableDate } from "@/lib/dateFieldFormat";
 import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
 import {
   BALE_ORDER_BY_UNIT,
@@ -29,12 +30,6 @@ function formatUnitPricingValue(
   return formatValue(value);
 }
 
-function formatDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("he-IL");
-}
-
 export const baleOrderTrackingsSchema: CollectionSchema = {
   id: "bale-order-trackings",
   collection: "baleOrderTrackings",
@@ -45,7 +40,7 @@ export const baleOrderTrackingsSchema: CollectionSchema = {
       label: "תאריך",
       type: "date",
       sortable: true,
-      format: (value) => formatDate(value),
+      format: (value) => formatTableDate(value),
       width: "8rem",
     },
     {

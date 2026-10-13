@@ -9,7 +9,6 @@ import {
 import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import { calcMaterialUsageAmount } from "@/lib/materialUsageAmount"
 import { materialUsageTrackingsSchema } from "@/schema/collections/materialUsageTrackingsSchema"
 import type { CollectionDocument, FormFieldDef } from "@/schema/types"
@@ -66,7 +65,7 @@ export function EmployeeMaterialPage() {
 
   useEffect(() => {
     if (employeeId) {
-      setValues((prev) => ({ ...prev, employee: employeeId, date: isoToDateDisplay(trackingDate) }))
+      setValues((prev) => ({ ...prev, employee: employeeId, date: trackingDate }))
     }
   }, [employeeId, trackingDate])
 

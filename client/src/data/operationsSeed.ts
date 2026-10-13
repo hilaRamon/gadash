@@ -11,6 +11,8 @@ type OperationSeedRow = {
   operationType: 'עיבוד' | 'מנהלה' | 'דלק'
 }
 
+const FUEL_OPERATION_NAMES = new Set(['תדלוק', 'מילוי מיכל'])
+
 const operations: OperationSeedRow[] = [
   { name: 'ארגז מיישר', currentCost: 23, pricingForm: 'דונם', operationType: 'עיבוד' },
   { name: 'גיבוב', currentCost: 17.5, pricingForm: 'דונם', operationType: 'עיבוד' },
@@ -40,12 +42,13 @@ const operations: OperationSeedRow[] = [
   { name: 'ריסוק תמרים', currentCost: 0, pricingForm: 'שעתי', operationType: 'עיבוד' },
   { name: 'שופל העמסה (זיבול)', currentCost: 400, pricingForm: 'שעתי', operationType: 'עיבוד' },
   { name: 'תדלוק', currentCost: 0, pricingForm: 'דונם', operationType: 'דלק' },
+  { name: 'מילוי מיכל', currentCost: 0, pricingForm: 'דונם', operationType: 'דלק' },
   { name: 'תיקון', currentCost: 0, pricingForm: 'דונם', operationType: 'עיבוד' },
 ]
 
 export const operationsSeedData: CollectionDocument[] = operations.map((row, index) => ({
   _id: mockObjectId(`operation-${index}`),
-  name: toDevName(row.name),
+  name: FUEL_OPERATION_NAMES.has(row.name) ? row.name : toDevName(row.name),
   pricingForm: row.pricingForm,
   operationType: row.operationType,
   currentCost: row.currentCost,

@@ -346,13 +346,14 @@ export const operationTrackingService = {
       String(patch.plot ?? '') !== String(existingPlotId ?? '');
     const timesChanged = patch.startTime != null || patch.endTime != null;
     const amountExplicitlySent = Object.prototype.hasOwnProperty.call(body, 'amount');
+    const unitCostExplicitlySent = Object.prototype.hasOwnProperty.call(body, 'unitCost');
 
     const nextOperationId = patch.operation ?? existingOperationId;
     const nextPlotId = patch.plot !== undefined ? patch.plot : existingPlotId;
     const nextStartTime = patch.startTime ?? String(existing.startTime ?? '');
     const nextEndTime = patch.endTime ?? String(existing.endTime ?? '');
 
-    if (operationChanged) {
+    if (operationChanged && !unitCostExplicitlySent) {
       const operationDetails = await resolveOperationDetails(patch.operation!);
       patch.unitCost = operationDetails.currentCost;
     }

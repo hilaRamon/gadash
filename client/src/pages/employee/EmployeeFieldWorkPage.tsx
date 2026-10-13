@@ -18,7 +18,6 @@ import {
 import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import {
   OPERATION_PRICING_BY_DUNAM,
   OPERATION_PRICING_BY_UNIT,
@@ -46,7 +45,7 @@ import { FormStack } from './employeeStyles'
 
 const formFields = operationsTrackingsFieldWorkSchema.form.fields
 const adminFormFields = operationsTrackingsAdminSchema.form.fields
-const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged'])
+const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged', 'unitCost'])
 
 function getField(key: string): FormFieldDef {
   const field = formFields.find((item) => item.key === key)
@@ -76,7 +75,7 @@ export function EmployeeFieldWorkPage() {
       setValues((prev) => ({
         ...prev,
         employee: employeeId,
-        date: isoToDateDisplay(trackingDate),
+        date: trackingDate,
       }))
     }
   }, [employeeId, trackingDate])
@@ -262,13 +261,15 @@ export function EmployeeFieldWorkPage() {
     const payloadValues = isMultiPlotMode
       ? { ...values, plot: '', amount: '' }
       : values
-    const payloadFields = isMultiPlotMode
-      ? submitFormFields.map((field) =>
-          field.key === 'plot' || field.key === 'amount'
-            ? { ...field, required: false }
-            : field,
-        )
-      : submitFormFields
+    const payloadFields = (
+      isMultiPlotMode
+        ? submitFormFields.map((field) =>
+            field.key === 'plot' || field.key === 'amount'
+              ? { ...field, required: false }
+              : field,
+          )
+        : submitFormFields
+    ).filter((field) => field.key !== 'unitCost')
     const payloadResult = buildPayload(payloadFields, payloadValues)
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')

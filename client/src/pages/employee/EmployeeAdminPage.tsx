@@ -11,7 +11,6 @@ import {
 import { useCollectionList } from "@/queries/collections/useCollectionList"
 import { useCreateDocument } from "@/queries/collections/useCollectionMutations"
 import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { isoToDateDisplay } from "@/lib/dateFieldFormat"
 import { operationsTrackingsAdminSchema } from "@/schema/collections/operationsTrackingsSchema"
 import {
   EmployeeAdminFormFields,
@@ -56,7 +55,7 @@ export function EmployeeAdminPage() {
       setValues((prev) => ({
         ...prev,
         employee: employeeId,
-        date: isoToDateDisplay(trackingDate),
+        date: trackingDate,
       }))
     }
   }, [employeeId, trackingDate])

@@ -7,6 +7,7 @@ import type { CollectionDocument } from "@/schema/types";
 export type TrackingMultiCreateEntry = {
   itemId: string;
   amount: string;
+  unitCost?: string;
 };
 
 type TrackingMultiCreateFieldsProps = {
@@ -15,6 +16,7 @@ type TrackingMultiCreateFieldsProps = {
   referenceCollection: string;
   referenceFieldLabel: string;
   amountLabel: string;
+  unitCostLabel?: string;
   items: CollectionDocument[];
   entries: TrackingMultiCreateEntry[];
   fieldErrors: Record<string, string>;
@@ -24,7 +26,7 @@ type TrackingMultiCreateFieldsProps = {
   onToggleItem: (itemId: string, checked: boolean) => void;
   onUpdateLine: (
     itemId: string,
-    patch: Partial<Pick<TrackingMultiCreateEntry, "itemId" | "amount">>,
+    patch: Partial<Pick<TrackingMultiCreateEntry, "itemId" | "amount" | "unitCost">>,
   ) => void;
 };
 
@@ -114,6 +116,7 @@ export function TrackingMultiCreateFields({
   referenceCollection,
   referenceFieldLabel,
   amountLabel,
+  unitCostLabel,
   items,
   entries,
   fieldErrors,
@@ -201,6 +204,24 @@ export function TrackingMultiCreateFields({
                   required
                 />
               </div>
+              {unitCostLabel ? (
+                <div>
+                  <FieldLabel htmlFor={`line-unit-cost-${entry.itemId}`}>
+                    {unitCostLabel}
+                  </FieldLabel>
+                  <AmountInput
+                    id={`line-unit-cost-${entry.itemId}`}
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
+                    value={entry.unitCost ?? ""}
+                    onChange={(e) =>
+                      onUpdateLine(entry.itemId, { unitCost: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              ) : null}
               {fieldErrors[entry.itemId] && (
                 <FieldErrorMessage>
                   {fieldErrors[entry.itemId]}

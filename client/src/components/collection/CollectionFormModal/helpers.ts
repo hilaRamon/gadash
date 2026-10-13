@@ -1,10 +1,5 @@
 import type { FormFieldDef, CollectionDocument } from "@/schema/types";
-import {
-  DATE_INVALID_ERROR,
-  isoToDateDisplay,
-  isValidDateDisplay,
-  parseDateDisplayToIso,
-} from "@/lib/dateFieldFormat";
+import { DATE_INVALID_ERROR, isValidIsoDate } from "@/lib/dateFieldFormat";
 import {
   isoToMonthValue,
   isValidMonthValue,
@@ -102,9 +97,9 @@ export function getInitialValues(
 
     if (field.type === "date") {
       if (raw == null || raw === "") {
-        values[field.key] = row ? "" : isoToDateDisplay(today);
+        values[field.key] = row ? "" : today;
       } else {
-        values[field.key] = isoToDateDisplay(String(raw).slice(0, 10));
+        values[field.key] = String(raw).slice(0, 10);
       }
       continue;
     }
@@ -202,10 +197,10 @@ export function buildPayload(
       const trimmed = String(val).trim();
       if (!trimmed) {
         payload[field.key] = "";
+      } else if (!isValidIsoDate(trimmed)) {
+        return { error: DATE_INVALID_ERROR };
       } else {
-        const iso = parseDateDisplayToIso(trimmed);
-        if (!iso) return { error: DATE_INVALID_ERROR };
-        payload[field.key] = iso;
+        payload[field.key] = trimmed;
       }
       continue;
     }
@@ -250,7 +245,7 @@ export function getRequiredFieldErrors(
 
     if (field.type === "date") {
       const trimmed = String(val).trim();
-      if (trimmed && !isValidDateDisplay(trimmed)) {
+      if (trimmed && !isValidIsoDate(trimmed)) {
         errors[field.key] = DATE_INVALID_ERROR;
       }
     }

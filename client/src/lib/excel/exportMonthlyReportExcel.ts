@@ -1,13 +1,9 @@
-import { exportExcelRows } from "./excelExport";
+import { exportExcelRows, toExcelNumber } from "./excelExport";
 import type {
   EmployeeMonthlyReport,
   MonthlySummaryRow,
 } from "@/api/monthlyReportApi";
-import {
-  formatHours,
-  formatReportDate,
-  formatReportMonth,
-} from "@/api/monthlyReportApi";
+import { formatReportDate, formatReportMonth } from "@/api/monthlyReportApi";
 
 export function exportMonthlyReportExcel(
   rows: MonthlySummaryRow[],
@@ -28,10 +24,10 @@ export function exportMonthlyReportExcel(
   const data = rows.map((row) => [
     row.employeeName,
     row.totalDaysWorked,
-    formatHours(row.totalHours),
-    formatHours(row.regularHours),
-    formatHours(row.overtime125Hours),
-    formatHours(row.overtime150Hours),
+    toExcelNumber(row.totalHours),
+    toExcelNumber(row.regularHours),
+    toExcelNumber(row.overtime125Hours),
+    toExcelNumber(row.overtime150Hours),
     row.sickDays,
     row.vacationDays,
     row.reserveDays,
@@ -68,20 +64,20 @@ export function exportEmployeeMonthlyReportExcel(
     ["תאריך", 'סה"כ שעות', "שעות רגילות", "שעות נוספות 125%", "שעות נוספות 150%"],
     ...report.days.map((day) => [
       formatReportDate(day.date),
-      formatHours(day.totalHours),
-      formatHours(day.regularHours),
-      formatHours(day.overtime125Hours),
-      formatHours(day.overtime150Hours),
+      toExcelNumber(day.totalHours),
+      toExcelNumber(day.regularHours),
+      toExcelNumber(day.overtime125Hours),
+      toExcelNumber(day.overtime150Hours),
     ]),
   ];
 
   if (report.days.length > 0) {
     rows.push([
       'סה"כ',
-      formatHours(totals.totalHours),
-      formatHours(totals.regularHours),
-      formatHours(totals.overtime125Hours),
-      formatHours(totals.overtime150Hours),
+      toExcelNumber(totals.totalHours),
+      toExcelNumber(totals.regularHours),
+      toExcelNumber(totals.overtime125Hours),
+      toExcelNumber(totals.overtime150Hours),
     ]);
   }
 
@@ -92,10 +88,10 @@ export function exportEmployeeMonthlyReportExcel(
     ["ימי מחלה", report.absence.sickDays],
     ["ימי חופש", report.absence.vacationDays],
     ["ימי מילואים", report.absence.reserveDays],
-    ['סה"כ שעות', formatHours(totals.totalHours)],
-    ["שעות רגילות", formatHours(totals.regularHours)],
-    ["שעות נוספות 125%", formatHours(totals.overtime125Hours)],
-    ["שעות נוספות 150%", formatHours(totals.overtime150Hours)],
+    ['סה"כ שעות', toExcelNumber(totals.totalHours)],
+    ["שעות רגילות", toExcelNumber(totals.regularHours)],
+    ["שעות נוספות 125%", toExcelNumber(totals.overtime125Hours)],
+    ["שעות נוספות 150%", toExcelNumber(totals.overtime150Hours)],
   );
 
   exportExcelRows({

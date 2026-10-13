@@ -165,7 +165,12 @@ export function CollectionFormModal({
       field.key === "operation" && field.referenceCollection === "operations",
   );
 
-  const adminFormKeysToHide = new Set(["operation", "plot", "billable"]);
+  const adminFormKeysToHide = new Set([
+    "operation",
+    "plot",
+    "billable",
+    "unitCost",
+  ]);
   const visibleFields = (() => {
     const base = schema.form.fields.filter((field) => {
       if (field.hidden) return false;
@@ -189,7 +194,10 @@ export function CollectionFormModal({
     }
     if (isOperationTrackingMultiCreate) {
       return base.filter(
-        (field) => field.key !== "operation" && field.key !== "amount",
+        (field) =>
+          field.key !== "operation" &&
+          field.key !== "amount" &&
+          field.key !== "unitCost",
       );
     }
     return base;
@@ -433,9 +441,11 @@ export function CollectionFormModal({
                       ? operations.filter(operationFormField.referenceFilter)
                       : operations
                   }
+                  unitCostLabel="מחיר ליחידה"
                   entries={operationTrackingEntries.map((entry) => ({
                     itemId: entry.operationId,
                     amount: entry.amount,
+                    unitCost: entry.unitCost,
                   }))}
                   fieldErrors={fieldErrors}
                   referenceFilter={operationFormField?.referenceFilter}
@@ -445,6 +455,7 @@ export function CollectionFormModal({
                     operationTrackingHandlers.onUpdateLine(itemId, {
                       operationId: patch.itemId,
                       amount: patch.amount,
+                      unitCost: patch.unitCost,
                     })
                   }
                 />
