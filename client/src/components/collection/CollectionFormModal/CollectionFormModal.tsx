@@ -189,7 +189,10 @@ export function CollectionFormModal({
     }
     if (isMaterialUsageMultiCreate) {
       return base.filter(
-        (field) => field.key !== "material" && field.key !== "amount",
+        (field) =>
+          field.key !== "material" &&
+          field.key !== "amount" &&
+          field.key !== "unitPrice",
       );
     }
     if (isOperationTrackingMultiCreate) {
@@ -411,10 +414,12 @@ export function CollectionFormModal({
                   referenceCollection="materials"
                   referenceFieldLabel="חומר"
                   amountLabel="כמות"
+                  unitCostLabel="מחיר לק״ג"
                   items={materials}
                   entries={materialUsageEntries.map((entry) => ({
                     itemId: entry.materialId,
                     amount: entry.amount,
+                    unitCost: entry.unitPrice,
                   }))}
                   fieldErrors={fieldErrors}
                   amountDisabled={!values.plot}
@@ -424,6 +429,7 @@ export function CollectionFormModal({
                     materialUsageHandlers.onUpdateLine(itemId, {
                       materialId: patch.itemId,
                       amount: patch.amount,
+                      unitPrice: patch.unitCost,
                     })
                   }
                 />

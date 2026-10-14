@@ -361,7 +361,11 @@ export const materialUsageTrackingService = {
       }
     }
 
-    if (materialChanged) {
+    const unitPriceExplicitlySent = Object.prototype.hasOwnProperty.call(
+      body,
+      "unitPrice",
+    );
+    if (materialChanged && !unitPriceExplicitlySent) {
       const materialId = patch.material ?? existingMaterialId;
       const unitPrice = await resolveMaterialUnitPrice(materialId);
       if (unitPrice != null) {

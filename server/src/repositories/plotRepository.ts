@@ -24,18 +24,21 @@ export const plotRepository = {
     return listPaginatedDocuments('plots', PlotModel, listQuery, customerPopulate);
   },
 
-  findById(id: string) {
-    return PlotModel.findById(id).populate(customerPopulate).lean();
+  findById(id: string, session?: unknown) {
+    const query = PlotModel.findById(id).populate(customerPopulate);
+    if (session) query.session(session as never);
+    return query.lean();
   },
 
   create(data: PlotInput) {
     return PlotModel.create(data);
   },
 
-  update(id: string, data: Partial<PlotInput>) {
+  update(id: string, data: Partial<PlotInput>, session?: unknown) {
     return PlotModel.findByIdAndUpdate(id, data, {
       returnDocument: 'after',
       runValidators: true,
+      ...(session ? { session: session as never } : {}),
     })
       .populate(customerPopulate)
       .lean();

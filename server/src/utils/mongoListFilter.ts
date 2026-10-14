@@ -3,12 +3,19 @@ import type { ListFilter, ListQuery } from './listQuery'
 
 export type FieldKind = 'string' | 'number' | 'boolean' | 'date' | 'ref'
 
+export type RefVia = {
+  model: string
+  field: string
+}
+
 export type ListFieldDef = {
   key: string
   path: string
   kind: FieldKind
   refModel?: string
   refNameField?: string
+  /** Match `refModel` by name, then keep parent docs whose `field` points at those ids. `path` is that parent id on the listed document. */
+  via?: RefVia
 }
 
 export type CollectionListConfig = {
@@ -22,6 +29,12 @@ type RefResolver = (
   modelName: string,
   nameField: string,
   search: string,
+) => Promise<Types.ObjectId[]>
+
+type ViaResolver = (
+  modelName: string,
+  field: string,
+  ids: Types.ObjectId[],
 ) => Promise<Types.ObjectId[]>
 
 function escapeRegex(value: string): string {
@@ -130,9 +143,13 @@ async function resolveRefIdsForField(
   field: ListFieldDef,
   search: string,
   resolveRefs: RefResolver,
+  resolveViaIds?: ViaResolver,
 ): Promise<Types.ObjectId[]> {
   if (field.kind !== 'ref' || !field.refModel) return []
-  return resolveRefs(field.refModel, field.refNameField ?? 'name', search)
+  const ids = await resolveRefs(field.refModel, field.refNameField ?? 'name', search)
+  if (!field.via) return ids
+  if (!resolveViaIds || ids.length === 0) return []
+  return resolveViaIds(field.via.model, field.via.field, ids)
 }
 
 export async function buildMongoListFilter(
@@ -140,6 +157,7 @@ export async function buildMongoListFilter(
   listQuery: Pick<ListQuery, 'search' | 'q' | 'filter'>,
   resolveRefs: RefResolver,
   extraFilter: Record<string, unknown> = {},
+  resolveViaIds?: ViaResolver,
 ): Promise<Record<string, unknown>> {
   const clauses: Record<string, unknown>[] = []
   if (Object.keys(extraFilter).length > 0) {
@@ -155,7 +173,12 @@ export async function buildMongoListFilter(
       const field = fieldByKey.get(key)
       if (!field) continue
       if (field.kind === 'ref') {
-        const ids = await resolveRefIdsForField(field, needle, resolveRefs)
+        const ids = await resolveRefIdsForField(
+          field,
+          needle,
+          resolveRefs,
+          resolveViaIds,
+        )
         if (ids.length > 0) {
           or.push({ [field.path]: { $in: ids } })
         }
@@ -188,10 +211,19 @@ export async function buildMongoListFilter(
       }
 
       if (field.kind === 'ref') {
-        if (Types.ObjectId.isValid(value) && String(new Types.ObjectId(value)) === value) {
+        if (
+          !field.via &&
+          Types.ObjectId.isValid(value) &&
+          String(new Types.ObjectId(value)) === value
+        ) {
           clauses.push({ [field.path]: new Types.ObjectId(value) })
         } else {
-          const ids = await resolveRefIdsForField(field, value, resolveRefs)
+          const ids = await resolveRefIdsForField(
+            field,
+            value,
+            resolveRefs,
+            resolveViaIds,
+          )
           clauses.push(
             ids.length > 0
               ? { [field.path]: { $in: ids } }
@@ -232,6 +264,7 @@ export async function buildMongoListFilter(
           field,
           listQuery.filter.value,
           resolveRefs,
+          resolveViaIds,
         )
       }
       const condition = buildOperatorCondition(

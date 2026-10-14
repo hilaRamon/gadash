@@ -38,7 +38,9 @@ export function useMaterialUsageMultiCreateHandlers({
 
   const onUpdateLine = (
     materialId: string,
-    patch: Partial<Pick<MaterialUsageLineEntry, "materialId" | "amount">>,
+    patch: Partial<
+      Pick<MaterialUsageLineEntry, "materialId" | "amount" | "unitPrice">
+    >,
   ) => {
     setMaterialUsageEntries((entries) =>
       updateMaterialUsageLine(entries, materialId, patch, plotId, context),

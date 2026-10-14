@@ -21,7 +21,14 @@ import { useRequireEmployee } from './hooks/useRequireEmployee'
 import { FormStack } from './employeeStyles'
 
 const formFields = materialUsageTrackingsSchema.form.fields
-const hiddenKeys = new Set(['date', 'employee', 'billable', 'wasCharged', 'amount'])
+const hiddenKeys = new Set([
+  'date',
+  'employee',
+  'billable',
+  'wasCharged',
+  'amount',
+  'unitPrice',
+])
 
 const dunamField: FormFieldDef = {
   key: 'dunam',
@@ -123,7 +130,10 @@ export function EmployeeMaterialPage() {
       amount: numberToFormFieldValue(amount),
     }
 
-    const payloadResult = buildPayload(formFields, submitValues)
+    const payloadResult = buildPayload(
+      formFields.filter((field) => field.key !== 'unitPrice'),
+      submitValues,
+    )
     if (payloadResult == null) {
       setError('יש למלא את כל שדות החובה')
       return

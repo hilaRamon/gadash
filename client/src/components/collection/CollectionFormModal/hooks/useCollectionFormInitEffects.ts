@@ -68,6 +68,15 @@ export function useCollectionFormInitEffects({
       ) {
         initial.unitCost = "0";
       }
+      if (
+        schema.collection === "materialUsageTrackings" &&
+        editingRow?.unitPrice != null &&
+        editingRow.unitPrice !== "" &&
+        Number(editingRow.unitPrice) === 0 &&
+        schema.form.fields.some((field) => field.key === "unitPrice")
+      ) {
+        initial.unitPrice = "0";
+      }
       setValues(initial);
       setValidationError(null);
       setFieldErrors({});

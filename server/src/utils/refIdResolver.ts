@@ -53,6 +53,21 @@ export async function resolveRefIds(
   return rows.map((r) => r._id)
 }
 
+export async function findIdsByRefField(
+  modelName: string,
+  field: string,
+  ids: Types.ObjectId[],
+): Promise<Types.ObjectId[]> {
+  if (ids.length === 0) return []
+  const model = modelByName[modelName]
+  if (!model) return []
+  const rows = await model
+    .find({ [field]: { $in: ids } })
+    .select('_id')
+    .lean()
+  return rows.map((r) => r._id)
+}
+
 export async function findOperationIdsByType(
   types: Array<'עיבוד' | 'מנהלה' | 'דלק'> | { $ne: 'עיבוד' | 'מנהלה' | 'דלק' },
 ): Promise<Types.ObjectId[]> {

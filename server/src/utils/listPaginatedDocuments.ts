@@ -4,6 +4,7 @@ import type { ListQuery, PaginatedResult } from './listQuery'
 import { buildMongoListFilter } from './mongoListFilter'
 import { paginateModel, sortFromListSort } from './pagination'
 import {
+  findIdsByRefField,
   findOperationIdsByType,
   resolveRefIds,
 } from './refIdResolver'
@@ -62,6 +63,7 @@ export async function listPaginatedDocuments<T = Record<string, unknown>>(
     listQuery,
     resolveRefIds,
     extraFilter,
+    findIdsByRefField,
   )
   const sort = sortFromListSort(
     listQuery.sort,

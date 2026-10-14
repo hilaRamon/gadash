@@ -1,8 +1,13 @@
 import { Types } from 'mongoose';
+import { OperationModel } from '../models/Operation';
 import { OperationTrackingModel } from '../models/OperationTracking';
 import type { ListQuery } from '../utils/listQuery';
 import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
+import {
+  DUNAM_AMOUNT_MATCH_TOLERANCE,
+  OPERATION_PRICING_BY_DUNAM,
+} from '../utils/operationTrackingPricing';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type OperationTrackingInput = {
@@ -37,7 +42,7 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .sort({ date: -1 })
+      .sort({ date: -1, startTime: 1 })
       .lean();
   },
 
@@ -126,5 +131,47 @@ export const operationTrackingRepository = {
     return OperationTrackingModel.find({ _id: { $in: toObjectIds(ids) } })
       .select('date employee')
       .lean();
+  },
+
+  async syncUnchargedAmountsForPlotDunam(options: {
+    plotId: string;
+    previousDunam: number;
+    nextDunam: number;
+    session?: unknown;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.plotId)) return;
+
+    const operationQuery = OperationModel.find({
+      $or: [
+        { pricingForm: OPERATION_PRICING_BY_DUNAM },
+        { pricingForm: null },
+        { pricingForm: { $exists: false } },
+      ],
+    }).select('_id');
+    if (options.session) operationQuery.session(options.session as never);
+    const operations = await operationQuery.lean();
+    const operationIds = operations.map((operation) => operation._id);
+    if (operationIds.length === 0) return;
+
+    await OperationTrackingModel.updateMany(
+      {
+        plot: new Types.ObjectId(options.plotId),
+        wasCharged: { $ne: true },
+        operation: { $in: operationIds },
+        $expr: {
+          $and: [
+            { $isNumber: '$amount' },
+            {
+              $lte: [
+                { $abs: { $subtract: ['$amount', options.previousDunam] } },
+                DUNAM_AMOUNT_MATCH_TOLERANCE,
+              ],
+            },
+          ],
+        },
+      },
+      { $set: { amount: options.nextDunam } },
+      options.session ? { session: options.session as never } : undefined,
+    );
   },
 };
