@@ -49,6 +49,7 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
       type: 'number',
       sortable: true,
       width: '6rem',
+      inlineEditable: () => true,
     },
     {
       key: 'unitPrice',
@@ -57,6 +58,7 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
       sortable: true,
       format: (value) => formatNumber(value),
       width: '8rem',
+      inlineEditable: () => true,
     },
     {
       key: 'finalPrice',
@@ -109,6 +111,7 @@ export const materialUsageTrackingsSchema: CollectionSchema = {
         referenceCollection: 'employees',
       },
       { key: 'amount', label: 'כמות', type: 'number', required: true },
+      { key: 'unitPrice', label: 'מחיר לק״ג', type: 'number' },
       { key: 'billable', label: 'לחיוב', type: 'boolean' },
       {
         key: 'wasCharged',

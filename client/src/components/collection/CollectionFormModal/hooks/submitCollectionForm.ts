@@ -16,6 +16,7 @@ import {
 import {
   buildMaterialUsageCreatePayloads,
   enrichMaterialUsagePayload,
+  getMaterialUsageEditErrors,
   getMaterialUsageMultiCreateErrors,
   type MaterialUsageLineEntry,
 } from "../materialUsageTrackingForm";
@@ -88,7 +89,10 @@ export function submitCollectionForm({
       })
     : isMaterialUsageMultiCreate
       ? schema.form.fields.filter(
-          (field) => field.key !== "material" && field.key !== "amount",
+          (field) =>
+            field.key !== "material" &&
+            field.key !== "amount" &&
+            field.key !== "unitPrice",
         )
       : isOperationTrackingMultiCreate
         ? schema.form.fields.filter(
@@ -113,7 +117,9 @@ export function submitCollectionForm({
         : getRequiredFieldErrors(fieldsForValidation, values);
   const materialUsageErrors = isMaterialUsageMultiCreate
     ? getMaterialUsageMultiCreateErrors(materialUsageEntries)
-    : {};
+    : isMaterialUsageForm
+      ? getMaterialUsageEditErrors(values)
+      : {};
   const operationTrackingErrors = isOperationTrackingMultiCreate
     ? getOperationTrackingMultiCreateErrors(operationTrackingEntries)
     : {};

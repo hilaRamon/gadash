@@ -6,6 +6,7 @@ import { numberToFormFieldValue } from "./helpers";
 export type MaterialUsageLineEntry = {
   materialId: string;
   amount: string;
+  unitPrice: string;
 };
 
 type MaterialUsageFormContext = {
@@ -13,6 +14,37 @@ type MaterialUsageFormContext = {
   plots: CollectionDocument[];
   editingRow: CollectionDocument | null;
 };
+
+function findMaterial(
+  materials: CollectionDocument[],
+  materialId: string,
+): CollectionDocument | undefined {
+  return materials.find((row) => String(row._id) === String(materialId));
+}
+
+function materialUnitPriceFormValue(
+  material: CollectionDocument | undefined,
+): string {
+  if (!material) return "";
+  const unitPrice = Number(material.customerCost ?? 0);
+  if (!Number.isFinite(unitPrice) || unitPrice < 0) return "";
+  return String(unitPrice);
+}
+
+function resolveFormUnitPrice(
+  values: Record<string, string>,
+  context: MaterialUsageFormContext,
+): number | null {
+  const explicitUnitPrice = String(values.unitPrice ?? "").trim();
+  if (explicitUnitPrice !== "") {
+    const parsed = Number(explicitUnitPrice);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  const fallback = Number(
+    findMaterial(context.materials, values.material ?? "")?.customerCost ?? 0,
+  );
+  return Number.isFinite(fallback) ? fallback : null;
+}
 
 export function calcMaterialUsageAmountForPlot(
   plotId: string,
@@ -58,6 +90,9 @@ export function toggleMaterialUsageLine(
     {
       materialId,
       amount: calcMaterialUsageAmountForPlot(plotId, materialId, context),
+      unitPrice: materialUnitPriceFormValue(
+        findMaterial(context.materials, materialId),
+      ),
     },
   ];
 }
@@ -65,20 +100,27 @@ export function toggleMaterialUsageLine(
 export function updateMaterialUsageLine(
   entries: MaterialUsageLineEntry[],
   materialId: string,
-  patch: Partial<Pick<MaterialUsageLineEntry, "materialId" | "amount">>,
+  patch: Partial<
+    Pick<MaterialUsageLineEntry, "materialId" | "amount" | "unitPrice">
+  >,
   plotId: string,
   context: Pick<MaterialUsageFormContext, "materials" | "plots">,
 ): MaterialUsageLineEntry[] {
   return entries.map((entry) => {
     if (entry.materialId !== materialId) return entry;
     const nextMaterialId = patch.materialId ?? entry.materialId;
-    const shouldRecalcAmount =
+    const materialChanged =
       patch.materialId != null && patch.materialId !== entry.materialId;
     return {
       materialId: nextMaterialId,
-      amount: shouldRecalcAmount
+      amount: materialChanged
         ? calcMaterialUsageAmountForPlot(plotId, nextMaterialId, context)
         : (patch.amount ?? entry.amount),
+      unitPrice: materialChanged
+        ? materialUnitPriceFormValue(
+            findMaterial(context.materials, nextMaterialId),
+          )
+        : (patch.unitPrice ?? entry.unitPrice),
     };
   });
 }
@@ -127,6 +169,15 @@ export function getMaterialUsageMultiCreateErrors(
     const amount = Number(entry.amount);
     if (!Number.isFinite(amount) || amount < 0) {
       errors[entry.materialId] = "כמות לא תקינה";
+      continue;
+    }
+    if (!entry.unitPrice.trim()) {
+      errors[entry.materialId] = "יש להזין מחיר לק״ג";
+      continue;
+    }
+    const unitPrice = Number(entry.unitPrice);
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+      errors[entry.materialId] = "מחיר לק״ג לא תקין";
     }
   }
 
@@ -145,8 +196,14 @@ export function buildMaterialUsageCreatePayloads(
         ...basePayload,
         material: entry.materialId,
         amount: entry.amount === "" ? "" : Number(entry.amount),
+        unitPrice: entry.unitPrice === "" ? "" : Number(entry.unitPrice),
       },
-      { ...values, material: entry.materialId, amount: entry.amount },
+      {
+        ...values,
+        material: entry.materialId,
+        amount: entry.amount,
+        unitPrice: entry.unitPrice,
+      },
       context,
     ),
   );
@@ -169,6 +226,24 @@ function resolveAmountFromSelections(
   );
 }
 
+function finalPriceNotice(unitPrice: number, amountRaw: string): string | null {
+  const amount = Number(amountRaw);
+  if (!Number.isFinite(amount)) return null;
+  return `המחיר הסופי יחושב מחדש (${formatNumber(Number((unitPrice * amount).toFixed(2)))})`;
+}
+
+export function getMaterialUsageEditErrors(
+  values: Record<string, string>,
+): Record<string, string> {
+  const raw = String(values.unitPrice ?? "").trim();
+  if (!raw) return {};
+  const unitPrice = Number(raw);
+  if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+    return { unitPrice: "מחיר לק״ג לא תקין" };
+  }
+  return {};
+}
+
 export function applyMaterialUsageFieldChange(
   key: string,
   value: string,
@@ -176,10 +251,26 @@ export function applyMaterialUsageFieldChange(
   context: MaterialUsageFormContext,
 ): { next: Record<string, string>; notice: string | null } {
   const next = { ...prev, [key]: value };
-  let notice: string | null = null;
+  const parts: string[] = [];
 
-  if (key !== "material" && key !== "plot") {
-    return { next, notice };
+  if (key !== "material" && key !== "plot" && key !== "unitPrice") {
+    return { next, notice: null };
+  }
+
+  if (key === "material" || key === "plot") {
+    const amount = resolveAmountFromSelections(next, context);
+    if (amount != null) {
+      next.amount = numberToFormFieldValue(amount);
+    }
+  }
+
+  if (key === "material" && value !== prev.material) {
+    const unitPrice = materialUnitPriceFormValue(
+      findMaterial(context.materials, value),
+    );
+    if (unitPrice !== "") {
+      next.unitPrice = unitPrice;
+    }
   }
 
   const originalPlot = String(context.editingRow?.plot ?? "");
@@ -189,53 +280,31 @@ export function applyMaterialUsageFieldChange(
   const materialChanged =
     key === "material" && value !== originalMaterial && originalMaterial !== "";
 
-  const amount = resolveAmountFromSelections(next, context);
-  if (amount != null) {
-    next.amount = numberToFormFieldValue(amount);
-  }
-
   if (context.editingRow && (plotChanged || materialChanged)) {
-    const parts: string[] = [];
-    if (amount != null) {
+    if (next.amount.trim()) {
       parts.push(
-        `הכמות תעודכן אוטומטית לפי דונם החלקה וכמות לדונם של החומר (${amount})`,
+        `הכמות תעודכן אוטומטית לפי דונם החלקה וכמות לדונם של החומר (${next.amount})`,
       );
     }
-    if (materialChanged) {
-      const material = context.materials.find(
-        (row) => String(row._id) === String(next.material ?? ""),
+    if (materialChanged && next.unitPrice.trim()) {
+      parts.push(
+        `מחיר לק״ג יעודכן לפי החומר החדש (${formatNumber(Number(next.unitPrice))})`,
       );
-      const unitPrice = Number(material?.customerCost ?? material?.currentBuyingCost ?? 0);
-      if (Number.isFinite(unitPrice)) {
-        parts.push(`מחיר לק״ג יעודכן לפי החומר החדש (${formatNumber(unitPrice)})`);
-        if (amount != null) {
-          parts.push(
-            `המחיר הסופי יחושב מחדש (${formatNumber(Number((unitPrice * amount).toFixed(2)))})`,
-          );
-        }
-      }
-    } else if (amount != null) {
-      const material = context.materials.find(
-        (row) => String(row._id) === String(next.material ?? ""),
-      );
-      const unitPrice = Number(
-        material?.customerCost ??
-          material?.currentBuyingCost ??
-          context.editingRow?.unitPrice ??
-          0,
-      );
-      if (Number.isFinite(unitPrice)) {
-        parts.push(
-          `המחיר הסופי יחושב מחדש (${formatNumber(Number((unitPrice * amount).toFixed(2)))})`,
-        );
-      }
-    }
-    if (parts.length > 0) {
-      notice = parts.join(". ");
     }
   }
 
-  return { next, notice };
+  const shouldPriceNotice =
+    key === "unitPrice" ||
+    (context.editingRow != null && (plotChanged || materialChanged));
+  if (shouldPriceNotice) {
+    const unitPrice = resolveFormUnitPrice(next, context);
+    if (unitPrice != null) {
+      const priceNotice = finalPriceNotice(unitPrice, next.amount);
+      if (priceNotice) parts.push(priceNotice);
+    }
+  }
+
+  return { next, notice: parts.length > 0 ? parts.join(". ") : null };
 }
 
 export function enrichMaterialUsagePayload(
