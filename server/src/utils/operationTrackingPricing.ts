@@ -4,6 +4,17 @@ export const OPERATION_PRICING_BY_DUNAM = 'דונם' as const;
 export const OPERATION_PRICING_HOURLY = 'שעתי' as const;
 export const OPERATION_PRICING_BY_UNIT = 'כמות יחידות' as const;
 
+/** Treat 10 and 10.0 as the same Dunam without collapsing a real manual amount. */
+export const DUNAM_AMOUNT_MATCH_TOLERANCE = 0.001;
+
+export function dunamAmountsMatch(left: number, right: number): boolean {
+  return (
+    Number.isFinite(left) &&
+    Number.isFinite(right) &&
+    Math.abs(left - right) <= DUNAM_AMOUNT_MATCH_TOLERANCE
+  );
+}
+
 function parseTimeToMinutes(value: string): number {
   const [hour, minute] = value.split(':').map(Number);
   return hour * 60 + minute;

@@ -5,7 +5,7 @@ import {
   deleteDocument,
   deleteManyDocuments,
 } from "@/api/collectionApi"
-import { collectionKeys, customerBillingKeys, invoiceKeys, transportGlobalChargeKeys } from "@/queries/queryKeys"
+import { collectionKeys, customerBillingKeys, invoiceKeys, summaryKeys, transportGlobalChargeKeys } from "@/queries/queryKeys"
 
 export function useCreateDocument(collection: string) {
   const queryClient = useQueryClient()
@@ -27,6 +27,10 @@ function onCollectionMutationSuccess(
   if (collection === 'transportGlobalCharges') {
     queryClient.invalidateQueries({ queryKey: customerBillingKeys.all })
     queryClient.invalidateQueries({ queryKey: transportGlobalChargeKeys.all })
+  }
+  if (collection === 'plots') {
+    queryClient.invalidateQueries({ queryKey: customerBillingKeys.all })
+    queryClient.invalidateQueries({ queryKey: summaryKeys.all })
   }
 }
 

@@ -1,8 +1,12 @@
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { CustomerModel } from '../models/Customer';
 import { PLOT_TYPES, type PlotType } from '../models/Plot';
+import { contractorTrackingRepository } from '../repositories/contractorTrackingRepository';
+import { materialUsageTrackingRepository } from '../repositories/materialUsageTrackingRepository';
+import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
 import { plotRepository, type PlotInput } from '../repositories/plotRepository';
 import type { ApiDocument } from '../types/apiDocument';
+import { dunamAmountsMatch } from '../utils/operationTrackingPricing';
 import { plotToApiDocument, plotsToApiDocuments } from '../utils/plotApiMapper';
 
 function parsePlotType(value: unknown): PlotType | null {
@@ -82,6 +86,18 @@ async function buildPlotPatch(
   return patch;
 }
 
+async function plotDunamWillChange(
+  id: string,
+  nextDunam: number | undefined,
+): Promise<boolean> {
+  if (nextDunam == null) return false;
+  const existing = await plotRepository.findById(id);
+  if (!existing) {
+    throw new Error('לא נמצא');
+  }
+  return !dunamAmountsMatch(Number(existing.dunam), nextDunam);
+}
+
 export const plotService = {
   async list(): Promise<ApiDocument[]> {
     const rows = await plotRepository.findAll();
@@ -108,12 +124,62 @@ export const plotService = {
     if (Object.keys(fields).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
-    const updated = await plotRepository.update(id, fields);
-    if (!updated) {
-      throw new Error('לא נמצא');
+
+    if (fields.dunam != null && fields.dunam < 0) {
+      throw new Error('דונם לא יכול להיות שלילי');
     }
 
-    return plotToApiDocument(updated as Record<string, unknown>);
+    const shouldCascade = await plotDunamWillChange(id, fields.dunam);
+    if (!shouldCascade) {
+      const updated = await plotRepository.update(id, fields);
+      if (!updated) {
+        throw new Error('לא נמצא');
+      }
+      return plotToApiDocument(updated as Record<string, unknown>);
+    }
+
+    const session = await mongoose.startSession();
+    try {
+      let updatedDoc: Record<string, unknown> | null = null;
+      await session.withTransaction(async () => {
+        const current = await plotRepository.findById(id, session);
+        if (!current) {
+          throw new Error('לא נמצא');
+        }
+        const previousDunam = Number(current.dunam);
+        const updated = await plotRepository.update(id, fields, session);
+        if (!updated) {
+          throw new Error('לא נמצא');
+        }
+        if (fields.dunam != null && !dunamAmountsMatch(previousDunam, fields.dunam)) {
+          await operationTrackingRepository.syncUnchargedAmountsForPlotDunam({
+            plotId: id,
+            previousDunam,
+            nextDunam: fields.dunam,
+            session,
+          });
+          await contractorTrackingRepository.syncUnchargedAmountsForPlotDunam({
+            plotId: id,
+            previousDunam,
+            nextDunam: fields.dunam,
+            session,
+          });
+          await materialUsageTrackingRepository.syncUnchargedAmountsForPlotDunam({
+            plotId: id,
+            previousDunam,
+            nextDunam: fields.dunam,
+            session,
+          });
+        }
+        updatedDoc = updated as Record<string, unknown>;
+      });
+      if (!updatedDoc) {
+        throw new Error('לא נמצא');
+      }
+      return plotToApiDocument(updatedDoc);
+    } finally {
+      await session.endSession();
+    }
   },
 
   async remove(id: string): Promise<void> {

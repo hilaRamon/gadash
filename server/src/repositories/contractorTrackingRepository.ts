@@ -4,6 +4,7 @@ import type { ContractorPricingForm } from '../models/ContractorTracking';
 import type { ListQuery } from '../utils/listQuery';
 import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
 import { toObjectIds } from '../utils/mongoIds';
+import { DUNAM_AMOUNT_MATCH_TOLERANCE } from '../utils/operationTrackingPricing';
 import { buildSeasonDateQuery } from '../utils/seasonRange';
 
 export type ContractorTrackingInput = {
@@ -101,6 +102,36 @@ export const contractorTrackingRepository = {
     return ContractorTrackingModel.updateMany(
       { _id: { $in: ids } },
       { wasCharged: false },
+    );
+  },
+
+  async syncUnchargedAmountsForPlotDunam(options: {
+    plotId: string;
+    previousDunam: number;
+    nextDunam: number;
+    session?: unknown;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.plotId)) return;
+
+    await ContractorTrackingModel.updateMany(
+      {
+        plot: new Types.ObjectId(options.plotId),
+        wasCharged: { $ne: true },
+        pricingForm: 'דונם',
+        $expr: {
+          $and: [
+            { $isNumber: '$unitAmount' },
+            {
+              $lte: [
+                { $abs: { $subtract: ['$unitAmount', options.previousDunam] } },
+                DUNAM_AMOUNT_MATCH_TOLERANCE,
+              ],
+            },
+          ],
+        },
+      },
+      { $set: { unitAmount: options.nextDunam } },
+      options.session ? { session: options.session as never } : undefined,
     );
   },
 };
