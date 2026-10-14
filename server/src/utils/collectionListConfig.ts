@@ -25,9 +25,15 @@ function ref(
   path: string,
   refModel: string,
   refNameField = 'name',
+  via?: ListFieldDef['via'],
 ): ListFieldDef {
-  return { key, path, kind: 'ref', refModel, refNameField }
+  return { key, path, kind: 'ref', refModel, refNameField, via }
 }
+
+const customerViaPlot = ref('customer', 'plot', 'Customer', 'name', {
+  model: 'Plot',
+  field: 'customer',
+})
 
 const nameEmailMobileNotes = fields(
   str('name'),
@@ -140,11 +146,12 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
     sortFields: { year: 'year', startDate: 'startDate', endDate: 'endDate' },
   },
   operationsTrackings: {
-    searchFields: ['operation', 'plot', 'employee', 'notes', 'startTime', 'endTime'],
+    searchFields: ['operation', 'plot', 'customer', 'employee', 'notes', 'startTime', 'endTime'],
     fields: fields(
       date('date'),
       ref('operation', 'operation', 'Operation'),
       ref('plot', 'plot', 'Plot'),
+      customerViaPlot,
       ref('employee', 'employee', 'Employee'),
       str('startTime'),
       str('endTime'),
@@ -163,11 +170,12 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
     },
   },
   materialUsageTrackings: {
-    searchFields: ['material', 'plot', 'employee', 'notes'],
+    searchFields: ['material', 'plot', 'customer', 'employee', 'notes'],
     fields: fields(
       date('date'),
       ref('material', 'material', 'Material'),
       ref('plot', 'plot', 'Plot'),
+      customerViaPlot,
       ref('employee', 'employee', 'Employee'),
       str('notes'),
       num('amount'),
