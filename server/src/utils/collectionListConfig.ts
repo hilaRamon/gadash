@@ -153,7 +153,7 @@ export const collectionListConfigs: Record<string, CollectionListConfig> = {
       bool('billable'),
       bool('wasCharged'),
     ),
-    defaultSort: { date: -1 },
+    defaultSort: { date: -1, startTime: 1 },
     sortFields: {
       date: 'date',
       amount: 'amount',

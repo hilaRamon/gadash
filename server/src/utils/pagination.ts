@@ -56,5 +56,10 @@ export function sortFromListSort(
   if (!sort) return fallback
   const path = allowed[sort.field]
   if (!path) return fallback
-  return { [path]: sort.direction === 'desc' ? -1 : 1 }
+  const direction: 1 | -1 = sort.direction === 'desc' ? -1 : 1
+  // Same-day operation rows stay in start-time order, earliest first.
+  if (path === 'date' && allowed.startTime) {
+    return { date: direction, startTime: 1 }
+  }
+  return { [path]: direction }
 }
