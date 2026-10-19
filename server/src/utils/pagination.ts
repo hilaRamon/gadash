@@ -57,9 +57,9 @@ export function sortFromListSort(
   const path = allowed[sort.field]
   if (!path) return fallback
   const direction: 1 | -1 = sort.direction === 'desc' ? -1 : 1
-  // Same-day operation rows stay in start-time order, earliest first.
-  if (path === 'date' && allowed.startTime) {
-    return { date: direction, startTime: 1 }
+  // Same-day rows stay grouped by employee, then by start time, earliest first.
+  if (path === 'date' && allowed.employee && allowed.startTime) {
+    return { date: direction, employee: 1, startTime: 1 }
   }
   return { [path]: direction }
 }
