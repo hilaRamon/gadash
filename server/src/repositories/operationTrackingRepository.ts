@@ -42,7 +42,7 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .sort({ date: -1, startTime: 1 })
+      .sort({ date: -1, employee: 1, startTime: 1 })
       .lean();
   },
 
