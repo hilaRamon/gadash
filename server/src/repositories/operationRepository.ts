@@ -31,8 +31,10 @@ export const operationRepository = {
     return listPaginatedDocuments('operations', OperationModel, listQuery);
   },
 
-  findById(id: string) {
-    return OperationModel.findById(id).lean();
+  findById(id: string, session?: unknown) {
+    const query = OperationModel.findById(id);
+    if (session) query.session(session as never);
+    return query.lean();
   },
 
   create(data: OperationInput) {
@@ -50,6 +52,7 @@ export const operationRepository = {
     id: string,
     entry: CostHistoryEntryInput,
     currentCost: number,
+    session?: unknown,
   ) {
     return OperationModel.findByIdAndUpdate(
       id,
@@ -57,7 +60,11 @@ export const operationRepository = {
         $push: { costHistory: entry },
         $set: { currentCost },
       },
-      { returnDocument: 'after', runValidators: true },
+      {
+        returnDocument: 'after',
+        runValidators: true,
+        ...(session ? { session: session as never } : {}),
+      },
     ).lean();
   },
 

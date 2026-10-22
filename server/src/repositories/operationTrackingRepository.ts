@@ -1,14 +1,14 @@
-import { Types } from 'mongoose';
-import { OperationModel } from '../models/Operation';
-import { OperationTrackingModel } from '../models/OperationTracking';
-import type { ListQuery } from '../utils/listQuery';
-import { listPaginatedDocuments } from '../utils/listPaginatedDocuments';
-import { toObjectIds } from '../utils/mongoIds';
+import { Types } from "mongoose";
+import { OperationModel } from "../models/Operation";
+import { OperationTrackingModel } from "../models/OperationTracking";
+import type { ListQuery } from "../utils/listQuery";
+import { listPaginatedDocuments } from "../utils/listPaginatedDocuments";
+import { toObjectIds } from "../utils/mongoIds";
 import {
   DUNAM_AMOUNT_MATCH_TOLERANCE,
   OPERATION_PRICING_BY_DUNAM,
-} from '../utils/operationTrackingPricing';
-import { buildSeasonDateQuery } from '../utils/seasonRange';
+} from "../utils/operationTrackingPricing";
+import { buildSeasonDateQuery } from "../utils/seasonRange";
 
 export type OperationTrackingInput = {
   date: Date;
@@ -25,15 +25,25 @@ export type OperationTrackingInput = {
 };
 
 const operationPopulate = {
-  path: 'operation',
-  select: '_id name operationType currentCost pricingForm',
+  path: "operation",
+  select: "_id name operationType currentCost pricingForm",
 };
 const plotPopulate = {
-  path: 'plot',
-  select: '_id name customer dunam',
-  populate: { path: 'customer', select: '_id name' },
+  path: "plot",
+  select: "_id name customer dunam",
+  populate: { path: "customer", select: "_id name" },
 };
-const employeePopulate = { path: 'employee', select: '_id name' };
+const employeePopulate = { path: "employee", select: "_id name" };
+
+function resolvePopulatedCurrentCost(operation: unknown): number {
+  if (operation && typeof operation === "object" && "currentCost" in operation) {
+    const cost = Number(
+      (operation as { currentCost?: unknown }).currentCost ?? 0,
+    );
+    if (Number.isFinite(cost) && cost >= 0) return cost;
+  }
+  return 0;
+}
 
 export const operationTrackingRepository = {
   findAll(seasonYear?: number) {
@@ -42,13 +52,13 @@ export const operationTrackingRepository = {
       .populate(operationPopulate)
       .populate(plotPopulate)
       .populate(employeePopulate)
-      .sort({ date: -1, employee: 1, startTime: 1 })
+      .sort({ date: -1, employee: 1, startTime: -1 })
       .lean();
   },
 
   findPaginated(listQuery: ListQuery) {
     return listPaginatedDocuments(
-      'operationsTrackings',
+      "operationsTrackings",
       OperationTrackingModel,
       listQuery,
       [operationPopulate, plotPopulate, employeePopulate],
@@ -69,7 +79,7 @@ export const operationTrackingRepository = {
 
   update(id: string, data: Partial<OperationTrackingInput>) {
     return OperationTrackingModel.findByIdAndUpdate(id, data, {
-      returnDocument: 'after',
+      returnDocument: "after",
       runValidators: true,
     })
       .populate(operationPopulate)
@@ -83,7 +93,9 @@ export const operationTrackingRepository = {
   },
 
   deleteMany(ids: string[]) {
-    return OperationTrackingModel.deleteMany({ _id: { $in: toObjectIds(ids) } });
+    return OperationTrackingModel.deleteMany({
+      _id: { $in: toObjectIds(ids) },
+    });
   },
 
   insertMany(rows: OperationTrackingInput[]) {
@@ -94,8 +106,34 @@ export const operationTrackingRepository = {
     return OperationTrackingModel.deleteMany({});
   },
 
-  markCharged(ids: Types.ObjectId[]) {
-    if (ids.length === 0) return Promise.resolve(null);
+  async markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return null;
+
+    const rows = await OperationTrackingModel.find({
+      _id: { $in: ids },
+      unitCost: null,
+    })
+      .select("_id operation")
+      .populate({ path: "operation", select: "currentCost" })
+      .lean();
+
+    const idsByCost = new Map<number, Types.ObjectId[]>();
+    for (const row of rows) {
+      const cost = resolvePopulatedCurrentCost(row.operation);
+      const group = idsByCost.get(cost) ?? [];
+      group.push(row._id as Types.ObjectId);
+      idsByCost.set(cost, group);
+    }
+
+    await Promise.all(
+      [...idsByCost].map(([cost, rowIds]) =>
+        OperationTrackingModel.updateMany(
+          { _id: { $in: rowIds }, unitCost: null },
+          { $set: { unitCost: cost, wasCharged: true } },
+        ),
+      ),
+    );
+
     return OperationTrackingModel.updateMany(
       { _id: { $in: ids } },
       { wasCharged: true },
@@ -115,13 +153,13 @@ export const operationTrackingRepository = {
       employee: new Types.ObjectId(employeeId),
       date: { $gte: start, $lte: end },
     })
-      .select('date startTime endTime employee')
+      .select("date startTime endTime employee")
       .sort({ date: 1 })
       .lean();
   },
 
   findDistinctEmployeeIdsInDateRange(start: Date, end: Date) {
-    return OperationTrackingModel.distinct('employee', {
+    return OperationTrackingModel.distinct("employee", {
       date: { $gte: start, $lte: end },
     });
   },
@@ -129,7 +167,7 @@ export const operationTrackingRepository = {
   findByIds(ids: string[]) {
     if (ids.length === 0) return Promise.resolve([]);
     return OperationTrackingModel.find({ _id: { $in: toObjectIds(ids) } })
-      .select('date employee')
+      .select("date employee")
       .lean();
   },
 
@@ -147,7 +185,7 @@ export const operationTrackingRepository = {
         { pricingForm: null },
         { pricingForm: { $exists: false } },
       ],
-    }).select('_id');
+    }).select("_id");
     if (options.session) operationQuery.session(options.session as never);
     const operations = await operationQuery.lean();
     const operationIds = operations.map((operation) => operation._id);
@@ -160,10 +198,10 @@ export const operationTrackingRepository = {
         operation: { $in: operationIds },
         $expr: {
           $and: [
-            { $isNumber: '$amount' },
+            { $isNumber: "$amount" },
             {
               $lte: [
-                { $abs: { $subtract: ['$amount', options.previousDunam] } },
+                { $abs: { $subtract: ["$amount", options.previousDunam] } },
                 DUNAM_AMOUNT_MATCH_TOLERANCE,
               ],
             },
@@ -171,6 +209,36 @@ export const operationTrackingRepository = {
         },
       },
       { $set: { amount: options.nextDunam } },
+      options.session ? { session: options.session as never } : undefined,
+    );
+  },
+
+  async syncUnchargedUnitCostsForOperationCost(options: {
+    operationId: string;
+    previousCost: number;
+    nextCost: number;
+    session?: unknown;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.operationId)) return;
+
+    await OperationTrackingModel.updateMany(
+      {
+        operation: new Types.ObjectId(options.operationId),
+        billable: true,
+        wasCharged: { $ne: true },
+        $expr: {
+          $and: [
+            { $isNumber: "$unitCost" },
+            {
+              $lte: [
+                { $abs: { $subtract: ["$unitCost", options.previousCost] } },
+                DUNAM_AMOUNT_MATCH_TOLERANCE,
+              ],
+            },
+          ],
+        },
+      },
+      { $set: { unitCost: options.nextCost } },
       options.session ? { session: options.session as never } : undefined,
     );
   },
