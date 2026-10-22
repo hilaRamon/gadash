@@ -35,6 +35,16 @@ const plotPopulate = {
 };
 const employeePopulate = { path: "employee", select: "_id name" };
 
+function resolvePopulatedCurrentCost(operation: unknown): number {
+  if (operation && typeof operation === "object" && "currentCost" in operation) {
+    const cost = Number(
+      (operation as { currentCost?: unknown }).currentCost ?? 0,
+    );
+    if (Number.isFinite(cost) && cost >= 0) return cost;
+  }
+  return 0;
+}
+
 export const operationTrackingRepository = {
   findAll(seasonYear?: number) {
     const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
@@ -96,8 +106,34 @@ export const operationTrackingRepository = {
     return OperationTrackingModel.deleteMany({});
   },
 
-  markCharged(ids: Types.ObjectId[]) {
-    if (ids.length === 0) return Promise.resolve(null);
+  async markCharged(ids: Types.ObjectId[]) {
+    if (ids.length === 0) return null;
+
+    const rows = await OperationTrackingModel.find({
+      _id: { $in: ids },
+      unitCost: null,
+    })
+      .select("_id operation")
+      .populate({ path: "operation", select: "currentCost" })
+      .lean();
+
+    const idsByCost = new Map<number, Types.ObjectId[]>();
+    for (const row of rows) {
+      const cost = resolvePopulatedCurrentCost(row.operation);
+      const group = idsByCost.get(cost) ?? [];
+      group.push(row._id as Types.ObjectId);
+      idsByCost.set(cost, group);
+    }
+
+    await Promise.all(
+      [...idsByCost].map(([cost, rowIds]) =>
+        OperationTrackingModel.updateMany(
+          { _id: { $in: rowIds }, unitCost: null },
+          { $set: { unitCost: cost, wasCharged: true } },
+        ),
+      ),
+    );
+
     return OperationTrackingModel.updateMany(
       { _id: { $in: ids } },
       { wasCharged: true },
