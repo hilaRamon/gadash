@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import {
   OPERATION_TYPES,
   PRICING_FORMS,
@@ -9,8 +10,10 @@ import {
   type OperationInput,
   type OperationMetadataPatch,
 } from '../repositories/operationRepository';
+import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
 import { deriveCurrentCost } from '../utils/deriveCurrentCost';
+import { dunamAmountsMatch } from '../utils/operationTrackingPricing';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 const DEFAULT_EFFECTIVE_FROM = new Date('2025-01-01T00:00:00.000Z');
@@ -138,13 +141,66 @@ async function applyCostChange(
   }
 
   const nextHistory = [...existing.costHistory, { cost, effectiveFrom }];
-  const currentCost = deriveCurrentCost(nextHistory);
+  const nextCost = deriveCurrentCost(nextHistory);
 
-  return operationRepository.appendCostChange(
-    id,
-    { cost, effectiveFrom },
-    currentCost,
-  );
+  if (dunamAmountsMatch(Number(existing.currentCost), nextCost)) {
+    return operationRepository.appendCostChange(
+      id,
+      { cost, effectiveFrom },
+      nextCost,
+    );
+  }
+
+  const session = await mongoose.startSession();
+  try {
+    let updatedDoc: Awaited<
+      ReturnType<typeof operationRepository.appendCostChange>
+    > = null;
+    await session.withTransaction(async () => {
+      const current = await operationRepository.findById(id, session);
+      if (!current) {
+        throw new Error('לא נמצא');
+      }
+
+      const previousCost = Number(current.currentCost);
+      const freshDuplicate = current.costHistory.some(
+        (entry) => entry.effectiveFrom.getTime() === effectiveFrom.getTime(),
+      );
+      if (freshDuplicate) {
+        throw new Error('כבר קיים מחיר בתאריך תחולה זה');
+      }
+
+      const freshNextCost = deriveCurrentCost([
+        ...current.costHistory,
+        { cost, effectiveFrom },
+      ]);
+      const updated = await operationRepository.appendCostChange(
+        id,
+        { cost, effectiveFrom },
+        freshNextCost,
+        session,
+      );
+      if (!updated) {
+        throw new Error('לא נמצא');
+      }
+
+      if (!dunamAmountsMatch(previousCost, freshNextCost)) {
+        await operationTrackingRepository.syncUnchargedUnitCostsForOperationCost({
+          operationId: id,
+          previousCost,
+          nextCost: freshNextCost,
+          session,
+        });
+      }
+      updatedDoc = updated;
+    });
+    if (!updatedDoc) {
+      throw new Error('לא נמצא');
+    }
+    return updatedDoc;
+  } finally {
+    await session.endSession();
+  }
 }
 
 export const operationService = {

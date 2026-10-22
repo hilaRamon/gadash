@@ -176,4 +176,34 @@ export const operationTrackingRepository = {
       options.session ? { session: options.session as never } : undefined,
     );
   },
+
+  async syncUnchargedUnitCostsForOperationCost(options: {
+    operationId: string;
+    previousCost: number;
+    nextCost: number;
+    session?: unknown;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.operationId)) return;
+
+    await OperationTrackingModel.updateMany(
+      {
+        operation: new Types.ObjectId(options.operationId),
+        billable: true,
+        wasCharged: { $ne: true },
+        $expr: {
+          $and: [
+            { $isNumber: "$unitCost" },
+            {
+              $lte: [
+                { $abs: { $subtract: ["$unitCost", options.previousCost] } },
+                DUNAM_AMOUNT_MATCH_TOLERANCE,
+              ],
+            },
+          ],
+        },
+      },
+      { $set: { unitCost: options.nextCost } },
+      options.session ? { session: options.session as never } : undefined,
+    );
+  },
 };
