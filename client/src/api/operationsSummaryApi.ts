@@ -4,7 +4,7 @@ export type OperationsSummaryRow = {
   operationId: string;
   operationName: string;
   pricingForm: 'דונם' | 'שעתי' | 'כמות יחידות' | null;
-  currentCost: number;
+  currentCost: number | null;
   totalAmount: number;
   amountUnit: 'דונם' | 'שעות' | 'יחידות';
   totalCharge: number;

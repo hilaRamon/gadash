@@ -191,12 +191,38 @@ const baseColumns: CollectionSchema["columns"] = [
   },
 ];
 
-const adminColumns = baseColumns.filter(
-  (column) =>
-    !["customer", "plot", "billable", "finalPrice", "amount", "unitCost"].includes(
-      column.key,
-    ),
-);
+const adminColumns: CollectionSchema["columns"] = [
+  ...baseColumns.filter((column) =>
+    ["date", "operation", "employee", "startTime", "endTime"].includes(column.key),
+  ),
+  {
+    key: "amount",
+    label: "שעות",
+    type: "number",
+    sortable: true,
+    format: (value) => formatNumber(value),
+    width: "7rem",
+    inlineEditable: () => false,
+  },
+  {
+    key: "unitCost",
+    label: "עלות לשעה",
+    type: "number",
+    sortable: true,
+    format: (value) => formatNumber(value),
+    width: "8rem",
+    inlineEditable: () => false,
+  },
+  {
+    key: "finalPrice",
+    label: "עלות",
+    type: "number",
+    sortable: true,
+    format: (value) => formatWholeNumber(value),
+    width: "8rem",
+  },
+  ...baseColumns.filter((column) => column.key === "notes"),
+];
 
 export const operationsTrackingsAllSchema: CollectionSchema = {
   id: "operations-trackings-all",

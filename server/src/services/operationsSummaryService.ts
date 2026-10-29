@@ -4,14 +4,19 @@ import {
   OPERATION_PRICING_BY_UNIT,
   OPERATION_PRICING_HOURLY,
   calcFinalPrice,
+  calcHoursBetween,
   resolveOperationAmount,
 } from '../utils/operationTrackingPricing';
+
+const ADMIN_OPERATION_TYPE = 'מנהלה';
+const MINALA_SUMMARY_OPERATION_ID = '__minala__';
 
 type PopulatedOperation = {
   _id: unknown;
   name?: string;
   pricingForm?: string | null;
   currentCost?: number | null;
+  operationType?: string | null;
 };
 
 type PopulatedPlot = {
@@ -22,7 +27,7 @@ export type OperationsSummaryRow = {
   operationId: string;
   operationName: string;
   pricingForm: 'דונם' | 'שעתי' | 'כמות יחידות' | null;
-  currentCost: number;
+  currentCost: number | null;
   totalAmount: number;
   amountUnit: 'דונם' | 'שעות' | 'יחידות';
   totalCharge: number;
@@ -58,16 +63,56 @@ function resolveTrackingUnitCost(
   return Number(operation.currentCost ?? 0);
 }
 
+function hasStoredAmount(amount: unknown): amount is number {
+  return (
+    amount != null &&
+    amount !== '' &&
+    Number.isFinite(Number(amount)) &&
+    Number(amount) >= 0
+  );
+}
+
+function resolveAdminTrackingHours(row: {
+  startTime?: string | null;
+  endTime?: string | null;
+  amount?: number | null;
+}): number | null {
+  if (hasStoredAmount(row.amount)) {
+    return Number(row.amount);
+  }
+  try {
+    return calcHoursBetween(String(row.startTime ?? ''), String(row.endTime ?? ''));
+  } catch {
+    return null;
+  }
+}
+
 export const operationsSummaryService = {
   async getOperationsSummary(seasonYear: number): Promise<OperationsSummaryRow[]> {
     const rows = await operationTrackingRepository.findAll(seasonYear);
     const aggregated = new Map<string, OperationsSummaryRow>();
+    let minalaHours = 0;
+    let minalaCharge = 0;
+    let hasMinala = false;
 
     for (const row of rows) {
-      if (!row.billable) continue;
-
       const operation = row.operation as PopulatedOperation | null;
       if (!operation?._id) continue;
+
+      if (String(operation.operationType ?? '') === ADMIN_OPERATION_TYPE) {
+        const hours = resolveAdminTrackingHours(row);
+        if (hours == null) continue;
+        const unitCost =
+          row.unitCost != null && Number.isFinite(Number(row.unitCost))
+            ? Number(row.unitCost)
+            : 0;
+        hasMinala = true;
+        minalaHours = Number((minalaHours + hours).toFixed(3));
+        minalaCharge = Number((minalaCharge + calcFinalPrice(unitCost, hours)).toFixed(2));
+        continue;
+      }
+
+      if (!row.billable) continue;
 
       const operationId = String(operation._id);
       const pricingForm = String(operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM);
@@ -108,8 +153,22 @@ export const operationsSummaryService = {
       });
     }
 
-    return [...aggregated.values()].sort((a, b) =>
+    const sorted = [...aggregated.values()].sort((a, b) =>
       a.operationName.localeCompare(b.operationName, 'he'),
     );
+
+    if (hasMinala) {
+      sorted.push({
+        operationId: MINALA_SUMMARY_OPERATION_ID,
+        operationName: ADMIN_OPERATION_TYPE,
+        pricingForm: OPERATION_PRICING_HOURLY,
+        currentCost: null,
+        totalAmount: minalaHours,
+        amountUnit: 'שעות',
+        totalCharge: minalaCharge,
+      });
+    }
+
+    return sorted;
   },
 };

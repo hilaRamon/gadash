@@ -12,6 +12,7 @@ export type EmployeeInput = {
   email?: string;
   mobile?: string;
   notes?: string;
+  hourlyCost?: number;
   formOfPayment?: EmployeeFormOfPayment;
   role?: EmployeeRole;
 };

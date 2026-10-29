@@ -6,12 +6,22 @@ import type { ApiDocument } from '../types/apiDocument';
 import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
+function parseHourlyCost(value: unknown): number {
+  if (value == null || value === '') return 0;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error('עלות לשעה לא תקינה');
+  }
+  return num;
+}
+
 function pickEmployeeFields(body: Record<string, unknown>): EmployeeInput {
   return {
     name: String(body.name ?? ''),
     email: String(body.email ?? ''),
     mobile: pickMobileFromBody(body),
     notes: String(body.notes ?? ''),
+    hourlyCost: parseHourlyCost(body.hourlyCost),
   };
 }
 
