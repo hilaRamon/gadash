@@ -7,7 +7,7 @@ import {
 import { useSeason } from "@/context/SeasonContext";
 import { useOperationsSummary } from "@/queries/summaries/useOperationsSummary";
 import { exportOperationsSummaryExcel } from "@/lib/excel/exportOperationsSummaryExcel";
-import { formatNumber } from "@/lib/formatNumber";
+import { formatNumber1 } from "@/lib/formatNumber";
 import type { OperationsSummaryRow } from "@/api/operationsSummaryApi";
 import "../Page.css";
 
@@ -21,10 +21,10 @@ function matchesGlobalSearch(
   const fields = [
     row.operationName,
     row.pricingForm ?? "",
-    row.currentCost == null ? "—" : formatNumber(row.currentCost),
-    formatNumber(row.totalAmount),
+    row.currentCost == null ? "—" : formatNumber1(row.currentCost),
+    formatNumber1(row.totalAmount),
     row.amountUnit,
-    formatNumber(row.totalCharge),
+    formatNumber1(row.totalCharge),
   ];
 
   return fields.some((field) => field.toLowerCase().includes(needle));
@@ -98,10 +98,10 @@ export function OperationsSummaryPage() {
                     <td>{row.operationName}</td>
                     <td>{row.pricingForm ?? "—"}</td>
                     <td>
-                      {row.currentCost == null ? "—" : formatNumber(row.currentCost)}
+                      {row.currentCost == null ? "—" : formatNumber1(row.currentCost)}
                     </td>
-                    <td>{formatNumber(row.totalAmount)}</td>
-                    <td>{formatNumber(row.totalCharge)}</td>
+                    <td>{formatNumber1(row.totalAmount)}</td>
+                    <td>{formatNumber1(row.totalCharge)}</td>
                   </tr>
                 ))}
               </tbody>
