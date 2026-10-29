@@ -32,7 +32,7 @@ export const employeesSchema: CollectionSchema = {
       { key: 'name', label: 'שם', type: 'text', required: true },
       { key: 'email', label: 'אימייל', type: 'text' },
       { key: 'mobile', label: 'נייד', type: 'phone' },
-      { key: 'hourlyCost', label: 'עלות לשעה', type: 'number', defaultValue: 0 },
+      { key: 'hourlyCost', label: 'עלות לשעה', type: 'number' },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
   },
