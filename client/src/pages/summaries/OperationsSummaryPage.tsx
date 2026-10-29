@@ -21,7 +21,7 @@ function matchesGlobalSearch(
   const fields = [
     row.operationName,
     row.pricingForm ?? "",
-    formatNumber(row.currentCost),
+    row.currentCost == null ? "—" : formatNumber(row.currentCost),
     formatNumber(row.totalAmount),
     row.amountUnit,
     formatNumber(row.totalCharge),
@@ -97,7 +97,9 @@ export function OperationsSummaryPage() {
                   <tr key={row.operationId}>
                     <td>{row.operationName}</td>
                     <td>{row.pricingForm ?? "—"}</td>
-                    <td>{formatNumber(row.currentCost)}</td>
+                    <td>
+                      {row.currentCost == null ? "—" : formatNumber(row.currentCost)}
+                    </td>
                     <td>{formatNumber(row.totalAmount)}</td>
                     <td>{formatNumber(row.totalCharge)}</td>
                   </tr>

@@ -2,8 +2,11 @@ import type { ApiDocument } from '../types/apiDocument';
 import { toApiDocument } from './toApiDocument';
 import {
   calcFinalPrice,
+  calcHoursBetween,
   resolveOperationAmount,
 } from './operationTrackingPricing';
+
+const ADMIN_OPERATION_TYPE = 'מנהלה';
 
 type PopulatedRef = {
   _id?: unknown;
@@ -55,11 +58,31 @@ function resolvePlotDunam(plotRaw: PopulatedPlotRef | undefined): number | null 
   return Number.isFinite(dunam) ? dunam : null;
 }
 
+function hasStoredAmount(amount: unknown): amount is number {
+  return amount != null && amount !== '' && Number.isFinite(Number(amount)) && Number(amount) >= 0;
+}
+
 function resolveTrackingAmount(
   doc: Record<string, unknown>,
   operationRaw: PopulatedOperationRef | undefined,
   plotRaw: PopulatedPlotRef | undefined,
 ): number | null {
+  const operationType =
+    operationRaw && typeof operationRaw === 'object'
+      ? String(operationRaw.operationType ?? '')
+      : '';
+
+  if (operationType === ADMIN_OPERATION_TYPE) {
+    if (hasStoredAmount(doc.amount)) {
+      return Number(doc.amount);
+    }
+    try {
+      return calcHoursBetween(String(doc.startTime ?? ''), String(doc.endTime ?? ''));
+    } catch {
+      return null;
+    }
+  }
+
   const pricingForm =
     operationRaw && typeof operationRaw === 'object'
       ? String(operationRaw.pricingForm ?? 'דונם')
@@ -68,10 +91,7 @@ function resolveTrackingAmount(
   return resolveOperationAmount(pricingForm, {
     startTime: String(doc.startTime ?? ''),
     endTime: String(doc.endTime ?? ''),
-    amount:
-      doc.amount == null || doc.amount === ''
-        ? null
-        : Number(doc.amount),
+    amount: hasStoredAmount(doc.amount) ? Number(doc.amount) : null,
     plotDunam: resolvePlotDunam(plotRaw),
   });
 }

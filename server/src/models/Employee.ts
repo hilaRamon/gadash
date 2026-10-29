@@ -14,6 +14,7 @@ const employeeSchema = new Schema(
     email: { type: String, default: '' },
     mobile: { type: String, default: '' },
     notes: { type: String, default: '' },
+    hourlyCost: { type: Number, required: true, min: 0, default: 0 },
     formOfPayment: {
       type: String,
       enum: EMPLOYEE_FORMS_OF_PAYMENT,

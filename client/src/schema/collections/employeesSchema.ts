@@ -1,5 +1,6 @@
 import { textColumn } from '../columnHelpers'
 import { formatMobileDisplay } from "@/lib/mobileFormat"
+import { formatNumber } from "@/lib/formatNumber"
 import type { CollectionSchema } from '../types'
 
 export const employeesSchema: CollectionSchema = {
@@ -13,6 +14,14 @@ export const employeesSchema: CollectionSchema = {
       searchable: true,
       format: (value) => formatMobileDisplay(String(value ?? '')),
     }),
+    {
+      key: 'hourlyCost',
+      label: 'עלות לשעה',
+      type: 'number',
+      sortable: true,
+      format: (value) => formatNumber(value),
+      width: '7rem',
+    },
     textColumn('notes', 'הערות', { searchable: true }),
   ],
   defaultSort: { field: 'name', direction: 'asc' },
@@ -23,6 +32,7 @@ export const employeesSchema: CollectionSchema = {
       { key: 'name', label: 'שם', type: 'text', required: true },
       { key: 'email', label: 'אימייל', type: 'text' },
       { key: 'mobile', label: 'נייד', type: 'phone' },
+      { key: 'hourlyCost', label: 'עלות לשעה', type: 'number', defaultValue: 0 },
       { key: 'notes', label: 'הערות', type: 'textarea' },
     ],
   },

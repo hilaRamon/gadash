@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { EmployeeModel } from '../models/Employee';
 import { OperationModel } from '../models/Operation';
-import type { PricingForm } from '../models/Operation';
+import type { OperationType, PricingForm } from '../models/Operation';
 import { PlotModel } from '../models/Plot';
 import {
   operationTrackingRepository,
@@ -17,11 +17,14 @@ import {
   operationTrackingToApiDocuments,
 } from '../utils/operationTrackingApiMapper';
 import {
+  calcHoursBetween,
   OPERATION_PRICING_BY_DUNAM,
   requireOperationAmount,
   resolveOperationAmount,
 } from '../utils/operationTrackingPricing';
 import { monthlyReportService } from './monthlyReportService';
+
+const ADMIN_OPERATION_TYPE: OperationType = 'מנהלה';
 
 function stripAdminOverride(body: Record<string, unknown>): Record<string, unknown> {
   const { adminOverride: _adminOverride, ...rest } = body;
@@ -101,9 +104,10 @@ async function resolvePlotDunam(plotId: Types.ObjectId | null): Promise<number |
 async function resolveOperationDetails(operationId: Types.ObjectId): Promise<{
   currentCost: number;
   pricingForm: PricingForm;
+  operationType: OperationType;
 }> {
   const operation = await OperationModel.findById(operationId)
-    .select('currentCost pricingForm')
+    .select('currentCost pricingForm operationType')
     .lean();
   if (!operation) {
     throw new Error('פעולה לא נמצאה');
@@ -111,7 +115,24 @@ async function resolveOperationDetails(operationId: Types.ObjectId): Promise<{
   return {
     currentCost: Number(operation.currentCost ?? 0),
     pricingForm: (operation.pricingForm ?? OPERATION_PRICING_BY_DUNAM) as PricingForm,
+    operationType: operation.operationType as OperationType,
   };
+}
+
+function isAdminOperation(operationType: string | null | undefined): boolean {
+  return operationType === ADMIN_OPERATION_TYPE;
+}
+
+async function resolveEmployeeHourlyCost(employeeId: Types.ObjectId): Promise<number> {
+  const employee = await EmployeeModel.findById(employeeId).select('hourlyCost').lean();
+  if (!employee?._id) {
+    throw new Error('עובד לא נמצא');
+  }
+  const hourlyCost = Number(employee.hourlyCost ?? 0);
+  if (!Number.isFinite(hourlyCost) || hourlyCost < 0) {
+    throw new Error('עלות לשעה לא תקינה');
+  }
+  return hourlyCost;
 }
 
 async function resolveOperationObjectId(operationId: unknown): Promise<Types.ObjectId> {
@@ -276,15 +297,26 @@ export const operationTrackingService = {
     assertTimeRange(patch.startTime, patch.endTime);
 
     const operationDetails = await resolveOperationDetails(patch.operation);
-    const amount = await resolveAmountForSave({
-      pricingForm: operationDetails.pricingForm,
-      explicitAmount: Object.prototype.hasOwnProperty.call(body, 'amount')
-        ? patch.amount
-        : undefined,
-      startTime: patch.startTime,
-      endTime: patch.endTime,
-      plotId: patch.plot ?? null,
-    });
+    const adminOperation = isAdminOperation(operationDetails.operationType);
+
+    let amount: number | null;
+    let unitCost: number | null;
+    if (adminOperation) {
+      amount = calcHoursBetween(patch.startTime, patch.endTime);
+      unitCost = await resolveEmployeeHourlyCost(patch.employee);
+    } else {
+      amount = await resolveAmountForSave({
+        pricingForm: operationDetails.pricingForm,
+        explicitAmount: Object.prototype.hasOwnProperty.call(body, 'amount')
+          ? patch.amount
+          : undefined,
+        startTime: patch.startTime,
+        endTime: patch.endTime,
+        plotId: patch.plot ?? null,
+      });
+      unitCost =
+        patch.unitCost !== undefined ? patch.unitCost : operationDetails.currentCost;
+    }
 
     const input: OperationTrackingInput = {
       date: patch.date,
@@ -297,8 +329,7 @@ export const operationTrackingService = {
       billable: patch.billable ?? true,
       wasCharged: patch.wasCharged ?? false,
       amount,
-      unitCost:
-        patch.unitCost !== undefined ? patch.unitCost : operationDetails.currentCost,
+      unitCost,
     };
 
     const created = await operationTrackingRepository.create(input);
@@ -310,7 +341,8 @@ export const operationTrackingService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const patch = await buildTrackingPatch(stripAdminOverride(body));
+    const requestBody = stripAdminOverride(body);
+    const patch = await buildTrackingPatch(requestBody);
     if (Object.keys(patch).length === 0) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
@@ -333,42 +365,68 @@ export const operationTrackingService = {
 
     const nextEmployeeId = patch.employee
       ? String(patch.employee)
-      : String(existing.employee?._id ?? existing.employee);
+      : String(
+          (existing.employee as { _id?: unknown } | null)?._id ?? existing.employee,
+        );
     const nextDate = patch.date ?? new Date(existing.date as Date);
 
     const existingRecord = existing as Record<string, unknown>;
     const existingOperationId = toObjectIdRef(existingRecord.operation);
     const existingPlotId = existingRecord.plot ? toObjectIdRef(existingRecord.plot) : null;
+    const existingEmployeeId = toObjectIdRef(existingRecord.employee);
     const operationChanged =
       patch.operation != null && String(patch.operation) !== String(existingOperationId);
+    const employeeChanged =
+      patch.employee != null && String(patch.employee) !== String(existingEmployeeId);
     const plotChanged =
       patch.plot !== undefined &&
       String(patch.plot ?? '') !== String(existingPlotId ?? '');
     const timesChanged = patch.startTime != null || patch.endTime != null;
-    const amountExplicitlySent = Object.prototype.hasOwnProperty.call(body, 'amount');
-    const unitCostExplicitlySent = Object.prototype.hasOwnProperty.call(body, 'unitCost');
+    const amountExplicitlySent = Object.prototype.hasOwnProperty.call(
+      requestBody,
+      'amount',
+    );
+    const unitCostExplicitlySent = Object.prototype.hasOwnProperty.call(
+      requestBody,
+      'unitCost',
+    );
 
     const nextOperationId = patch.operation ?? existingOperationId;
     const nextPlotId = patch.plot !== undefined ? patch.plot : existingPlotId;
     const nextStartTime = patch.startTime ?? String(existing.startTime ?? '');
     const nextEndTime = patch.endTime ?? String(existing.endTime ?? '');
+    const nextEmployeeObjectId = patch.employee ?? existingEmployeeId;
 
-    if (operationChanged && !unitCostExplicitlySent) {
-      const operationDetails = await resolveOperationDetails(patch.operation!);
-      patch.unitCost = operationDetails.currentCost;
-    }
+    const operationDetails = await resolveOperationDetails(nextOperationId);
+    if (isAdminOperation(operationDetails.operationType)) {
+      if (amountExplicitlySent) {
+        delete patch.amount;
+      }
+      if (unitCostExplicitlySent) {
+        delete patch.unitCost;
+      }
+      if (timesChanged || operationChanged) {
+        patch.amount = calcHoursBetween(nextStartTime, nextEndTime);
+      }
+      if (employeeChanged || operationChanged) {
+        patch.unitCost = await resolveEmployeeHourlyCost(nextEmployeeObjectId);
+      }
+    } else {
+      if (operationChanged && !unitCostExplicitlySent) {
+        patch.unitCost = operationDetails.currentCost;
+      }
 
-    if (amountExplicitlySent) {
-      patch.amount = patch.amount ?? null;
-    } else if (operationChanged || plotChanged || timesChanged) {
-      const operationDetails = await resolveOperationDetails(nextOperationId);
-      patch.amount = await resolveAmountForSave({
-        pricingForm: operationDetails.pricingForm,
-        explicitAmount: undefined,
-        startTime: nextStartTime,
-        endTime: nextEndTime,
-        plotId: nextPlotId,
-      });
+      if (amountExplicitlySent) {
+        patch.amount = patch.amount ?? null;
+      } else if (operationChanged || plotChanged || timesChanged) {
+        patch.amount = await resolveAmountForSave({
+          pricingForm: operationDetails.pricingForm,
+          explicitAmount: undefined,
+          startTime: nextStartTime,
+          endTime: nextEndTime,
+          plotId: nextPlotId,
+        });
+      }
     }
 
     const updated = await operationTrackingRepository.update(id, patch);
