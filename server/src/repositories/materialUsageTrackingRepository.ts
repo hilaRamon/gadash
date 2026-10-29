@@ -182,4 +182,21 @@ export const materialUsageTrackingRepository = {
       );
     }
   },
+
+  async syncUnchargedUnitPricesForMaterialCost(options: {
+    materialId: string;
+    nextCost: number;
+    session?: unknown;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.materialId)) return;
+
+    await MaterialUsageTrackingModel.updateMany(
+      {
+        material: new Types.ObjectId(options.materialId),
+        wasCharged: { $ne: true },
+      },
+      { $set: { unitPrice: options.nextCost } },
+      options.session ? { session: options.session as never } : undefined,
+    );
+  },
 };

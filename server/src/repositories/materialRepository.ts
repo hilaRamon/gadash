@@ -33,8 +33,10 @@ export const materialRepository = {
     return listPaginatedDocuments('materials', MaterialModel, listQuery);
   },
 
-  findById(id: string) {
-    return MaterialModel.findById(id).lean();
+  findById(id: string, session?: unknown) {
+    const query = MaterialModel.findById(id);
+    if (session) query.session(session as never);
+    return query.lean();
   },
 
   create(data: MaterialInput) {
@@ -53,6 +55,7 @@ export const materialRepository = {
     entry: MaterialPricingEntryInput,
     currentBuyingCost: number,
     currentSalePercent: number,
+    session?: unknown,
   ) {
     return MaterialModel.findByIdAndUpdate(
       id,
@@ -60,7 +63,11 @@ export const materialRepository = {
         $push: { pricingHistory: entry },
         $set: { currentBuyingCost, currentSalePercent },
       },
-      { returnDocument: 'after', runValidators: true },
+      {
+        returnDocument: 'after',
+        runValidators: true,
+        ...(session ? { session: session as never } : {}),
+      },
     ).lean();
   },
 

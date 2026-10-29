@@ -11,6 +11,7 @@ import {
   materialPurchaseTrackingToApiDocuments,
 } from '../utils/materialPurchaseTrackingApiMapper';
 import { syncInventoryGroupPricingFromMaterial } from '../utils/materialInventoryGroup';
+import { syncUnchargedMaterialUsagePrices } from './materialCustomerCostSync';
 import { roundQuantity } from '../utils/quantityPrecision';
 
 function parseDate(value: unknown): Date {
@@ -133,6 +134,7 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
 
   const nextQuantity = Number(material.currentQuantity ?? 0) + input.amount;
   const currentBuyingCost = Number(material.currentBuyingCost ?? 0);
+  const currentSalePercent = Number(material.currentSalePercent ?? 15);
   const shouldUpdateCost = currentBuyingCost !== input.unitPrice;
 
   const update: {
@@ -158,7 +160,7 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
     update.$push = {
       pricingHistory: {
         cost: input.unitPrice,
-        percent: Number(material.currentSalePercent ?? 15),
+        percent: currentSalePercent,
         effectiveFrom: input.date,
       },
     };
@@ -171,15 +173,15 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
   if (shouldUpdateCost) {
     const historyEntry = {
       cost: input.unitPrice,
-      percent: Number(material.currentSalePercent ?? 15),
+      percent: currentSalePercent,
       effectiveFrom: input.date,
     };
-    await syncInventoryGroupPricingFromMaterial(
+    const siblings = await syncInventoryGroupPricingFromMaterial(
       {
         _id: material._id,
         inventoryGroup: material.inventoryGroup,
         currentBuyingCost: input.unitPrice,
-        currentSalePercent: Number(material.currentSalePercent ?? 15),
+        currentSalePercent,
         pricingHistory: [
           ...((material.pricingHistory ?? []) as {
             cost: number;
@@ -191,6 +193,18 @@ async function syncMaterialAfterPurchaseCreate(input: MaterialPurchaseTrackingIn
       },
       historyEntry,
     );
+    await syncUnchargedMaterialUsagePrices({
+      materials: [
+        {
+          id: String(material._id),
+          previousBuyingCost: currentBuyingCost,
+          previousSalePercent: currentSalePercent,
+        },
+        ...siblings,
+      ],
+      nextBuyingCost: input.unitPrice,
+      nextSalePercent: currentSalePercent,
+    });
   }
 }
 

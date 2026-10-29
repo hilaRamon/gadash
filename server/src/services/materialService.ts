@@ -1,8 +1,10 @@
+import mongoose from 'mongoose';
 import {
   materialRepository,
   type MaterialInput,
   type MaterialMetadataPatch,
 } from '../repositories/materialRepository';
+import { syncUnchargedMaterialUsagePrices } from './materialCustomerCostSync';
 import type { ApiDocument } from '../types/apiDocument';
 import {
   calcCustomerCost,
@@ -13,6 +15,7 @@ import {
   enrichMaterialsWithGroupQuantity,
   syncInventoryGroupPricingFromMaterial,
 } from '../utils/materialInventoryGroup';
+import { dunamAmountsMatch } from '../utils/operationTrackingPricing';
 import { roundQuantity } from '../utils/quantityPrecision';
 
 const DEFAULT_EFFECTIVE_FROM = new Date('2025-01-01T00:00:00.000Z');
@@ -185,24 +188,95 @@ async function applyPricingChange(
     throw new Error('כבר קיים שינוי לתאריך תחולה זה');
   }
 
-  const nextHistory = [
-    ...existing.pricingHistory,
-    { cost: nextCost, percent: nextPercent, effectiveFrom },
-  ];
+  const entry = { cost: nextCost, percent: nextPercent, effectiveFrom };
+  const nextHistory = [...existing.pricingHistory, entry];
   const current = deriveCurrentPricing(nextHistory);
-
-  const updated = await materialRepository.appendPricingChange(
-    id,
-    { cost: nextCost, percent: nextPercent, effectiveFrom },
-    current.cost,
-    current.percent,
+  const previousCustomerCost = calcCustomerCost(
+    Number(existing.currentBuyingCost),
+    Number(existing.currentSalePercent),
   );
-  if (!updated) return null;
+  const nextCustomerCost = calcCustomerCost(current.cost, current.percent);
 
-  await syncInventoryGroupPricingFromMaterial(
+  let updated: NonNullable<
+    Awaited<ReturnType<typeof materialRepository.appendPricingChange>>
+  >;
+
+  if (dunamAmountsMatch(previousCustomerCost, nextCustomerCost)) {
+    const pricingResult = await materialRepository.appendPricingChange(
+      id,
+      entry,
+      current.cost,
+      current.percent,
+    );
+    if (!pricingResult) return null;
+    updated = pricingResult;
+  } else {
+    const session = await mongoose.startSession();
+    try {
+      let updatedDoc: Awaited<
+        ReturnType<typeof materialRepository.appendPricingChange>
+      > = null;
+      await session.withTransaction(async () => {
+        const fresh = await materialRepository.findById(id, session);
+        if (!fresh) {
+          throw new Error('לא נמצא');
+        }
+
+        const freshDuplicate = fresh.pricingHistory.some(
+          (historyEntry) =>
+            new Date(historyEntry.effectiveFrom).getTime() === effectiveFrom.getTime(),
+        );
+        if (freshDuplicate) {
+          throw new Error('כבר קיים שינוי לתאריך תחולה זה');
+        }
+
+        const freshCurrent = deriveCurrentPricing([
+          ...fresh.pricingHistory,
+          entry,
+        ]);
+        const pricingResult = await materialRepository.appendPricingChange(
+          id,
+          entry,
+          freshCurrent.cost,
+          freshCurrent.percent,
+          session,
+        );
+        if (!pricingResult) {
+          throw new Error('לא נמצא');
+        }
+
+        await syncUnchargedMaterialUsagePrices({
+          materials: [
+            {
+              id,
+              previousBuyingCost: Number(fresh.currentBuyingCost),
+              previousSalePercent: Number(fresh.currentSalePercent),
+            },
+          ],
+          nextBuyingCost: freshCurrent.cost,
+          nextSalePercent: freshCurrent.percent,
+          session,
+        });
+        updatedDoc = pricingResult;
+      });
+      if (!updatedDoc) {
+        throw new Error('לא נמצא');
+      }
+      updated = updatedDoc;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  const siblings = await syncInventoryGroupPricingFromMaterial(
     updated as MaterialPricingRow,
-    { cost: nextCost, percent: nextPercent, effectiveFrom },
+    entry,
   );
+  await syncUnchargedMaterialUsagePrices({
+    materials: siblings,
+    nextBuyingCost: Number(updated.currentBuyingCost),
+    nextSalePercent: Number(updated.currentSalePercent ?? DEFAULT_SALE_PERCENT),
+  });
   return updated;
 }
 

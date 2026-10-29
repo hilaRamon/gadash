@@ -15,6 +15,12 @@ type MaterialPricingRow = {
   pricingHistory?: MaterialPricingEntryInput[];
 };
 
+export type InventoryGroupPricingSibling = {
+  id: string;
+  previousBuyingCost: number;
+  previousSalePercent: number;
+};
+
 function normalizePricingEntry(
   entry: MaterialPricingEntryInput,
 ): MaterialPricingEntryInput {
@@ -28,13 +34,13 @@ function normalizePricingEntry(
 export async function syncInventoryGroupPricingFromMaterial(
   source: MaterialPricingRow,
   latestEntry?: MaterialPricingEntryInput,
-): Promise<void> {
+): Promise<InventoryGroupPricingSibling[]> {
   const group = String(source.inventoryGroup ?? '').trim();
-  if (!group || source._id == null) return;
+  if (!group || source._id == null) return [];
 
   const history = source.pricingHistory ?? [];
   const entry = latestEntry ?? history[history.length - 1];
-  if (!entry) return;
+  if (!entry) return [];
 
   const normalizedEntry = normalizePricingEntry(entry);
   const currentBuyingCost = Number(source.currentBuyingCost ?? 0);
@@ -44,10 +50,17 @@ export async function syncInventoryGroupPricingFromMaterial(
     inventoryGroup: group,
     _id: { $ne: source._id },
   })
-    .select('_id pricingHistory')
+    .select('_id pricingHistory currentBuyingCost currentSalePercent')
     .lean();
 
+  const previousPricing: InventoryGroupPricingSibling[] = [];
+
   for (const sibling of siblings) {
+    previousPricing.push({
+      id: String(sibling._id),
+      previousBuyingCost: Number(sibling.currentBuyingCost ?? 0),
+      previousSalePercent: Number(sibling.currentSalePercent ?? 15),
+    });
     const siblingHistory = (sibling.pricingHistory ??
       []) as MaterialPricingEntryInput[];
     const duplicateDate = siblingHistory.some(
@@ -74,6 +87,8 @@ export async function syncInventoryGroupPricingFromMaterial(
       runValidators: true,
     });
   }
+
+  return previousPricing;
 }
 
 export function buildGroupQuantityMap(

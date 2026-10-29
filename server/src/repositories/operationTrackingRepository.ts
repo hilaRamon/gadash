@@ -224,7 +224,6 @@ export const operationTrackingRepository = {
     await OperationTrackingModel.updateMany(
       {
         operation: new Types.ObjectId(options.operationId),
-        billable: true,
         wasCharged: { $ne: true },
         $expr: {
           $and: [
