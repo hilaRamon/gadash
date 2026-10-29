@@ -57,6 +57,9 @@ function compareByDate(a: CustomerBillLine, b: CustomerBillLine): number {
 function operationLine(row: CollectionDocument): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const unitCost = Number(row.unitCost ?? 0);
+  const isDiscount = row.isDiscount === true;
+  const beforeDiscount = Number(row.priceBeforeDiscount ?? 0);
+  const shownUnit = isDiscount ? beforeDiscount : unitCost;
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
@@ -67,7 +70,11 @@ function operationLine(row: CollectionDocument): CustomerBillLine {
         ? formatNumber(amountValue)
         : "",
     unitPrice:
-      Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : "",
+      Number.isFinite(shownUnit) && shownUnit > 0 ? formatNumber(shownUnit) : "",
+    unitPriceAfterDiscount:
+      isDiscount && Number.isFinite(unitCost) && unitCost >= 0
+        ? formatNumber(unitCost)
+        : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatWholeNumber(row.finalPrice ?? 0),
   };
@@ -189,10 +196,14 @@ export function buildCustomerBillDocumentFromRows(input: {
   baleOrders: CollectionDocument[];
 }): CustomerBillDocument {
   const showPlots = input.showPlots !== false;
-  const operationsSection = buildSection("פעולות", "operations", [
+  const showDiscountColumn = input.operations.some((row) => row.isDiscount === true);
+  const builtOperationsSection = buildSection("פעולות", "operations", [
     ...input.operations.map(operationLine),
     ...input.contractors.map(contractorLine),
   ]);
+  const operationsSection = builtOperationsSection
+    ? { ...builtOperationsSection, showDiscountColumn }
+    : null;
   const materialsSection = buildSection(
     "חומרים",
     "quantityWithUnitPrice",

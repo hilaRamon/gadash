@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { buttonBase, toolbarButtonAccent } from "@/styles/buttonStyles";
 import type {
@@ -27,6 +27,12 @@ import {
   applyTransportTrackingFieldChange,
   getTransportTrackingVisibleFields,
 } from "./transportTrackingForm";
+import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
+import {
+  DiscountedUnitCostWarning,
+  requestDiscountedUnitCostEdit,
+  type DiscountedUnitCostEdit,
+} from "@/components/collection/DiscountedUnitCostWarning";
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { ModalPanel } from "@/components/ui/Modal";
 import { FormFieldControl } from "./FormFieldControl";
@@ -119,6 +125,13 @@ export function CollectionFormModal({
   const [amountRecalcNotice, setAmountRecalcNotice] = useState<string | null>(
     null,
   );
+  const [pendingOperationChange, setPendingOperationChange] = useState<
+    string | null
+  >(null);
+  const [pendingUnitCostEdit, setPendingUnitCostEdit] =
+    useState<DiscountedUnitCostEdit | null>(null);
+  const pendingUnitCostEditRef = useRef(pendingUnitCostEdit);
+  pendingUnitCostEditRef.current = pendingUnitCostEdit;
   const [materialUsageEntries, setMaterialUsageEntries] = useState<
     MaterialUsageLineEntry[]
   >([]);
@@ -259,6 +272,12 @@ export function CollectionFormModal({
     setFieldErrors,
   });
 
+  useEffect(() => {
+    if (open) return;
+    setPendingOperationChange(null);
+    pendingUnitCostEditRef.current?.reject();
+  }, [open]);
+
   if (!open) return null;
 
   // Title: computed modal heading for create vs edit mode.
@@ -266,7 +285,7 @@ export function CollectionFormModal({
     ? (schema.form.editTitle ?? `עריכת ${schema.label}`)
     : (schema.form.createTitle ?? `הוספת ${schema.label}`);
 
-  const setFieldValue = (key: string, value: string) => {
+  const commitFieldValue = (key: string, value: string) => {
     let shouldUpdateNotice = false;
     let nextNotice: string | null = null;
 
@@ -318,6 +337,21 @@ export function CollectionFormModal({
     });
   };
 
+  const setFieldValue = (key: string, value: string) => {
+    if (
+      isOperationTrackingForm &&
+      !isOperationTrackingMultiCreate &&
+      key === "operation" &&
+      editingRow?.isDiscount === true &&
+      value !== String(editingRow.operation ?? "") &&
+      value !== (values.operation ?? "")
+    ) {
+      setPendingOperationChange(value);
+      return;
+    }
+    commitFieldValue(key, value);
+  };
+
   const getBooleanLabels = (fieldKey: string) => {
     const matchingColumn = schema.columns.find(
       (column) => column.key === fieldKey && column.type === "boolean",
@@ -360,11 +394,48 @@ export function CollectionFormModal({
       operations,
       setFieldErrors,
       setValidationError,
-      onSubmit,
+      onSubmit: (payload) => {
+        void submitAfterDiscountWarning(payload);
+      },
     });
   };
 
+  async function submitAfterDiscountWarning(
+    payload: Record<string, unknown> | Record<string, unknown>[],
+  ) {
+    const operationChanged =
+      editingRow != null &&
+      String(values.operation ?? "") !== String(editingRow.operation ?? "");
+    const previousUnitCost = Number(editingRow?.unitCost);
+    const nextUnitCost = Number(values.unitCost);
+    const unitCostChanged =
+      Number.isFinite(nextUnitCost) &&
+      (!Number.isFinite(previousUnitCost) || nextUnitCost !== previousUnitCost);
+    if (
+      isOperationTrackingForm &&
+      !isOperationTrackingMultiCreate &&
+      editingRow?.isDiscount === true &&
+      !operationChanged &&
+      unitCostChanged &&
+      !Array.isArray(payload)
+    ) {
+      try {
+        await requestDiscountedUnitCostEdit(
+          setPendingUnitCostEdit,
+          editingRow._id,
+          nextUnitCost,
+        );
+      } catch {
+        return;
+      }
+      onSubmit({ ...payload, isDiscount: false });
+      return;
+    }
+    onSubmit(payload);
+  }
+
   return (
+    <>
     <ModalOverlay open={open} onClose={onClose} layout="centered">
       <ModalPanel
         title={title}
@@ -504,5 +575,20 @@ export function CollectionFormModal({
         </form>
       </ModalPanel>
     </ModalOverlay>
+    <DiscountedUnitCostWarning pending={pendingUnitCostEdit} />
+    <ConfirmDialog
+      open={pendingOperationChange != null}
+      title="הסרת הנחה"
+      message="לשורה זו יש הנחה. החלפת הפעולה תבטל את ההנחה ותעדכן את מחיר היחידה למחיר של הפעולה החדשה."
+      confirmLabel="החלפה"
+      cancelLabel="ביטול"
+      onCancel={() => setPendingOperationChange(null)}
+      onConfirm={() => {
+        const nextOperation = pendingOperationChange;
+        setPendingOperationChange(null);
+        if (nextOperation != null) commitFieldValue("operation", nextOperation);
+      }}
+    />
+    </>
   );
 }

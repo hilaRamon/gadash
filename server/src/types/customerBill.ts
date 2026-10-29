@@ -7,6 +7,7 @@ export type CustomerBillLine = {
   pricingForm?: string;
   amount?: string;
   unitPrice?: string;
+  unitPriceAfterDiscount?: string;
   transportPrice?: string;
   price: number;
   priceFormatted: string;
@@ -18,6 +19,7 @@ export type CustomerBillSection = {
   lines: CustomerBillLine[];
   subtotal: number;
   subtotalFormatted: string;
+  showDiscountColumn?: boolean;
 };
 
 export type CustomerBillDocument = {

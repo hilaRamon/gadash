@@ -22,6 +22,7 @@ export type OperationTrackingInput = {
   wasCharged?: boolean;
   amount?: number | null;
   unitCost?: number | null;
+  isDiscount?: boolean;
 };
 
 const operationPopulate = {
@@ -225,6 +226,7 @@ export const operationTrackingRepository = {
       {
         operation: new Types.ObjectId(options.operationId),
         wasCharged: { $ne: true },
+        isDiscount: { $ne: true },
         $expr: {
           $and: [
             { $isNumber: "$unitCost" },

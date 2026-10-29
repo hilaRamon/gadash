@@ -13,15 +13,20 @@ function escapeHtml(value: string): string {
 function renderOperationsRow(
   line: CustomerBillSection['lines'][number],
   showPlots: boolean,
+  showDiscountColumn: boolean,
 ): string {
   const plotCell = showPlots ? `
       <td>${escapeHtml(line.plotName ?? '')}</td>` : '';
+  const afterCell = showDiscountColumn
+    ? `
+      <td class="price">${escapeHtml(line.unitPriceAfterDiscount ?? '')}</td>`
+    : '';
   return `
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>${plotCell}
       <td>${escapeHtml(line.pricingForm ?? '')}</td>
-      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>
+      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${afterCell}
       <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
@@ -51,15 +56,20 @@ function isBaleSection(section: CustomerBillSection): boolean {
 
 function renderSection(section: CustomerBillSection, showPlots: boolean): string {
   const isOperations = section.layout === 'operations';
+  const showDiscountColumn = isOperations && section.showDiscountColumn === true;
   const showTransport = isBaleSection(section);
   const rows = section.lines
     .map((line) =>
       isOperations
-        ? renderOperationsRow(line, showPlots)
+        ? renderOperationsRow(line, showPlots, showDiscountColumn)
         : renderQuantityWithUnitPriceRow(line, showTransport),
     )
     .join('');
-  const colspan = isOperations ? (showPlots ? 6 : 5) : showTransport ? 5 : 4;
+  const colspan = isOperations
+    ? (showPlots ? 6 : 5) + (showDiscountColumn ? 1 : 0)
+    : showTransport
+      ? 5
+      : 4;
 
   const plotHeader = showPlots
     ? `
@@ -69,13 +79,17 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
     ? `
             <th>הובלה</th>`
     : '';
+  const afterHeader = showDiscountColumn
+    ? `
+            <th>מחיר אחרי הנחה</th>`
+    : '';
   const header = isOperations
     ? `
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>${plotHeader}
             <th>צורת תמחור</th>
-            <th>מחיר ליחידה</th>
+            <th>מחיר ליחידה</th>${afterHeader}
             <th>כמות</th>
             <th>מחיר</th>
           </tr>`
@@ -97,9 +111,12 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
             <th>מחיר</th>
           </tr>`;
 
-  const operationsClass = showPlots
-    ? 'bill-section-operations'
-    : 'bill-section-operations-no-plot';
+  const operationsClass = [
+    showPlots ? 'bill-section-operations' : 'bill-section-operations-no-plot',
+    showDiscountColumn ? 'bill-section-operations-discount' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const quantityClass = showTransport
     ? 'bill-section-bales'
     : 'bill-section-quantity';

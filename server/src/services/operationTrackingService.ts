@@ -94,6 +94,37 @@ function parseUnitCost(value: unknown): number {
   return num;
 }
 
+function parseIsDiscount(value: unknown): boolean {
+  if (value === true || value === 'true') return true;
+  if (value === false || value === 'false') return false;
+  throw new Error('הנחה לא תקינה');
+}
+
+function calcDiscountedUnitCost(
+  currentCost: number,
+  discountType: unknown,
+  discountValue: unknown,
+): number {
+  if (discountType !== 'amount' && discountType !== 'percent') {
+    throw new Error('סוג הנחה לא תקין');
+  }
+  const value = Number(discountValue);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('סכום הנחה לא תקין');
+  }
+  if (discountType === 'percent' && value > 100) {
+    throw new Error('אחוז הנחה לא תקין');
+  }
+  const next =
+    discountType === 'amount'
+      ? currentCost - value
+      : currentCost * (1 - value / 100);
+  if (!Number.isFinite(next) || next < 0) {
+    throw new Error('ההנחה גדולה ממחיר היחידה');
+  }
+  return Number(next.toFixed(2));
+}
+
 async function resolvePlotDunam(plotId: Types.ObjectId | null): Promise<number | null> {
   if (!plotId) return null;
   const plot = await PlotModel.findById(plotId).select('dunam').lean();
@@ -229,6 +260,9 @@ async function buildTrackingPatch(
         ? null
         : parseUnitCost(body.unitCost);
   }
+  if (Object.prototype.hasOwnProperty.call(body, 'isDiscount')) {
+    patch.isDiscount = parseIsDiscount(body.isDiscount);
+  }
 
   const startTime = patch.startTime;
   const endTime = patch.endTime;
@@ -343,7 +377,10 @@ export const operationTrackingService = {
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
     const requestBody = stripAdminOverride(body);
     const patch = await buildTrackingPatch(requestBody);
-    if (Object.keys(patch).length === 0) {
+    const hasDiscountRequest =
+      Object.prototype.hasOwnProperty.call(requestBody, 'discountType') ||
+      Object.prototype.hasOwnProperty.call(requestBody, 'discountValue');
+    if (Object.keys(patch).length === 0 && !hasDiscountRequest) {
       throw new Error('לא נמצאו שדות לעדכון');
     }
 
@@ -427,6 +464,21 @@ export const operationTrackingService = {
           plotId: nextPlotId,
         });
       }
+    }
+
+    if (hasDiscountRequest && !operationChanged) {
+      if (isAdminOperation(operationDetails.operationType)) {
+        throw new Error('לא ניתן להוסיף הנחה לפעולת מנהלה');
+      }
+      patch.unitCost = calcDiscountedUnitCost(
+        operationDetails.currentCost,
+        requestBody.discountType,
+        requestBody.discountValue,
+      );
+      patch.isDiscount = true;
+    }
+    if (operationChanged) {
+      patch.isDiscount = false;
     }
 
     const updated = await operationTrackingRepository.update(id, patch);

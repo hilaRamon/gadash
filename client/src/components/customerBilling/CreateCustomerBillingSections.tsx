@@ -5,7 +5,7 @@
  * Does not fetch preview itself — only maps preview.* arrays to table rows and column schemas.
  * Bill HTML is loaded separately inside CustomerBillPaper based on checked row IDs.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateDocument } from "@/queries/collections/useCollectionMutations";
@@ -15,13 +15,20 @@ import type { CollectionDocument, CollectionSchema } from "@/schema/types";
 import { countCustomerPlots, type UnbilledPreview } from "@/api/customerBillingApi";
 import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
 import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
+import {
+  DiscountedUnitCostWarning,
+  requestDiscountedUnitCostEdit,
+  type DiscountedUnitCostEdit,
+} from "@/components/collection/DiscountedUnitCostWarning";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 import { CustomerBillPaper } from "./CustomerBillPaper";
+import { OperationDiscountModal, type DiscountType } from "./OperationDiscountModal";
+import { buildOperationsBillingSchema } from "./operationsBillingSchema";
 import { PreviewSection, type PreviewSectionProps } from "./PreviewSection";
 import {
   balePreviewSchema,
   contractorPreviewSchema,
   materialPreviewSchema,
-  operationsPreviewSchema,
   withoutPlotColumn,
 } from "./billingPreviewSchemas";
 
@@ -66,6 +73,17 @@ export function CreateCustomerBillingSections({
   const { data: plots } = useCollectionList("plots");
   const showPlots = plots == null || countCustomerPlots(plots, customerId) > 1;
   const [includedIds, setIncludedIds] = useState<Set<string>>(() => new Set());
+  const [discountRow, setDiscountRow] = useState<CollectionDocument | null>(null);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [pendingUnitCostEdit, setPendingUnitCostEdit] =
+    useState<DiscountedUnitCostEdit | null>(null);
+  const [cancelDiscountError, setCancelDiscountError] = useState<string | null>(
+    null,
+  );
+  const [cancelingDiscountId, setCancelingDiscountId] = useState<string | null>(
+    null,
+  );
+  const cancelingDiscountIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Default: all preview rows are included in the bill until the user unchecks them.
@@ -110,6 +128,17 @@ export function CreateCustomerBillingSections({
 
   const handleOperationCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
+      if (key === "unitCost" && row.isDiscount === true) {
+        const unitCost = Number(value);
+        if (!Number.isFinite(unitCost)) return;
+        await requestDiscountedUnitCostEdit(
+          setPendingUnitCostEdit,
+          row._id,
+          unitCost,
+        );
+        await refreshBillingPreviews();
+        return;
+      }
       if (key === "unitCost" || key === "amount") {
         await updateOperationTracking.mutateAsync({
           id: row._id,
@@ -121,6 +150,48 @@ export function CreateCustomerBillingSections({
       await refreshBillingPreviews();
     },
     [refreshBillingPreviews, updateOperationTracking],
+  );
+
+  const handleCancelDiscount = useCallback(
+    async (row: CollectionDocument) => {
+      const unitCost = Number(row.priceBeforeDiscount);
+      if (!Number.isFinite(unitCost) || unitCost < 0) return;
+      if (cancelingDiscountIdRef.current) return;
+      cancelingDiscountIdRef.current = row._id;
+      setCancelingDiscountId(row._id);
+      setCancelDiscountError(null);
+      try {
+        await updateOperationTracking.mutateAsync({
+          id: row._id,
+          body: { unitCost, isDiscount: false },
+        });
+        await refreshBillingPreviews();
+      } catch (err) {
+        setCancelDiscountError(getApiErrorMessage(err, "שגיאה בביטול ההנחה"));
+      } finally {
+        cancelingDiscountIdRef.current = null;
+        setCancelingDiscountId(null);
+      }
+    },
+    [refreshBillingPreviews, updateOperationTracking],
+  );
+
+  const handleApproveDiscount = useCallback(
+    async (discountType: DiscountType, discountValue: number) => {
+      if (!discountRow) return;
+      setDiscountError(null);
+      try {
+        await updateOperationTracking.mutateAsync({
+          id: discountRow._id,
+          body: { discountType, discountValue },
+        });
+        setDiscountRow(null);
+        await refreshBillingPreviews();
+      } catch (err) {
+        setDiscountError(getApiErrorMessage(err, "שגיאה בשמירת ההנחה"));
+      }
+    },
+    [discountRow, refreshBillingPreviews, updateOperationTracking],
   );
 
   const handleMaterialCellChange = useCallback(
@@ -189,10 +260,26 @@ export function CreateCustomerBillingSections({
   >(() => {
     const sectionSchema = (schema: CollectionSchema) =>
       showPlots ? schema : withoutPlotColumn(schema);
+    const showDiscountColumns = (preview?.operations ?? []).some(
+      (row) => row.isDiscount === true,
+    );
     return [
       {
         title: "פעולות",
-        schema: sectionSchema(operationsPreviewSchema),
+        schema: buildOperationsBillingSchema({
+          showPlots,
+          showDiscountColumns,
+          onOpenDiscount: (row) => {
+            setDiscountError(null);
+            setDiscountRow(row);
+          },
+          cancelingDiscountId,
+          onCancelDiscount: (row) => {
+            void handleCancelDiscount(row);
+          },
+          onUnitCostChange: (row, value) =>
+            handleOperationCellChange(row, "unitCost", value),
+        }),
         rows: preview?.operations ?? [],
         onCellChange: handleOperationCellChange,
       },
@@ -219,6 +306,8 @@ export function CreateCustomerBillingSections({
     preview,
     showPlots,
     handleOperationCellChange,
+    handleCancelDiscount,
+    cancelingDiscountId,
     handleMaterialCellChange,
     handleBaleCellChange,
     handleContractorCellChange,
@@ -247,6 +336,11 @@ export function CreateCustomerBillingSections({
 
   return (
     <SectionsStack>
+      {cancelDiscountError && (
+        <StatusText $error role="alert">
+          {cancelDiscountError}
+        </StatusText>
+      )}
       {nonEmptySections.map((section) => (
         <PreviewSection
           key={section.title}
@@ -256,6 +350,21 @@ export function CreateCustomerBillingSections({
           onToggleIncludeAll={onToggleIncludeAll}
         />
       ))}
+      <DiscountedUnitCostWarning pending={pendingUnitCostEdit} />
+      <OperationDiscountModal
+        open={discountRow != null}
+        row={discountRow}
+        isPending={updateOperationTracking.isPending}
+        error={discountError}
+        onClose={() => {
+          if (updateOperationTracking.isPending) return;
+          setDiscountRow(null);
+          setDiscountError(null);
+        }}
+        onApprove={(discountType, discountValue) => {
+          void handleApproveDiscount(discountType, discountValue);
+        }}
+      />
       {preview && (
         <CustomerBillPaper
           customerId={customerId}
