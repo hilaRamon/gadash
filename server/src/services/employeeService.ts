@@ -2,8 +2,10 @@ import {
   employeeRepository,
   type EmployeeInput,
 } from '../repositories/employeeRepository';
+import { operationTrackingRepository } from '../repositories/operationTrackingRepository';
 import type { ApiDocument } from '../types/apiDocument';
 import { pickMobileFromBody } from '../utils/mobileFormat';
+import { getCurrentSeasonYear } from '../utils/seasonRange';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
 function parseHourlyCost(value: unknown): number {
@@ -55,9 +57,26 @@ export const employeeService = {
       throw new Error('שם הוא שדה חובה');
     }
 
+    const existing = await employeeRepository.findById(id);
+    if (!existing) {
+      throw new Error('לא נמצא');
+    }
+
+    const previousHourlyCost = Number(existing.hourlyCost ?? 0);
+    const nextHourlyCost = Number(fields.hourlyCost ?? 0);
+    const hourlyCostChanged = previousHourlyCost !== nextHourlyCost;
+
     const updated = await employeeRepository.update(id, fields);
     if (!updated) {
       throw new Error('לא נמצא');
+    }
+
+    if (hourlyCostChanged) {
+      await operationTrackingRepository.syncAdminUnitCostsForEmployeeHourlyCost({
+        employeeId: id,
+        seasonYear: getCurrentSeasonYear(),
+        nextHourlyCost,
+      });
     }
 
     return toApiDocument(updated as Record<string, unknown>);

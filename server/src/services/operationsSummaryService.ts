@@ -165,7 +165,8 @@ export const operationsSummaryService = {
         currentCost: null,
         totalAmount: minalaHours,
         amountUnit: 'שעות',
-        totalCharge: minalaCharge,
+        // Expense (money paid out), not customer charge.
+        totalCharge: Number((-minalaCharge).toFixed(2)),
       });
     }
 

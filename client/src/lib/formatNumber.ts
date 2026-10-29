@@ -12,11 +12,11 @@ function wrapLtrNumeric(text: string): string {
   return `${LTR_ISOLATE_START}${text}${LTR_ISOLATE_END}`
 }
 
-export function formatNumber(value: unknown): string {
+function formatRounded(value: unknown, maxDecimals: number): string {
   const amount = Number(value ?? '');
   if (!Number.isFinite(amount)) return '';
 
-  const factor = 10 ** MAX_DECIMALS;
+  const factor = 10 ** maxDecimals;
   const rounded = Math.round(amount * factor) / factor;
   const sign = rounded < 0 ? '-' : '';
   const abs = Math.abs(rounded);
@@ -26,8 +26,17 @@ export function formatNumber(value: unknown): string {
   const intStr = intPart.toLocaleString('he-IL');
   if (frac === 0) return wrapLtrNumeric(`${sign}${intStr}`);
 
-  const fracStr = String(frac).padStart(MAX_DECIMALS, '0').replace(/0+$/, '');
+  const fracStr = String(frac).padStart(maxDecimals, '0').replace(/0+$/, '');
   return wrapLtrNumeric(`${sign}${intStr}.${fracStr}`);
+}
+
+export function formatNumber(value: unknown): string {
+  return formatRounded(value, MAX_DECIMALS);
+}
+
+/** Rounds to one decimal place and drops a trailing zero. */
+export function formatNumber1(value: unknown): string {
+  return formatRounded(value, 1);
 }
 
 /** Rounds to the nearest integer and formats without a decimal part. */

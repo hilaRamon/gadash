@@ -241,4 +241,32 @@ export const operationTrackingRepository = {
       options.session ? { session: options.session as never } : undefined,
     );
   },
+
+  async syncAdminUnitCostsForEmployeeHourlyCost(options: {
+    employeeId: string;
+    seasonYear: number;
+    nextHourlyCost: number;
+  }): Promise<void> {
+    if (!Types.ObjectId.isValid(options.employeeId)) return;
+    if (!Number.isFinite(options.nextHourlyCost) || options.nextHourlyCost < 0) {
+      return;
+    }
+
+    const adminOperations = await OperationModel.find({
+      operationType: "מנהלה",
+    })
+      .select("_id")
+      .lean();
+    const operationIds = adminOperations.map((operation) => operation._id);
+    if (operationIds.length === 0) return;
+
+    await OperationTrackingModel.updateMany(
+      {
+        employee: new Types.ObjectId(options.employeeId),
+        operation: { $in: operationIds },
+        ...buildSeasonDateQuery(options.seasonYear),
+      },
+      { $set: { unitCost: options.nextHourlyCost } },
+    );
+  },
 };

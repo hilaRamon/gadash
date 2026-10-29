@@ -33,7 +33,6 @@
     "migrate:material-amount-per-dunam": "tsx scripts/migrate-material-amount-per-dunam.ts",
     "migrate:employee-form-of-payment": "tsx scripts/migrate-employee-form-of-payment.ts",
     "migrate:employee-role": "tsx scripts/migrate-employee-role.ts",
-    "migrate:minala-hourly-cost": "tsx scripts/migrate-minala-hourly-cost.ts",
     "seed:customer-billing-example": "tsx scripts/seed-customer-billing-example.ts",
     "puppeteer:install": "puppeteer browsers install chrome"
   },
