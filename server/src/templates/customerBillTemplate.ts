@@ -35,7 +35,12 @@ function renderOperationsRow(
 function renderQuantityWithUnitPriceRow(
   line: CustomerBillSection['lines'][number],
   showTransport: boolean,
+  showDiscountColumn: boolean,
 ): string {
+  const afterCell = showDiscountColumn
+    ? `
+      <td class="price">${escapeHtml(line.unitPriceAfterDiscount ?? '')}</td>`
+    : '';
   const transportCell = showTransport
     ? `
       <td class="price">${escapeHtml(line.transportPrice ?? '')}</td>`
@@ -45,7 +50,7 @@ function renderQuantityWithUnitPriceRow(
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>
       <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
-      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${transportCell}
+      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${afterCell}${transportCell}
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
 }
@@ -56,19 +61,19 @@ function isBaleSection(section: CustomerBillSection): boolean {
 
 function renderSection(section: CustomerBillSection, showPlots: boolean): string {
   const isOperations = section.layout === 'operations';
-  const showDiscountColumn = isOperations && section.showDiscountColumn === true;
   const showTransport = isBaleSection(section);
+  const showDiscountColumn = section.showDiscountColumn === true && (isOperations || showTransport);
   const rows = section.lines
     .map((line) =>
       isOperations
         ? renderOperationsRow(line, showPlots, showDiscountColumn)
-        : renderQuantityWithUnitPriceRow(line, showTransport),
+        : renderQuantityWithUnitPriceRow(line, showTransport, showDiscountColumn),
     )
     .join('');
   const colspan = isOperations
     ? (showPlots ? 6 : 5) + (showDiscountColumn ? 1 : 0)
     : showTransport
-      ? 5
+      ? 5 + (showDiscountColumn ? 1 : 0)
       : 4;
 
   const plotHeader = showPlots
@@ -99,7 +104,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
             <th>תאריך</th>
             <th>תיאור</th>
             <th>כמות/משקל</th>
-            <th>מחיר ליחידה/טון</th>${transportHeader}
+            <th>מחיר ליחידה/טון</th>${afterHeader}${transportHeader}
             <th>מחיר</th>
           </tr>`
       : `
@@ -118,7 +123,9 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
     .filter(Boolean)
     .join(' ');
   const quantityClass = showTransport
-    ? 'bill-section-bales'
+    ? ['bill-section-bales', showDiscountColumn ? 'bill-section-bales-discount' : '']
+        .filter(Boolean)
+        .join(' ')
     : 'bill-section-quantity';
 
   return `

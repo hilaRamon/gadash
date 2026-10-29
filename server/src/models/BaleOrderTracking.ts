@@ -16,6 +16,7 @@ const baleOrderTrackingSchema = new Schema(
     },
     pricePerTon: { type: Number, required: true, min: 0 },
     pricePerUnit: { type: Number, required: true, min: 0 },
+    isDiscount: { type: Boolean, default: false },
     weight: { type: Number, default: null },
     transportPrice: { type: Number, default: null },
     weighed: { type: Boolean, default: false },

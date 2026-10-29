@@ -50,9 +50,10 @@ export function OperationDiscountModal({
   }, [open, row?._id]);
 
   const base = Number(row?.priceBeforeDiscount ?? 0);
+  const missingPrice = !Number.isFinite(base) || base <= 0;
   const nextUnitCost = useMemo(
-    () => previewUnitCost(base, discountType, amount),
-    [amount, base, discountType],
+    () => (missingPrice ? null : previewUnitCost(base, discountType, amount)),
+    [amount, base, discountType, missingPrice],
   );
   const amountInvalid = amount.trim() !== "" && nextUnitCost == null;
 
@@ -69,6 +70,9 @@ export function OperationDiscountModal({
         aria-modal={true}
         aria-labelledby="operation-discount-title"
       >
+        <CurrentPrice>
+          מחיר נוכחי: {Number.isFinite(base) ? formatNumber(base) : "—"}
+        </CurrentPrice>
         <ChoiceRow>
           <ChoiceLabel>
             <input
@@ -107,7 +111,10 @@ export function OperationDiscountModal({
           מחיר ליחידה חדש:{" "}
           {nextUnitCost == null ? "—" : formatNumber(nextUnitCost)}
         </Preview>
-        {amountInvalid && (
+        {missingPrice && (
+          <ErrorText role="alert">אין מחיר נוכחי, לא ניתן לתת הנחה</ErrorText>
+        )}
+        {amountInvalid && !missingPrice && (
           <ErrorText role="alert">ההנחה גדולה ממחיר היחידה או אינה תקינה</ErrorText>
         )}
         {error && <ErrorText role="alert">{error}</ErrorText>}
@@ -130,6 +137,12 @@ export function OperationDiscountModal({
     </ModalOverlay>
   );
 }
+
+const CurrentPrice = styled.p`
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+`;
 
 const ChoiceRow = styled.div`
   display: flex;

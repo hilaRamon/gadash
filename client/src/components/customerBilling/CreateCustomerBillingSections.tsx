@@ -13,6 +13,7 @@ import { useCollectionList } from "@/queries/collections/useCollectionList";
 import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 import type { CollectionDocument, CollectionSchema } from "@/schema/types";
 import { countCustomerPlots, type UnbilledPreview } from "@/api/customerBillingApi";
+import { isByWeightPricing } from "@/lib/baleOrderPricing";
 import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
 import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
 import {
@@ -23,10 +24,10 @@ import {
 import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 import { CustomerBillPaper } from "./CustomerBillPaper";
 import { OperationDiscountModal, type DiscountType } from "./OperationDiscountModal";
+import { buildBalesBillingSchema } from "./balesBillingSchema";
 import { buildOperationsBillingSchema } from "./operationsBillingSchema";
 import { PreviewSection, type PreviewSectionProps } from "./PreviewSection";
 import {
-  balePreviewSchema,
   contractorPreviewSchema,
   materialPreviewSchema,
   withoutPlotColumn,
@@ -84,6 +85,17 @@ export function CreateCustomerBillingSections({
     null,
   );
   const cancelingDiscountIdRef = useRef<string | null>(null);
+  const [baleDiscountRow, setBaleDiscountRow] = useState<CollectionDocument | null>(
+    null,
+  );
+  const [baleDiscountError, setBaleDiscountError] = useState<string | null>(null);
+  const [cancelingBaleDiscountId, setCancelingBaleDiscountId] = useState<
+    string | null
+  >(null);
+  const cancelingBaleDiscountIdRef = useRef<string | null>(null);
+  const [baleCancelDiscountError, setBaleCancelDiscountError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     // Default: all preview rows are included in the bill until the user unchecks them.
@@ -206,6 +218,51 @@ export function CreateCustomerBillingSections({
     [refreshBillingPreviews, updateMaterialUsage],
   );
 
+  const handleCancelBaleDiscount = useCallback(
+    async (row: CollectionDocument) => {
+      const price = Number(row.priceBeforeDiscount);
+      if (!Number.isFinite(price) || price < 0) return;
+      if (cancelingBaleDiscountIdRef.current) return;
+      const priceKey = isByWeightPricing(row.pricingForm)
+        ? "pricePerTon"
+        : "pricePerUnit";
+      cancelingBaleDiscountIdRef.current = row._id;
+      setCancelingBaleDiscountId(row._id);
+      setBaleCancelDiscountError(null);
+      try {
+        await updateBaleOrder.mutateAsync({
+          id: row._id,
+          body: { [priceKey]: price, isDiscount: false },
+        });
+        await refreshBillingPreviews();
+      } catch (err) {
+        setBaleCancelDiscountError(getApiErrorMessage(err, "שגיאה בביטול ההנחה"));
+      } finally {
+        cancelingBaleDiscountIdRef.current = null;
+        setCancelingBaleDiscountId(null);
+      }
+    },
+    [refreshBillingPreviews, updateBaleOrder],
+  );
+
+  const handleApproveBaleDiscount = useCallback(
+    async (discountType: DiscountType, discountValue: number) => {
+      if (!baleDiscountRow) return;
+      setBaleDiscountError(null);
+      try {
+        await updateBaleOrder.mutateAsync({
+          id: baleDiscountRow._id,
+          body: { discountType, discountValue },
+        });
+        setBaleDiscountRow(null);
+        await refreshBillingPreviews();
+      } catch (err) {
+        setBaleDiscountError(getApiErrorMessage(err, "שגיאה בשמירת ההנחה"));
+      }
+    },
+    [baleDiscountRow, refreshBillingPreviews, updateBaleOrder],
+  );
+
   const handleBaleCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
       const editableKeys = [
@@ -291,7 +348,21 @@ export function CreateCustomerBillingSections({
       },
       {
         title: "הזמנות חציר",
-        schema: balePreviewSchema,
+        schema: buildBalesBillingSchema({
+          showDiscountColumns: (preview?.baleOrders ?? []).some(
+            (row) => row.isDiscount === true,
+          ),
+          onOpenDiscount: (row) => {
+            setBaleDiscountError(null);
+            setBaleDiscountRow(row);
+          },
+          cancelingDiscountId: cancelingBaleDiscountId,
+          onCancelDiscount: (row) => {
+            void handleCancelBaleDiscount(row);
+          },
+          onPriceChange: (row, key, value) =>
+            handleBaleCellChange(row, key, value),
+        }),
         rows: preview?.baleOrders ?? [],
         onCellChange: handleBaleCellChange,
       },
@@ -310,6 +381,8 @@ export function CreateCustomerBillingSections({
     cancelingDiscountId,
     handleMaterialCellChange,
     handleBaleCellChange,
+    handleCancelBaleDiscount,
+    cancelingBaleDiscountId,
     handleContractorCellChange,
   ]);
 
@@ -341,6 +414,11 @@ export function CreateCustomerBillingSections({
           {cancelDiscountError}
         </StatusText>
       )}
+      {baleCancelDiscountError && (
+        <StatusText $error role="alert">
+          {baleCancelDiscountError}
+        </StatusText>
+      )}
       {nonEmptySections.map((section) => (
         <PreviewSection
           key={section.title}
@@ -363,6 +441,20 @@ export function CreateCustomerBillingSections({
         }}
         onApprove={(discountType, discountValue) => {
           void handleApproveDiscount(discountType, discountValue);
+        }}
+      />
+      <OperationDiscountModal
+        open={baleDiscountRow != null}
+        row={baleDiscountRow}
+        isPending={updateBaleOrder.isPending}
+        error={baleDiscountError}
+        onClose={() => {
+          if (updateBaleOrder.isPending) return;
+          setBaleDiscountRow(null);
+          setBaleDiscountError(null);
+        }}
+        onApprove={(discountType, discountValue) => {
+          void handleApproveBaleDiscount(discountType, discountValue);
         }}
       />
       {preview && (

@@ -144,6 +144,20 @@ export function getBillStyles(): string {
     .bill-section-bales td:nth-child(5) { width: 12%; }
     .bill-section-bales th:nth-child(6),
     .bill-section-bales td:nth-child(6) { width: 24%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(1),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(1) { width: 11%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(2),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(2) { width: 20%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(3),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(3) { width: 11%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(4),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(4) { width: 14%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(5),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(5) { width: 14%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(6),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(6) { width: 12%; }
+    .bill-section-bales.bill-section-bales-discount th:nth-child(7),
+    .bill-section-bales.bill-section-bales-discount td:nth-child(7) { width: 18%; }
     td.price,
     td.numeric,
     .bill-total-amount {

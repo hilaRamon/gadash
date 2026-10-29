@@ -14,6 +14,7 @@ export type BaleOrderTrackingInput = {
   pricingForm: BaleOrderPricingForm;
   pricePerTon: number;
   pricePerUnit: number;
+  isDiscount?: boolean;
   weight?: number | null;
   transportPrice?: number | null;
   weighed?: boolean;

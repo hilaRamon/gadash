@@ -14,7 +14,11 @@ import { suppliersSeedData } from "@/data/suppliersSeed";
 import { materialPurchaseTrackingsSeedData } from "@/data/materialPurchaseTrackingsSeed";
 import { materialUsageTrackingsSeedData } from "@/data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "@/schema/types";
-import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "@/lib/baleOrderPricing";
+import {
+  calcBaleOrderFinalPrice,
+  isByWeightPricing,
+  resolveBaleOrderPrices,
+} from "@/lib/baleOrderPricing";
 import type {
   ListCollectionParams,
   PaginatedResult,
@@ -315,6 +319,10 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerUnit,
     finalPrice,
     weighed: row.weighed === true,
+    isDiscount: row.isDiscount === true,
+    priceBeforeDiscount: isByWeightPricing(row.pricingForm)
+      ? Number(bale?.pricePerTon ?? 0)
+      : Number(bale?.pricePerUnit ?? 0),
   };
 }
 
@@ -847,7 +855,39 @@ async function updateMock(
     return enrichFuelOperationTrackingRow(store[index]);
   }
   if (collection === "baleOrderTrackings") {
-    return enrichBaleOrderTrackingRow(store[index]);
+    const row = store[index];
+    delete row.discountType;
+    delete row.discountValue;
+    const baleChanged =
+      body.bale != null && String(body.bale) !== String(previousRow.bale ?? "");
+    const hasDiscountRequest =
+      Object.prototype.hasOwnProperty.call(body, "discountType") ||
+      Object.prototype.hasOwnProperty.call(body, "discountValue");
+    const bale = balesSeedData.find(
+      (item) => String(item._id) === String(row.bale ?? ""),
+    );
+    if (baleChanged && bale) {
+      if (!Object.prototype.hasOwnProperty.call(body, "pricePerTon")) {
+        row.pricePerTon = Number(bale.pricePerTon ?? 0);
+      }
+      if (!Object.prototype.hasOwnProperty.call(body, "pricePerUnit")) {
+        row.pricePerUnit = Number(bale.pricePerUnit ?? 0);
+      }
+      row.isDiscount = false;
+    } else if (hasDiscountRequest) {
+      const byWeight = isByWeightPricing(row.pricingForm);
+      const catalog = Number(byWeight ? bale?.pricePerTon : bale?.pricePerUnit) || 0;
+      if (!(catalog > 0)) {
+        throw new Error("אין מחיר נוכחי, לא ניתן לתת הנחה");
+      }
+      row[byWeight ? "pricePerTon" : "pricePerUnit"] = calcMockDiscountedUnitCost(
+        catalog,
+        body.discountType,
+        body.discountValue,
+      );
+      row.isDiscount = true;
+    }
+    return enrichBaleOrderTrackingRow(row);
   }
   if (collection === "contractorTrackings") {
     return enrichContractorTrackingRow(store[index]);

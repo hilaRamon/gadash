@@ -57,15 +57,19 @@ const Table = styled.table<{ $previewMode?: boolean }>`
     ${({ $previewMode }) =>
       $previewMode &&
       css`
+        white-space: normal;
+        overflow-wrap: normal;
+        word-break: keep-all;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       `}
   }
 
   tbody td {
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: ${({ $previewMode }) =>
+      $previewMode ? "normal" : "anywhere"};
+    word-break: ${({ $previewMode }) =>
+      $previewMode ? "keep-all" : "normal"};
     overflow: visible;
     vertical-align: top;
   }
