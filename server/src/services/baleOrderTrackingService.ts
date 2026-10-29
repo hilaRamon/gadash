@@ -66,6 +66,47 @@ function parseWeighed(value: unknown): boolean {
   throw new Error("נשקל לא תקין");
 }
 
+function parseIsDiscount(value: unknown): boolean {
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  throw new Error("הנחה לא תקינה");
+}
+
+function calcDiscountedPrice(
+  catalogPrice: number,
+  discountType: unknown,
+  discountValue: unknown,
+): number {
+  if (!Number.isFinite(catalogPrice) || catalogPrice <= 0) {
+    throw new Error("אין מחיר נוכחי, לא ניתן לתת הנחה");
+  }
+  if (discountType !== "amount" && discountType !== "percent") {
+    throw new Error("סוג הנחה לא תקין");
+  }
+  const value = Number(discountValue);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("סכום הנחה לא תקין");
+  }
+  if (discountType === "percent" && value > 100) {
+    throw new Error("אחוז הנחה לא תקין");
+  }
+  const next =
+    discountType === "amount"
+      ? catalogPrice - value
+      : catalogPrice * (1 - value / 100);
+  if (!Number.isFinite(next) || next < 0) {
+    throw new Error("ההנחה גדולה ממחיר היחידה");
+  }
+  return Number(next.toFixed(2));
+}
+
+function refId(value: unknown): string {
+  if (value && typeof value === "object" && "_id" in value) {
+    return String((value as { _id?: unknown })._id ?? "");
+  }
+  return value == null ? "" : String(value);
+}
+
 function parseWasCharged(value: unknown): boolean {
   if (value == null || value === "") return false;
   if (typeof value === "boolean") return value;
@@ -200,6 +241,9 @@ async function buildTrackingPatch(
   if (mustHave("notes")) {
     patch.notes = parseNotes(body.notes);
   }
+  if (Object.prototype.hasOwnProperty.call(body, "isDiscount")) {
+    patch.isDiscount = parseIsDiscount(body.isDiscount);
+  }
 
   return patch;
 }
@@ -278,8 +322,11 @@ export const baleOrderTrackingService = {
     id: string,
     body: Record<string, unknown>,
   ): Promise<ApiDocument> {
+    const hasDiscountRequest =
+      Object.prototype.hasOwnProperty.call(body, "discountType") ||
+      Object.prototype.hasOwnProperty.call(body, "discountValue");
     const patch = await buildTrackingPatch(body);
-    if (Object.keys(patch).length === 0) {
+    if (Object.keys(patch).length === 0 && !hasDiscountRequest) {
       throw new Error("לא נמצאו שדות לעדכון");
     }
 
@@ -301,6 +348,9 @@ export const baleOrderTrackingService = {
       }
     }
 
+    const existingBaleId = refId((existing as { bale?: unknown }).bale);
+    const baleChanged =
+      patch.bale != null && String(patch.bale) !== existingBaleId;
     const pricingForm =
       patch.pricingForm ??
       inferPricingFormFromDoc(
@@ -308,6 +358,23 @@ export const baleOrderTrackingService = {
       );
     const withPricing = applyPricingFormSideEffects(patch, pricingForm);
     Object.assign(patch, withPricing);
+
+    if (baleChanged) {
+      patch.isDiscount = false;
+    } else if (hasDiscountRequest) {
+      const catalogBaleId =
+        patch.bale ?? (await resolveBaleObjectId(existingBaleId));
+      const catalog = await getBaleDefaultPrices(catalogBaleId);
+      const byWeight = isByWeightPricing(pricingForm);
+      const discounted = calcDiscountedPrice(
+        byWeight ? catalog.pricePerTon : catalog.pricePerUnit,
+        body.discountType,
+        body.discountValue,
+      );
+      if (byWeight) patch.pricePerTon = discounted;
+      else patch.pricePerUnit = discounted;
+      patch.isDiscount = true;
+    }
 
     const updated = await baleOrderTrackingRepository.update(id, patch);
     if (!updated) {

@@ -45,6 +45,9 @@ function compareByDate(a: CustomerBillLine, b: CustomerBillLine): number {
 function operationLine(row: ApiDocument): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const unitCost = Number(row.unitCost ?? 0);
+  const isDiscount = row.isDiscount === true;
+  const beforeDiscount = Number(row.priceBeforeDiscount ?? 0);
+  const shownUnit = isDiscount ? beforeDiscount : unitCost;
   return {
     date: formatBillDate(row.date),
     description: String(row.operationName ?? ""),
@@ -55,7 +58,11 @@ function operationLine(row: ApiDocument): CustomerBillLine {
         ? formatNumber(amountValue)
         : "",
     unitPrice:
-      Number.isFinite(unitCost) && unitCost > 0 ? formatNumber(unitCost) : "",
+      Number.isFinite(shownUnit) && shownUnit > 0 ? formatNumber(shownUnit) : "",
+    unitPriceAfterDiscount:
+      isDiscount && Number.isFinite(unitCost) && unitCost >= 0
+        ? formatNumber(unitCost)
+        : "",
     price: Number(row.finalPrice ?? 0),
     priceFormatted: formatWholeNumber(row.finalPrice ?? 0),
   };
@@ -115,29 +122,30 @@ function baleLine(row: ApiDocument): CustomerBillLine {
   const byWeight = isByWeightPricing(row.pricingForm);
 
   let amount = "";
-  let unitPrice = "";
 
   if (byWeight) {
     if (Number.isFinite(weight) && weight > 0) {
       amount = `טון ${formatNumber(weight)} `;
     }
-    if (Number.isFinite(pricePerTon) && pricePerTon > 0) {
-      unitPrice = formatNumber(pricePerTon);
-    }
-  } else {
-    if (Number.isFinite(quantity) && quantity > 0) {
-      amount = `יחידות ${formatNumber(quantity)}`;
-    }
-    if (Number.isFinite(pricePerUnit) && pricePerUnit > 0) {
-      unitPrice = formatNumber(pricePerUnit);
-    }
+  } else if (Number.isFinite(quantity) && quantity > 0) {
+    amount = `יחידות ${formatNumber(quantity)}`;
   }
+
+  const savedUnit = byWeight ? pricePerTon : pricePerUnit;
+  const isDiscount = row.isDiscount === true;
+  const beforeDiscount = Number(row.priceBeforeDiscount ?? 0);
+  const shownUnit = isDiscount ? beforeDiscount : savedUnit;
 
   return {
     date: formatBillDate(row.date),
     description: String(row.baleName ?? ""),
     amount,
-    unitPrice,
+    unitPrice:
+      Number.isFinite(shownUnit) && shownUnit > 0 ? formatNumber(shownUnit) : "",
+    unitPriceAfterDiscount:
+      isDiscount && Number.isFinite(savedUnit) && savedUnit >= 0
+        ? formatNumber(savedUnit)
+        : "",
     transportPrice:
       Number.isFinite(transport) && transport > 0
         ? formatNumber(transport)
@@ -174,20 +182,30 @@ export function buildCustomerBillDocument(input: {
   baleOrders: ApiDocument[];
 }): CustomerBillDocument {
   const showPlots = input.showPlots !== false;
-  const operationsSection = buildSection("פעולות", "operations", [
+  const showDiscountColumn = input.operations.some((row) => row.isDiscount === true);
+  const builtOperationsSection = buildSection("פעולות", "operations", [
     ...input.operations.map(operationLine),
     ...input.contractors.map(contractorLine),
   ]);
+  const operationsSection = builtOperationsSection
+    ? { ...builtOperationsSection, showDiscountColumn }
+    : null;
   const materialsSection = buildSection(
     "חומרים",
     "quantityWithUnitPrice",
     input.materialUsage.map((row) => materialLine(row, showPlots)),
   );
-  const balesSection = buildSection(
+  const builtBalesSection = buildSection(
     "הזמנת חבילות",
     "quantityWithUnitPrice",
     input.baleOrders.map(baleLine),
   );
+  const balesSection = builtBalesSection
+    ? {
+        ...builtBalesSection,
+        showDiscountColumn: input.baleOrders.some((row) => row.isDiscount === true),
+      }
+    : null;
 
   const sections = [operationsSection, materialsSection, balesSection].filter(
     (section): section is CustomerBillSection => section != null,

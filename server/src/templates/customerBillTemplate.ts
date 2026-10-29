@@ -13,15 +13,20 @@ function escapeHtml(value: string): string {
 function renderOperationsRow(
   line: CustomerBillSection['lines'][number],
   showPlots: boolean,
+  showDiscountColumn: boolean,
 ): string {
   const plotCell = showPlots ? `
       <td>${escapeHtml(line.plotName ?? '')}</td>` : '';
+  const afterCell = showDiscountColumn
+    ? `
+      <td class="price">${escapeHtml(line.unitPriceAfterDiscount ?? '')}</td>`
+    : '';
   return `
     <tr>
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>${plotCell}
       <td>${escapeHtml(line.pricingForm ?? '')}</td>
-      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>
+      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${afterCell}
       <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
@@ -30,7 +35,12 @@ function renderOperationsRow(
 function renderQuantityWithUnitPriceRow(
   line: CustomerBillSection['lines'][number],
   showTransport: boolean,
+  showDiscountColumn: boolean,
 ): string {
+  const afterCell = showDiscountColumn
+    ? `
+      <td class="price">${escapeHtml(line.unitPriceAfterDiscount ?? '')}</td>`
+    : '';
   const transportCell = showTransport
     ? `
       <td class="price">${escapeHtml(line.transportPrice ?? '')}</td>`
@@ -40,7 +50,7 @@ function renderQuantityWithUnitPriceRow(
       <td>${escapeHtml(line.date)}</td>
       <td>${escapeHtml(line.description)}</td>
       <td class="numeric">${escapeHtml(line.amount ?? '')}</td>
-      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${transportCell}
+      <td class="price">${escapeHtml(line.unitPrice ?? '')}</td>${afterCell}${transportCell}
       <td class="price">${escapeHtml(line.priceFormatted)}</td>
     </tr>`;
 }
@@ -52,14 +62,19 @@ function isBaleSection(section: CustomerBillSection): boolean {
 function renderSection(section: CustomerBillSection, showPlots: boolean): string {
   const isOperations = section.layout === 'operations';
   const showTransport = isBaleSection(section);
+  const showDiscountColumn = section.showDiscountColumn === true && (isOperations || showTransport);
   const rows = section.lines
     .map((line) =>
       isOperations
-        ? renderOperationsRow(line, showPlots)
-        : renderQuantityWithUnitPriceRow(line, showTransport),
+        ? renderOperationsRow(line, showPlots, showDiscountColumn)
+        : renderQuantityWithUnitPriceRow(line, showTransport, showDiscountColumn),
     )
     .join('');
-  const colspan = isOperations ? (showPlots ? 6 : 5) : showTransport ? 5 : 4;
+  const colspan = isOperations
+    ? (showPlots ? 6 : 5) + (showDiscountColumn ? 1 : 0)
+    : showTransport
+      ? 5 + (showDiscountColumn ? 1 : 0)
+      : 4;
 
   const plotHeader = showPlots
     ? `
@@ -69,13 +84,17 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
     ? `
             <th>הובלה</th>`
     : '';
+  const afterHeader = showDiscountColumn
+    ? `
+            <th>מחיר אחרי הנחה</th>`
+    : '';
   const header = isOperations
     ? `
           <tr>
             <th>תאריך</th>
             <th>תיאור</th>${plotHeader}
             <th>צורת תמחור</th>
-            <th>מחיר ליחידה</th>
+            <th>מחיר ליחידה</th>${afterHeader}
             <th>כמות</th>
             <th>מחיר</th>
           </tr>`
@@ -85,7 +104,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
             <th>תאריך</th>
             <th>תיאור</th>
             <th>כמות/משקל</th>
-            <th>מחיר ליחידה/טון</th>${transportHeader}
+            <th>מחיר ליחידה/טון</th>${afterHeader}${transportHeader}
             <th>מחיר</th>
           </tr>`
       : `
@@ -97,11 +116,16 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
             <th>מחיר</th>
           </tr>`;
 
-  const operationsClass = showPlots
-    ? 'bill-section-operations'
-    : 'bill-section-operations-no-plot';
+  const operationsClass = [
+    showPlots ? 'bill-section-operations' : 'bill-section-operations-no-plot',
+    showDiscountColumn ? 'bill-section-operations-discount' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const quantityClass = showTransport
-    ? 'bill-section-bales'
+    ? ['bill-section-bales', showDiscountColumn ? 'bill-section-bales-discount' : '']
+        .filter(Boolean)
+        .join(' ')
     : 'bill-section-quantity';
 
   return `

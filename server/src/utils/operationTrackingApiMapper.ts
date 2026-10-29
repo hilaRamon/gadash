@@ -130,6 +130,7 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
   const dateValue = doc.date == null ? new Date() : new Date(String(doc.date));
   const unitCost = resolveTrackingUnitCost(doc, operationRaw);
   const amount = resolveTrackingAmount(doc, operationRaw, plotRaw);
+  const catalogCost = Number(operationRaw?.currentCost ?? 0);
 
   return {
     ...base,
@@ -146,6 +147,8 @@ export function operationTrackingToApiDocument(doc: Record<string, unknown>): Ap
     employee: employee.id,
     employeeName: employee.name,
     unitCost,
+    isDiscount: doc.isDiscount === true,
+    priceBeforeDiscount: Number.isFinite(catalogCost) ? catalogCost : 0,
     amount,
     pricingForm:
       operationRaw && typeof operationRaw === 'object'

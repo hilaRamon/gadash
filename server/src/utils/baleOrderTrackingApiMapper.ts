@@ -1,5 +1,9 @@
 import type { ApiDocument } from '../types/apiDocument';
-import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from './baleOrderPricing';
+import {
+  calcBaleOrderFinalPrice,
+  isByWeightPricing,
+  resolveBaleOrderPrices,
+} from './baleOrderPricing';
 import { toApiDocument } from './toApiDocument';
 
 type PopulatedRef = {
@@ -21,6 +25,17 @@ function toRefParts(value: unknown): { id: string; name: string } {
     id: value == null ? '' : String(value),
     name: '',
   };
+}
+
+function catalogPriceBeforeDiscount(
+  pricingForm: unknown,
+  bale: PopulatedRef | null,
+): number {
+  const raw = isByWeightPricing(pricingForm)
+    ? bale?.pricePerTon
+    : bale?.pricePerUnit;
+  const price = Number(raw ?? 0);
+  return Number.isFinite(price) ? price : 0;
 }
 
 function toBalePrices(value: unknown): PopulatedRef | null {
@@ -60,6 +75,8 @@ export function baleOrderTrackingToApiDocument(doc: Record<string, unknown>): Ap
     pricingForm: doc.pricingForm,
     pricePerTon,
     pricePerUnit,
+    isDiscount: doc.isDiscount === true,
+    priceBeforeDiscount: catalogPriceBeforeDiscount(doc.pricingForm, baleRef),
     transportPrice: doc.transportPrice,
     finalPrice,
     weighed: doc.weighed === true,

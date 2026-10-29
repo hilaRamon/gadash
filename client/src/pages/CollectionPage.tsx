@@ -25,6 +25,11 @@ import {
 import { DataTable } from "@/components/collection/DataTable";
 import { Pagination } from "@/components/collection/Pagination";
 import { CollectionFormModal } from "@/components/collection/CollectionFormModal";
+import {
+  DiscountedUnitCostWarning,
+  requestDiscountedUnitCostEdit,
+  type DiscountedUnitCostEdit,
+} from "@/components/collection/DiscountedUnitCostWarning";
 import { ConfirmDialog } from "@/components/collection/ConfirmDialog";
 import { TransportTrackingPageExtras } from "@/components/transport/TransportTrackingPageExtras";
 import { TransportGlobalChargePageExtras } from "@/components/transport/TransportGlobalChargePageExtras";
@@ -126,6 +131,8 @@ function CollectionPageContent({
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingUnitCostEdit, setPendingUnitCostEdit] =
+    useState<DiscountedUnitCostEdit | null>(null);
   const [exporting, setExporting] = useState(false);
   const [viewingInvoiceRow, setViewingInvoiceRow] =
     useState<CollectionDocument | null>(null);
@@ -278,12 +285,26 @@ function CollectionPageContent({
   const handleCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
       if (isChargedTracking(row)) return;
+      if (
+        schema.collection === "operationsTrackings" &&
+        key === "unitCost" &&
+        row.isDiscount === true
+      ) {
+        const unitCost = Number(value);
+        if (!Number.isFinite(unitCost)) return;
+        await requestDiscountedUnitCostEdit(
+          setPendingUnitCostEdit,
+          row._id,
+          unitCost,
+        );
+        return;
+      }
       await updateMutation.mutateAsync({
         id: row._id,
         body: { [key]: value },
       });
     },
-    [updateMutation],
+    [schema.collection, updateMutation],
   );
 
   const handleExportExcel = useCallback(async () => {
@@ -560,6 +581,7 @@ function CollectionPageContent({
         />
       </section>
 
+      <DiscountedUnitCostWarning pending={pendingUnitCostEdit} />
       <CollectionFormModal
         open={modalOpen}
         schema={schema}

@@ -14,7 +14,11 @@ import { suppliersSeedData } from "@/data/suppliersSeed";
 import { materialPurchaseTrackingsSeedData } from "@/data/materialPurchaseTrackingsSeed";
 import { materialUsageTrackingsSeedData } from "@/data/materialUsageTrackingsSeed";
 import type { CollectionDocument } from "@/schema/types";
-import { calcBaleOrderFinalPrice, resolveBaleOrderPrices } from "@/lib/baleOrderPricing";
+import {
+  calcBaleOrderFinalPrice,
+  isByWeightPricing,
+  resolveBaleOrderPrices,
+} from "@/lib/baleOrderPricing";
 import type {
   ListCollectionParams,
   PaginatedResult,
@@ -195,6 +199,31 @@ function resolveOperationTrackingAmount(
   });
 }
 
+function calcMockDiscountedUnitCost(
+  currentCost: number,
+  discountType: unknown,
+  discountValue: unknown,
+): number {
+  if (discountType !== "amount" && discountType !== "percent") {
+    throw new Error("סוג הנחה לא תקין");
+  }
+  const value = Number(discountValue);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("סכום הנחה לא תקין");
+  }
+  if (discountType === "percent" && value > 100) {
+    throw new Error("אחוז הנחה לא תקין");
+  }
+  const next =
+    discountType === "amount"
+      ? currentCost - value
+      : currentCost * (1 - value / 100);
+  if (!Number.isFinite(next) || next < 0) {
+    throw new Error("ההנחה גדולה ממחיר היחידה");
+  }
+  return Number(next.toFixed(2));
+}
+
 function resolveOperationTrackingUnitCost(
   row: Record<string, unknown>,
   operation: Record<string, unknown> | null | undefined,
@@ -251,6 +280,8 @@ function enrichOperationTrackingRow(
     plotName: plot ? String(plot.name ?? "") : null,
     employeeName: String(employee?.name ?? ""),
     unitCost,
+    isDiscount: row.isDiscount === true,
+    priceBeforeDiscount: Number(operation?.currentCost ?? 0),
     amount,
     pricingForm: String(operation?.pricingForm ?? "דונם"),
     finalPrice: calcOperationTrackingFinalPrice(row),
@@ -288,6 +319,10 @@ function enrichBaleOrderTrackingRow(row: CollectionDocument): CollectionDocument
     pricePerUnit,
     finalPrice,
     weighed: row.weighed === true,
+    isDiscount: row.isDiscount === true,
+    priceBeforeDiscount: isByWeightPricing(row.pricingForm)
+      ? Number(bale?.pricePerTon ?? 0)
+      : Number(bale?.pricePerUnit ?? 0),
   };
 }
 
@@ -755,6 +790,8 @@ async function updateMock(
   }
   if (collection === "operationsTrackings") {
     const row = store[index];
+    delete row.discountType;
+    delete row.discountValue;
     const operationChanged =
       body.operation != null &&
       String(body.operation) !== String(previousRow.operation ?? "");
@@ -763,6 +800,9 @@ async function updateMock(
       String(body.plot ?? "") !== String(previousRow.plot ?? "");
     const timesChanged = body.startTime != null || body.endTime != null;
     const amountExplicitlySent = Object.prototype.hasOwnProperty.call(body, "amount");
+    const hasDiscountRequest =
+      Object.prototype.hasOwnProperty.call(body, "discountType") ||
+      Object.prototype.hasOwnProperty.call(body, "discountValue");
 
     const operation = operationsSeedData.find(
       (item) => String(item._id) === String(row.operation ?? ""),
@@ -770,6 +810,17 @@ async function updateMock(
 
     if (operationChanged && operation) {
       row.unitCost = Number(operation.currentCost ?? 0);
+      row.isDiscount = false;
+    } else if (hasDiscountRequest) {
+      if (String(operation?.operationType ?? "") === "מנהלה") {
+        throw new Error("לא ניתן להוסיף הנחה לפעולת מנהלה");
+      }
+      row.unitCost = calcMockDiscountedUnitCost(
+        Number(operation?.currentCost ?? 0),
+        body.discountType,
+        body.discountValue,
+      );
+      row.isDiscount = true;
     }
 
     const plotId = row.plot;
@@ -804,7 +855,39 @@ async function updateMock(
     return enrichFuelOperationTrackingRow(store[index]);
   }
   if (collection === "baleOrderTrackings") {
-    return enrichBaleOrderTrackingRow(store[index]);
+    const row = store[index];
+    delete row.discountType;
+    delete row.discountValue;
+    const baleChanged =
+      body.bale != null && String(body.bale) !== String(previousRow.bale ?? "");
+    const hasDiscountRequest =
+      Object.prototype.hasOwnProperty.call(body, "discountType") ||
+      Object.prototype.hasOwnProperty.call(body, "discountValue");
+    const bale = balesSeedData.find(
+      (item) => String(item._id) === String(row.bale ?? ""),
+    );
+    if (baleChanged && bale) {
+      if (!Object.prototype.hasOwnProperty.call(body, "pricePerTon")) {
+        row.pricePerTon = Number(bale.pricePerTon ?? 0);
+      }
+      if (!Object.prototype.hasOwnProperty.call(body, "pricePerUnit")) {
+        row.pricePerUnit = Number(bale.pricePerUnit ?? 0);
+      }
+      row.isDiscount = false;
+    } else if (hasDiscountRequest) {
+      const byWeight = isByWeightPricing(row.pricingForm);
+      const catalog = Number(byWeight ? bale?.pricePerTon : bale?.pricePerUnit) || 0;
+      if (!(catalog > 0)) {
+        throw new Error("אין מחיר נוכחי, לא ניתן לתת הנחה");
+      }
+      row[byWeight ? "pricePerTon" : "pricePerUnit"] = calcMockDiscountedUnitCost(
+        catalog,
+        body.discountType,
+        body.discountValue,
+      );
+      row.isDiscount = true;
+    }
+    return enrichBaleOrderTrackingRow(row);
   }
   if (collection === "contractorTrackings") {
     return enrichContractorTrackingRow(store[index]);

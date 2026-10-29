@@ -13,6 +13,7 @@ const operationTrackingSchema = new Schema(
     wasCharged: { type: Boolean, default: false },
     amount: { type: Number, default: null, min: 0 },
     unitCost: { type: Number, default: null, min: 0 },
+    isDiscount: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

@@ -441,6 +441,14 @@ export function applyOperationTrackingFieldChange(
           `מחיר ליחידה יעודכן לפי הפעולה החדשה (${formatNumber(Number(unitCost))})`,
         );
       }
+      const originalOperation = String(context.editingRow?.operation ?? "");
+      if (
+        context.editingRow?.isDiscount === true &&
+        originalOperation !== "" &&
+        value !== originalOperation
+      ) {
+        parts.push("ההנחה תוסר");
+      }
     }
 
     if (key === "plot") {
