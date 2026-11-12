@@ -12,10 +12,11 @@ export type OperationsSummaryRow = {
 
 export async function fetchOperationsSummary(
   season: number,
+  month?: string,
 ): Promise<OperationsSummaryRow[]> {
   const { data } = await api.get<{ rows: OperationsSummaryRow[] }>(
     '/api/summaries/operations',
-    { params: { season } },
+    { params: { season, ...(month ? { month } : {}) } },
   );
   return data.rows;
 }

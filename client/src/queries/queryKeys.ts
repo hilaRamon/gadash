@@ -44,8 +44,8 @@ export const monthlyReportKeys = {
 
 export const summaryKeys = {
   all: ['summaries'] as const,
-  operations: (season: number) =>
-    [...summaryKeys.all, 'operations', season] as const,
+  operations: (season: number, month?: string) =>
+    [...summaryKeys.all, 'operations', season, month ?? 'all'] as const,
 }
 
 export const invoiceKeys = {

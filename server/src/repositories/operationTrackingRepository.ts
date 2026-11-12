@@ -8,7 +8,10 @@ import {
   DUNAM_AMOUNT_MATCH_TOLERANCE,
   OPERATION_PRICING_BY_DUNAM,
 } from "../utils/operationTrackingPricing";
-import { buildSeasonDateQuery } from "../utils/seasonRange";
+import {
+  buildSeasonDateQuery,
+  buildSeasonMonthDateQuery,
+} from "../utils/seasonRange";
 
 export type OperationTrackingInput = {
   date: Date;
@@ -47,8 +50,18 @@ function resolvePopulatedCurrentCost(operation: unknown): number {
 }
 
 export const operationTrackingRepository = {
-  findAll(seasonYear?: number) {
-    const filter = seasonYear != null ? buildSeasonDateQuery(seasonYear) : {};
+  findAll(seasonYear?: number, month?: string) {
+    let filter: Record<string, unknown> = {};
+    if (seasonYear != null) {
+      if (month) {
+        // A month outside the season overlaps nothing, so match no documents.
+        filter = buildSeasonMonthDateQuery(seasonYear, month) ?? {
+          date: { $gte: new Date(1), $lte: new Date(0) },
+        };
+      } else {
+        filter = buildSeasonDateQuery(seasonYear);
+      }
+    }
     return OperationTrackingModel.find(filter)
       .populate(operationPopulate)
       .populate(plotPopulate)
