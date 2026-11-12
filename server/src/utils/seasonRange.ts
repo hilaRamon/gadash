@@ -1,4 +1,5 @@
 import { endOfDay, startOfDay } from './dateRange';
+import { parseMonth } from './monthRange';
 
 const SEASON_YEAR_PATTERN = /^20\d{2}$/;
 
@@ -47,6 +48,29 @@ export function buildSeasonDateQuery(seasonYear: number): {
 } {
   const { startDate, endDate } = getSeasonDateRange(seasonYear);
   return { date: { $gte: startDate, $lte: endDate } };
+}
+
+function intersectDateRanges(
+  a: { startDate: Date; endDate: Date },
+  b: { startDate: Date; endDate: Date },
+): { startDate: Date; endDate: Date } | null {
+  const startDate = a.startDate > b.startDate ? a.startDate : b.startDate;
+  const endDate = a.endDate < b.endDate ? a.endDate : b.endDate;
+  if (startDate.getTime() > endDate.getTime()) return null;
+  return { startDate, endDate };
+}
+
+/** Season range narrowed to one calendar month. Null when the month is outside the season. */
+export function buildSeasonMonthDateQuery(
+  seasonYear: number,
+  month: string,
+): { date: { $gte: Date; $lte: Date } } | null {
+  const overlap = intersectDateRanges(
+    getSeasonDateRange(seasonYear),
+    parseMonth(month),
+  );
+  if (!overlap) return null;
+  return { date: { $gte: overlap.startDate, $lte: overlap.endDate } };
 }
 
 export function collectionHasDateField(collection: string): boolean {

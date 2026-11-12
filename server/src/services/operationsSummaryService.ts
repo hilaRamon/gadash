@@ -88,8 +88,11 @@ function resolveAdminTrackingHours(row: {
 }
 
 export const operationsSummaryService = {
-  async getOperationsSummary(seasonYear: number): Promise<OperationsSummaryRow[]> {
-    const rows = await operationTrackingRepository.findAll(seasonYear);
+  async getOperationsSummary(
+    seasonYear: number,
+    month?: string,
+  ): Promise<OperationsSummaryRow[]> {
+    const rows = await operationTrackingRepository.findAll(seasonYear, month);
     const aggregated = new Map<string, OperationsSummaryRow>();
     let minalaHours = 0;
     let minalaCharge = 0;

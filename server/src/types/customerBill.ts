@@ -25,7 +25,6 @@ export type CustomerBillSection = {
 export type CustomerBillDocument = {
   customerName: string;
   billDate: string;
-  showPlots: boolean;
   sections: CustomerBillSection[];
   total: number;
   totalFormatted: string;

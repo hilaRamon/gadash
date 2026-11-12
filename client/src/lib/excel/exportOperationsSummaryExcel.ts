@@ -1,9 +1,11 @@
+import { formatReportMonth } from '@/api/monthlyReportApi';
 import { exportExcelRows, toExcelNumber } from './excelExport';
 import type { OperationsSummaryRow } from '@/api/operationsSummaryApi';
 
 export function exportOperationsSummaryExcel(
   rows: OperationsSummaryRow[],
   season: number,
+  month?: string,
 ): void {
   const headers = [
     'שם הפעולה',
@@ -25,6 +27,8 @@ export function exportOperationsSummaryExcel(
     rows: [headers, ...data],
     sheetName: 'סיכום משימות',
     filenameTitle: 'סיכום משימות',
-    filenameDetails: ['עונה', season],
+    filenameDetails: month
+      ? ['עונה', season, formatReportMonth(month)]
+      : ['עונה', season],
   });
 }

@@ -12,7 +12,7 @@ import { useUpdateDocument } from "@/queries/collections/useCollectionMutations"
 import { useCollectionList } from "@/queries/collections/useCollectionList";
 import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 import type { CollectionDocument, CollectionSchema } from "@/schema/types";
-import { countCustomerPlots, type UnbilledPreview } from "@/api/customerBillingApi";
+import type { UnbilledPreview } from "@/api/customerBillingApi";
 import { isByWeightPricing } from "@/lib/baleOrderPricing";
 import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
 import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
@@ -32,6 +32,14 @@ import {
   materialPreviewSchema,
   withoutPlotColumn,
 } from "./billingPreviewSchemas";
+
+function countCustomerPlots(
+  plots: CollectionDocument[],
+  customerId: string,
+): number {
+  if (!customerId) return 0;
+  return plots.filter((plot) => String(plot.customer ?? "") === customerId).length;
+}
 
 function collectPreviewRowIds(preview: UnbilledPreview): string[] {
   return [

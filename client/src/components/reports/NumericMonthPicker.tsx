@@ -23,8 +23,9 @@ export function NumericMonthPicker({
   allowEmpty = false,
   yearRange,
 }: NumericMonthPickerProps) {
-  const parsed = parseMonthValue(value);
-  const selectedYear = Number.isInteger(parsed.year) ? parsed.year : null;
+  const parsed = value ? parseMonthValue(value) : { year: NaN, month: NaN };
+  const selectedYear =
+    Number.isInteger(parsed.year) && parsed.year > 0 ? parsed.year : null;
   const selectedMonth =
     Number.isInteger(parsed.month) && parsed.month >= 1 && parsed.month <= 12
       ? parsed.month
