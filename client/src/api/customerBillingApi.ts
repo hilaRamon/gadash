@@ -65,19 +65,6 @@ function splitIncludedContractorRows(rows: CollectionDocument[]): {
   };
 }
 
-export function countCustomerPlots(
-  plots: CollectionDocument[],
-  customerId: string,
-): number {
-  if (!customerId) return 0;
-  return plots.filter((plot) => String(plot.customer ?? "") === customerId).length;
-}
-
-async function customerHasMultiplePlotsMock(customerId: string): Promise<boolean> {
-  const plots = await listCollection("plots");
-  return countCustomerPlots(plots, customerId) > 1;
-}
-
 export type CustomerWithUnbilled = {
   _id: string;
   name: string;
@@ -306,7 +293,6 @@ async function fetchCustomerBillPreviewMock(
   request: CustomerBillRequest,
   customerName: string,
 ): Promise<{ html: string }> {
-  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
   const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
     await Promise.all([
     listCollection("operationsTrackings"),
@@ -326,7 +312,6 @@ async function fetchCustomerBillPreviewMock(
 
   const bill = buildCustomerBillDocumentFromRows({
     customerName,
-    showPlots,
     operations: pickRowsByIds(operations, request.operationsTrackingIds),
     contractors: [
       ...pickRowsByIds(contractors, request.contractorTrackingIds),
@@ -376,13 +361,9 @@ async function fetchSavedBillingBillPreviewMock(
     toIdArray(billing.globalTransportAllocationIds),
   );
 
-  const showPlots = await customerHasMultiplePlotsMock(
-    String(billing.customer ?? ""),
-  );
   const bill = buildCustomerBillDocumentFromRows({
     customerName,
     billDate: formatStoredBillDate(billing.date),
-    showPlots,
     operations: pickRowsByIds(operations, toIdArray(billing.operationsTrackingIds)),
     contractors: [
       ...pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
@@ -444,11 +425,9 @@ async function createCustomerBillingMock(
   customerName: string,
   preview: UnbilledPreview,
 ) {
-  const showPlots = await customerHasMultiplePlotsMock(request.customerId);
   const bill = buildCustomerBillDocumentFromPreview({
     customerName,
     customerId: request.customerId,
-    showPlots,
     operations: preview.operations.filter((row) =>
       request.operationsTrackingIds.includes(row._id),
     ),

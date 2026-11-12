@@ -12,11 +12,8 @@ function escapeHtml(value: string): string {
 
 function renderOperationsRow(
   line: CustomerBillSection["lines"][number],
-  showPlots: boolean,
   showDiscountColumn: boolean,
 ): string {
-  const plotCell = showPlots ? `
-      <td>${escapeHtml(line.plotName ?? "")}</td>` : "";
   const afterCell = showDiscountColumn
     ? `
       <td class="price">${escapeHtml(line.unitPriceAfterDiscount ?? "")}</td>`
@@ -24,7 +21,7 @@ function renderOperationsRow(
   return `
     <tr>
       <td>${escapeHtml(line.date)}</td>
-      <td>${escapeHtml(line.description)}</td>${plotCell}
+      <td>${escapeHtml(line.description)}</td>
       <td>${escapeHtml(line.pricingForm ?? "")}</td>
       <td class="price">${escapeHtml(line.unitPrice ?? "")}</td>${afterCell}
       <td class="numeric">${escapeHtml(line.amount ?? "")}</td>
@@ -59,27 +56,23 @@ function isBaleSection(section: CustomerBillSection): boolean {
   return section.title === "הזמנת חבילות";
 }
 
-function renderSection(section: CustomerBillSection, showPlots: boolean): string {
+function renderSection(section: CustomerBillSection): string {
   const isOperations = section.layout === "operations";
   const showTransport = isBaleSection(section);
   const showDiscountColumn = section.showDiscountColumn === true && (isOperations || showTransport);
   const rows = section.lines
     .map((line) =>
       isOperations
-        ? renderOperationsRow(line, showPlots, showDiscountColumn)
+        ? renderOperationsRow(line, showDiscountColumn)
         : renderQuantityWithUnitPriceRow(line, showTransport, showDiscountColumn),
     )
     .join("");
   const colspan = isOperations
-    ? (showPlots ? 6 : 5) + (showDiscountColumn ? 1 : 0)
+    ? 5 + (showDiscountColumn ? 1 : 0)
     : showTransport
       ? 5 + (showDiscountColumn ? 1 : 0)
       : 4;
 
-  const plotHeader = showPlots
-    ? `
-            <th>חלקה</th>`
-    : "";
   const transportHeader = showTransport
     ? `
             <th>הובלה</th>`
@@ -92,7 +85,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
     ? `
           <tr>
             <th>תאריך</th>
-            <th>תיאור</th>${plotHeader}
+            <th>תיאור</th>
             <th>צורת תמחור</th>
             <th>מחיר ליחידה</th>${afterHeader}
             <th>כמות</th>
@@ -117,7 +110,7 @@ function renderSection(section: CustomerBillSection, showPlots: boolean): string
           </tr>`;
 
   const operationsClass = [
-    showPlots ? "bill-section-operations" : "bill-section-operations-no-plot",
+    "bill-section-operations-no-plot",
     showDiscountColumn ? "bill-section-operations-discount" : "",
   ]
     .filter(Boolean)
@@ -149,7 +142,7 @@ const billStyles = getBillStyles();
 
 function renderCustomerBillContent(bill: CustomerBillDocument): string {
   const sections = bill.sections
-    .map((section) => renderSection(section, bill.showPlots))
+    .map((section) => renderSection(section))
     .join("");
 
   return `<div class="bill">

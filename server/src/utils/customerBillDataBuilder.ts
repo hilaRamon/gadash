@@ -21,13 +21,6 @@ function todayBillDate(): string {
   return new Date().toLocaleDateString("he-IL");
 }
 
-function buildDescription(primary: string, secondary?: string | null): string {
-  const a = String(primary ?? "").trim();
-  const b = String(secondary ?? "").trim();
-  if (a && b) return `${a} — ${b}`;
-  return a || b;
-}
-
 function calcUnitPrice(finalPrice: number, amount: number): string {
   if (!Number.isFinite(amount) || amount === 0) return "";
   return formatNumber(finalPrice / amount);
@@ -93,7 +86,7 @@ function contractorLine(row: ApiDocument): CustomerBillLine {
   };
 }
 
-function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
+function materialLine(row: ApiDocument): CustomerBillLine {
   const amountValue = Number(row.amount ?? 0);
   const finalPrice = Number(row.finalPrice ?? 0);
   const amount =
@@ -102,10 +95,7 @@ function materialLine(row: ApiDocument, showPlots: boolean): CustomerBillLine {
       : "";
   return {
     date: formatBillDate(row.date),
-    description: buildDescription(
-      String(row.materialName ?? ""),
-      showPlots ? String(row.plotName ?? "") : "",
-    ),
+    description: String(row.materialName ?? ""),
     amount,
     unitPrice: calcUnitPrice(finalPrice, amountValue),
     price: finalPrice,
@@ -175,13 +165,11 @@ function buildSection(
 export function buildCustomerBillDocument(input: {
   customerName: string;
   billDate?: string;
-  showPlots?: boolean;
   operations: ApiDocument[];
   contractors: ApiDocument[];
   materialUsage: ApiDocument[];
   baleOrders: ApiDocument[];
 }): CustomerBillDocument {
-  const showPlots = input.showPlots !== false;
   const showDiscountColumn = input.operations.some((row) => row.isDiscount === true);
   const builtOperationsSection = buildSection("פעולות", "operations", [
     ...input.operations.map(operationLine),
@@ -193,7 +181,7 @@ export function buildCustomerBillDocument(input: {
   const materialsSection = buildSection(
     "חומרים",
     "quantityWithUnitPrice",
-    input.materialUsage.map((row) => materialLine(row, showPlots)),
+    input.materialUsage.map(materialLine),
   );
   const builtBalesSection = buildSection(
     "הזמנת חבילות",
@@ -215,7 +203,6 @@ export function buildCustomerBillDocument(input: {
   return {
     customerName: input.customerName,
     billDate: input.billDate ?? todayBillDate(),
-    showPlots,
     sections,
     total: Number(total.toFixed(2)),
     totalFormatted: formatNumber(total),
@@ -310,7 +297,6 @@ export function buildGlobalTransportBillDocument(input: {
   return {
     customerName: input.customerName,
     billDate: input.billDate ?? todayBillDate(),
-    showPlots: true,
     sections,
     total: Number(total.toFixed(2)),
     totalFormatted: formatNumber(total),
