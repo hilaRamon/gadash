@@ -11,9 +11,6 @@ const employeeMonthlyReportSchema = new Schema(
     overtime125Hours: { type: Number, default: 0, min: 0 },
     overtime150Hours: { type: Number, default: 0, min: 0 },
     totalDaysWorked: { type: Number, default: 0, min: 0 },
-    sickDays: { type: Number, default: 0, min: 0 },
-    vacationDays: { type: Number, default: 0, min: 0 },
-    reserveDays: { type: Number, default: 0, min: 0 },
     status: {
       type: String,
       enum: MONTHLY_REPORT_STATUSES,

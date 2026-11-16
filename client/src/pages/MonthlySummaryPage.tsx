@@ -75,9 +75,6 @@ export function MonthlySummaryPage() {
                   <th>שעות רגילות</th>
                   <th>125%</th>
                   <th>150%</th>
-                  <th>מחלה</th>
-                  <th>חופש</th>
-                  <th>מילואים</th>
                   <th>פירוט</th>
                 </tr>
               </thead>
@@ -90,9 +87,6 @@ export function MonthlySummaryPage() {
                     <td>{formatHours(row.regularHours)}</td>
                     <td>{formatHours(row.overtime125Hours)}</td>
                     <td>{formatHours(row.overtime150Hours)}</td>
-                    <td>{row.sickDays}</td>
-                    <td>{row.vacationDays}</td>
-                    <td>{row.reserveDays}</td>
                     <td>
                       <DetailLink
                         to={`/reports/employee-monthly?employeeId=${encodeURIComponent(row.employeeId)}&month=${encodeURIComponent(selectedMonth)}`}

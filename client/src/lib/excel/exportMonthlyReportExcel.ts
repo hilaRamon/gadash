@@ -16,9 +16,6 @@ export function exportMonthlyReportExcel(
     "שעות רגילות",
     "שעות נוספות 125%",
     "שעות נוספות 150%",
-    "ימי מחלה",
-    "ימי חופש",
-    "ימי מילואים",
   ];
 
   const data = rows.map((row) => [
@@ -28,9 +25,6 @@ export function exportMonthlyReportExcel(
     toExcelNumber(row.regularHours),
     toExcelNumber(row.overtime125Hours),
     toExcelNumber(row.overtime150Hours),
-    row.sickDays,
-    row.vacationDays,
-    row.reserveDays,
   ]);
 
   exportExcelRows({
@@ -85,9 +79,6 @@ export function exportEmployeeMonthlyReportExcel(
     [],
     ["סיכום חודשי"],
     ["ימי עבודה", workingDays],
-    ["ימי מחלה", report.absence.sickDays],
-    ["ימי חופש", report.absence.vacationDays],
-    ["ימי מילואים", report.absence.reserveDays],
     ['סה"כ שעות', toExcelNumber(totals.totalHours)],
     ["שעות רגילות", toExcelNumber(totals.regularHours)],
     ["שעות נוספות 125%", toExcelNumber(totals.overtime125Hours)],

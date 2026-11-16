@@ -5,7 +5,6 @@ import { ExportButton } from "@/components/collection/CollectionToolbar/ExportBu
 import {
   useEmployeeMonthlyReport,
   useMonthlySummary,
-  useUpdateMonthlyAbsence,
 } from "@/queries/monthlyReport/useMonthlyReport";
 import { NumericMonthPicker } from "@/components/reports/NumericMonthPicker";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -14,7 +13,6 @@ import {
   defaultSelectedMonth,
   formatHours,
   formatReportDate,
-  type AbsenceDays,
 } from "@/api/monthlyReportApi";
 import "./Page.css";
 
@@ -26,11 +24,6 @@ export function EmployeeMonthlyReportPage() {
   const [selectedMonth, setSelectedMonth] = useState(
     searchParams.get("month") ?? defaultSelectedMonth(),
   );
-  const [absenceDraft, setAbsenceDraft] = useState<AbsenceDays>({
-    sickDays: 0,
-    vacationDays: 0,
-    reserveDays: 0,
-  });
 
   const { data: workedEmployees = [], isLoading: employeesLoading } =
     useMonthlySummary(selectedMonth);
@@ -41,10 +34,6 @@ export function EmployeeMonthlyReportPage() {
     isError: reportError,
     error: reportErrorObj,
   } = useEmployeeMonthlyReport(selectedEmployeeId, selectedMonth);
-  const updateAbsence = useUpdateMonthlyAbsence(
-    selectedEmployeeId,
-    selectedMonth,
-  );
 
   useEffect(() => {
     const employeeId = searchParams.get("employeeId");
@@ -62,11 +51,6 @@ export function EmployeeMonthlyReportPage() {
       setSelectedEmployeeId("");
     }
   }, [workedEmployees, selectedEmployeeId, employeesLoading]);
-
-  useEffect(() => {
-    if (!report) return;
-    setAbsenceDraft(report.absence);
-  }, [report]);
 
   const workingDaysCount = report?.days.length ?? 0;
   const footerTotals = useMemo(() => {
@@ -97,18 +81,6 @@ export function EmployeeMonthlyReportPage() {
       })),
     [workedEmployees],
   );
-
-  const handleAbsenceBlur = () => {
-    if (!report) return;
-    if (
-      absenceDraft.sickDays === report.absence.sickDays &&
-      absenceDraft.vacationDays === report.absence.vacationDays &&
-      absenceDraft.reserveDays === report.absence.reserveDays
-    ) {
-      return;
-    }
-    updateAbsence.mutate(absenceDraft);
-  };
 
   return (
     <div className="page page-collection">
@@ -221,71 +193,9 @@ export function EmployeeMonthlyReportPage() {
               </ReportTable>
             </TableWrap>
 
-            <SummarySection>
-              <DaysSummaryTitle>סיכום ימים</DaysSummaryTitle>
-              <DaysSummaryTable>
-                <thead>
-                  <tr>
-                    <th>ימי עבודה</th>
-                    <th>מחלה</th>
-                    <th>חופש</th>
-                    <th>מילואים</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <ReadOnlyValue>{workingDaysCount}</ReadOnlyValue>
-                    </td>
-                    <td>
-                      <AbsenceInput
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={absenceDraft.sickDays}
-                        onChange={(event) =>
-                          setAbsenceDraft((prev) => ({
-                            ...prev,
-                            sickDays: Number(event.target.value) || 0,
-                          }))
-                        }
-                        onBlur={handleAbsenceBlur}
-                      />
-                    </td>
-                    <td>
-                      <AbsenceInput
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={absenceDraft.vacationDays}
-                        onChange={(event) =>
-                          setAbsenceDraft((prev) => ({
-                            ...prev,
-                            vacationDays: Number(event.target.value) || 0,
-                          }))
-                        }
-                        onBlur={handleAbsenceBlur}
-                      />
-                    </td>
-                    <td>
-                      <AbsenceInput
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={absenceDraft.reserveDays}
-                        onChange={(event) =>
-                          setAbsenceDraft((prev) => ({
-                            ...prev,
-                            reserveDays: Number(event.target.value) || 0,
-                          }))
-                        }
-                        onBlur={handleAbsenceBlur}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </DaysSummaryTable>
-            </SummarySection>
+            <WorkingDaysLine>
+              {`סה״כ ימי עבודה בחודש: ${workingDaysCount}`}
+            </WorkingDaysLine>
 
             <ActionsRow>
               <SummaryLink
@@ -372,52 +282,11 @@ const TotalCell = styled.td`
   background: var(--hover-bg);
 `;
 
-const SummarySection = styled.section`
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--card-bg);
-`;
-
-const DaysSummaryTitle = styled.h3`
-  margin: 0 0 0.75rem;
+const WorkingDaysLine = styled.p`
+  margin: 0 0 1.5rem;
   font-size: 1rem;
-`;
-
-const DaysSummaryTable = styled.table`
-  width: auto;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border-color);
-    text-align: center;
-  }
-
-  th {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-    background: var(--hover-bg);
-  }
-`;
-
-const ReadOnlyValue = styled.span`
-  display: inline-block;
-  min-width: 4.5rem;
   font-weight: 600;
-`;
-
-const AbsenceInput = styled.input`
-  width: 4.5rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--card-bg);
   color: var(--text-primary);
-  font: inherit;
-  text-align: center;
 `;
 
 const ActionsRow = styled.div`
