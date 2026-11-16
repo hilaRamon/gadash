@@ -1,43 +1,17 @@
 /**
  * Client API for customer billing: unbilled preview, bill HTML/PDF, create billing.
  *
- * When VITE_USE_MOCK !== "false", list/filter mock collections locally.
- * Otherwise all bill data comes from the server; the client only renders JSON/HTML.
+ * Bill data comes from the server; the client only renders JSON/HTML.
  *
  * UnbilledPreview is the payload for create-billing tables (four tracking arrays).
  * Bill preview/PDF use a separate endpoint that builds the invoice document server-side.
  */
 import api from "./api";
-import { createDocument, listCollection, updateDocument } from "./collectionApi";
-import {
-  buildCustomerBillDocumentFromPreview,
-  buildCustomerBillDocumentFromRows,
-} from "@/lib/customerBill/buildCustomerBillData";
 import { buildCustomerBillDownloadFilename } from "@/lib/customerBill/downloadFilename";
-import { renderCustomerBillPreviewHtml } from "@/lib/customerBill/renderCustomerBillHtml";
 import type { CustomerBillRequest } from "@/lib/customerBill/types";
 import type { CollectionDocument } from "@/schema/types";
-import {
-  isUnbilledBaleOrderForCustomer,
-  isUnbilledContractorForCustomer,
-  isUnbilledMaterialUsageForCustomer,
-  isUnbilledOperationForCustomer,
-  isUncharged,
-  isBillable,
-  isFuelOperation,
-} from "@/lib/unbilledTrackingFilters";
-import {
-  isTransportBillingRow,
-  isUnbilledTransportForCustomer,
-  transportTrackingToContractorBillingRow,
-} from "@/lib/transportTrackingBilling";
-import {
-  isGlobalTransportAllocationRow,
-  isUnbilledGlobalTransportAllocationForCustomer,
-  transportGlobalAllocationToContractorBillingRow,
-} from "@/lib/transportGlobalAllocationBilling";
-
-const useMock = import.meta.env.VITE_USE_MOCK !== "false";
+import { isTransportBillingRow } from "@/lib/transportTrackingBilling";
+import { isGlobalTransportAllocationRow } from "@/lib/transportGlobalAllocationBilling";
 
 function splitIncludedContractorRows(rows: CollectionDocument[]): {
   contractorTrackingIds: string[];
@@ -78,140 +52,7 @@ export type UnbilledPreview = {
   contractors: CollectionDocument[];
 };
 
-async function loadAllocationBillingRows(
-  allocationIds?: string[],
-): Promise<CollectionDocument[]> {
-  const [allocations, charges] = await Promise.all([
-    listCollection("transportGlobalAllocations"),
-    listCollection("transportGlobalCharges"),
-  ]);
-  const chargeById = new Map(
-    charges.map((charge) => [String(charge._id), charge]),
-  );
-  const idSet = allocationIds ? new Set(allocationIds) : null;
-
-  return allocations
-    .filter((row) => (idSet == null ? true : idSet.has(row._id)))
-    .map((row) => {
-      const charge = chargeById.get(String(row.globalTransportChargeId ?? ""));
-      return transportGlobalAllocationToContractorBillingRow(
-        row,
-        Number(charge?.pricePerDunam ?? 0),
-        charge?.executedAt,
-      );
-    });
-}
-
-/** Mock: load all trackings from in-memory store and filter by customer + uncharged rules. */
-async function fetchUnbilledPreviewMock(
-  customerId: string,
-): Promise<UnbilledPreview> {
-  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
-    await Promise.all([
-    listCollection("operationsTrackings"),
-    listCollection("materialUsageTrackings"),
-    listCollection("baleOrderTrackings"),
-    listCollection("contractorTrackings"),
-    listCollection("transportTrackings"),
-  ]);
-
-  const transportRows = transportTrackings
-    .filter((row) => isUnbilledTransportForCustomer(row, customerId))
-    .map(transportTrackingToContractorBillingRow);
-  const allocationRows = (await loadAllocationBillingRows()).filter((row) =>
-    isUnbilledGlobalTransportAllocationForCustomer(row, customerId),
-  );
-
-  return {
-    operations: operations.filter((row) =>
-      isUnbilledOperationForCustomer(row, customerId),
-    ),
-    materialUsage: materialUsage.filter((row) =>
-      isUnbilledMaterialUsageForCustomer(row, customerId),
-    ),
-    baleOrders: baleOrders.filter((row) =>
-      isUnbilledBaleOrderForCustomer(row, customerId),
-    ),
-    contractors: [
-      ...contractors.filter((row) =>
-        isUnbilledContractorForCustomer(row, customerId),
-      ),
-      ...transportRows,
-      ...allocationRows,
-    ],
-  };
-}
-
-async function fetchCustomersWithUnbilledMock(): Promise<CustomerWithUnbilled[]> {
-  const [operations, materialUsage, baleOrders, contractors, transportTrackings, allocations, customers] =
-    await Promise.all([
-      listCollection("operationsTrackings"),
-      listCollection("materialUsageTrackings"),
-      listCollection("baleOrderTrackings"),
-      listCollection("contractorTrackings"),
-      listCollection("transportTrackings"),
-      listCollection("transportGlobalAllocations"),
-      listCollection("customers"),
-    ]);
-
-  const customerIds = new Set<string>();
-
-  for (const row of baleOrders) {
-    if (isUncharged(row) && row.customer) {
-      customerIds.add(String(row.customer));
-    }
-  }
-
-  for (const row of operations) {
-    if (
-      isUncharged(row) &&
-      isBillable(row) &&
-      row.plot != null &&
-      row.plot !== "" &&
-      !isFuelOperation(row)
-    ) {
-      const id = String(row.customer ?? "");
-      if (id) customerIds.add(id);
-    }
-  }
-
-  for (const row of materialUsage) {
-    if (isUncharged(row) && isBillable(row)) {
-      const id = String(row.customer ?? "");
-      if (id) customerIds.add(id);
-    }
-  }
-
-  for (const row of contractors) {
-    if (isUncharged(row)) {
-      const id = String(row.customer ?? "");
-      if (id) customerIds.add(id);
-    }
-  }
-
-  for (const row of transportTrackings) {
-    if (isUncharged(row) && row.customer) {
-      const id = String(row.customer);
-      if (isUnbilledTransportForCustomer(row, id)) {
-        customerIds.add(id);
-      }
-    }
-  }
-
-  for (const row of allocations) {
-    if (isUncharged(row) && row.customer) {
-      customerIds.add(String(row.customer));
-    }
-  }
-
-  return customers
-    .filter((c) => customerIds.has(c._id))
-    .map((c) => ({ _id: c._id, name: String(c.name ?? "") }))
-    .sort((a, b) => a.name.localeCompare(b.name, "he"));
-}
-
 export async function fetchCustomersWithUnbilled(): Promise<CustomerWithUnbilled[]> {
-  if (useMock) return fetchCustomersWithUnbilledMock();
   const { data } = await api.get<{ customers: CustomerWithUnbilled[] }>(
     "/api/customerBillingTrackings/customers-with-unbilled",
   );
@@ -230,7 +71,6 @@ export async function fetchUnbilledPreview(
       contractors: [],
     };
   }
-  if (useMock) return fetchUnbilledPreviewMock(customerId);
   const { data } = await api.get<UnbilledPreview>(
     "/api/customerBillingTrackings/unbilled-preview",
     { params: { customerId } },
@@ -279,129 +119,21 @@ export function hasIncludedBillItems(request: CustomerBillRequest): boolean {
   );
 }
 
-function pickRowsByIds(
-  rows: CollectionDocument[],
-  ids: string[],
-): CollectionDocument[] {
-  if (ids.length === 0) return [];
-  const idSet = new Set(ids);
-  return rows.filter((row) => idSet.has(row._id));
-}
-
-/** Mock only: build invoice HTML from fresh collection rows (not cached preview). */
-async function fetchCustomerBillPreviewMock(
-  request: CustomerBillRequest,
-  customerName: string,
-): Promise<{ html: string }> {
-  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
-    await Promise.all([
-    listCollection("operationsTrackings"),
-    listCollection("materialUsageTrackings"),
-    listCollection("baleOrderTrackings"),
-    listCollection("contractorTrackings"),
-    listCollection("transportTrackings"),
-  ]);
-
-  const transportRows = pickRowsByIds(
-    transportTrackings,
-    request.transportTrackingIds,
-  ).map(transportTrackingToContractorBillingRow);
-  const allocationRows = await loadAllocationBillingRows(
-    request.globalTransportAllocationIds,
-  );
-
-  const bill = buildCustomerBillDocumentFromRows({
-    customerName,
-    operations: pickRowsByIds(operations, request.operationsTrackingIds),
-    contractors: [
-      ...pickRowsByIds(contractors, request.contractorTrackingIds),
-      ...transportRows,
-      ...allocationRows,
-    ],
-    materialUsage: pickRowsByIds(
-      materialUsage,
-      request.materialUsageTrackingIds,
-    ),
-    baleOrders: pickRowsByIds(baleOrders, request.baleOrderTrackingIds),
-  });
-  return { html: renderCustomerBillPreviewHtml(bill) };
-}
-
-function toIdArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => String(item ?? "")).filter(Boolean);
-}
-
-function formatStoredBillDate(value: unknown): string {
-  const date = new Date(String(value ?? ""));
-  if (Number.isNaN(date.getTime())) {
-    return new Date().toLocaleDateString("he-IL");
-  }
-  return date.toLocaleDateString("he-IL");
-}
-
-async function fetchSavedBillingBillPreviewMock(
-  billing: CollectionDocument,
-): Promise<{ html: string }> {
-  const customerName = String(billing.customerName ?? "").trim() || "לקוח";
-  const [operations, materialUsage, baleOrders, contractors, transportTrackings] =
-    await Promise.all([
-    listCollection("operationsTrackings"),
-    listCollection("materialUsageTrackings"),
-    listCollection("baleOrderTrackings"),
-    listCollection("contractorTrackings"),
-    listCollection("transportTrackings"),
-  ]);
-
-  const transportRows = pickRowsByIds(
-    transportTrackings,
-    toIdArray(billing.transportTrackingIds),
-  ).map(transportTrackingToContractorBillingRow);
-  const allocationRows = await loadAllocationBillingRows(
-    toIdArray(billing.globalTransportAllocationIds),
-  );
-
-  const bill = buildCustomerBillDocumentFromRows({
-    customerName,
-    billDate: formatStoredBillDate(billing.date),
-    operations: pickRowsByIds(operations, toIdArray(billing.operationsTrackingIds)),
-    contractors: [
-      ...pickRowsByIds(contractors, toIdArray(billing.contractorTrackingIds)),
-      ...transportRows,
-      ...allocationRows,
-    ],
-    materialUsage: pickRowsByIds(
-      materialUsage,
-      toIdArray(billing.materialUsageTrackingIds),
-    ),
-    baleOrders: pickRowsByIds(baleOrders, toIdArray(billing.baleOrderTrackingIds)),
-  });
-
-  return { html: renderCustomerBillPreviewHtml(bill) };
-}
-
 export async function fetchSavedBillingBillPreview(
   billing: CollectionDocument,
 ): Promise<{ html: string }> {
-  if (useMock) {
-    return fetchSavedBillingBillPreviewMock(billing);
-  }
   const { data } = await api.get<{ html: string }>(
     `/api/customerBillingTrackings/${billing._id}/bill-preview`,
   );
   return data;
 }
 
-/** Invoice HTML for selected rows — POST bill-preview on server (mock builds locally). */
+/** Invoice HTML for selected rows — POST bill-preview on server. */
 export async function fetchCustomerBillPreview(
   request: CustomerBillRequest,
-  options: { customerName: string; preview: UnbilledPreview },
 ): Promise<{ html: string }> {
   if (!hasIncludedBillItems(request)) {
     return { html: "" };
-  }
-  if (useMock) {
-    return fetchCustomerBillPreviewMock(request, options.customerName);
   }
   const { data } = await api.post<{ html: string }>(
     "/api/customerBillingTrackings/bill-preview",
@@ -420,83 +152,9 @@ async function readBlobErrorMessage(data: Blob): Promise<string> {
   }
 }
 
-async function createCustomerBillingMock(
-  request: CustomerBillRequest,
-  customerName: string,
-  preview: UnbilledPreview,
-) {
-  const bill = buildCustomerBillDocumentFromPreview({
-    customerName,
-    customerId: request.customerId,
-    operations: preview.operations.filter((row) =>
-      request.operationsTrackingIds.includes(row._id),
-    ),
-    contractors: preview.contractors.filter(
-      (row) =>
-        request.contractorTrackingIds.includes(row._id) ||
-        request.transportTrackingIds.includes(row._id) ||
-        request.globalTransportAllocationIds.includes(row._id),
-    ),
-    materialUsage: preview.materialUsage.filter((row) =>
-      request.materialUsageTrackingIds.includes(row._id),
-    ),
-    baleOrders: preview.baleOrders.filter((row) =>
-      request.baleOrderTrackingIds.includes(row._id),
-    ),
-  });
-
-  const created = await createDocument("customerBillingTrackings", {
-    date: new Date().toISOString().slice(0, 10),
-    customer: request.customerId,
-    finalPrice: bill.total,
-    status: "לא אושר כלל",
-    paid: false,
-    notes: "",
-    operationsTrackingIds: request.operationsTrackingIds,
-    materialUsageTrackingIds: request.materialUsageTrackingIds,
-    contractorTrackingIds: request.contractorTrackingIds,
-    baleOrderTrackingIds: request.baleOrderTrackingIds,
-    transportTrackingIds: request.transportTrackingIds,
-    globalTransportAllocationIds: request.globalTransportAllocationIds,
-  });
-
-  await Promise.all([
-    ...request.operationsTrackingIds.map((id) =>
-      updateDocument("operationsTrackings", id, { wasCharged: true }),
-    ),
-    ...request.contractorTrackingIds.map((id) =>
-      updateDocument("contractorTrackings", id, { wasCharged: true }),
-    ),
-    ...request.materialUsageTrackingIds.map((id) =>
-      updateDocument("materialUsageTrackings", id, { wasCharged: true }),
-    ),
-    ...request.baleOrderTrackingIds.map((id) =>
-      updateDocument("baleOrderTrackings", id, { wasCharged: true }),
-    ),
-    ...request.transportTrackingIds.map((id) =>
-      updateDocument("transportTrackings", id, { wasCharged: true }),
-    ),
-    ...request.globalTransportAllocationIds.map((id) =>
-      updateDocument("transportGlobalAllocations", id, { wasCharged: true }),
-    ),
-  ]);
-
-  return created;
-}
-
-export async function createCustomerBilling(
-  request: CustomerBillRequest,
-  options: { customerName: string; preview: UnbilledPreview },
-) {
+export async function createCustomerBilling(request: CustomerBillRequest) {
   if (!hasIncludedBillItems(request)) {
     throw new Error("יש לבחור לפחות פריט אחד לחיוב");
-  }
-  if (useMock) {
-    return createCustomerBillingMock(
-      request,
-      options.customerName,
-      options.preview,
-    );
   }
   const { data } = await api.post(
     "/api/customerBillingTrackings/create-from-selection",
@@ -509,9 +167,6 @@ export async function downloadCustomerBillPdf(
   request: CustomerBillRequest,
   customerName: string,
 ): Promise<void> {
-  if (useMock) {
-    throw new Error("הורדת PDF זמינה רק עם שרת");
-  }
   try {
     const { data } = await api.post<Blob>(
       "/api/customerBillingTrackings/bill-pdf",
@@ -534,7 +189,9 @@ export async function downloadCustomerBillPdf(
       "data" in error.response &&
       error.response.data instanceof Blob
     ) {
-      throw new Error(await readBlobErrorMessage(error.response.data));
+      throw new Error(await readBlobErrorMessage(error.response.data), {
+        cause: error,
+      });
     }
     throw error;
   }
