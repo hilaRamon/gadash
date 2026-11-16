@@ -1,7 +1,7 @@
 /**
  * Loads the printable bill HTML for checked items in the create-billing flow.
- * Builds a CustomerBillRequest from preview + includedIds, then calls fetchCustomerBillPreview
- * (server builds HTML/PDF data; mock builds HTML on the client).
+ * Builds a CustomerBillRequest from preview + includedIds, then calls fetchCustomerBillPreview.
+ * The server builds the bill HTML.
  */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +15,6 @@ import { customerBillingKeys } from "@/queries/queryKeys";
 
 type UseCustomerBillPreviewOptions = {
   customerId: string;
-  customerName: string;
   preview: UnbilledPreview | undefined;
   includedIds: Set<string>;
   enabled?: boolean;
@@ -23,7 +22,6 @@ type UseCustomerBillPreviewOptions = {
 
 export function useCustomerBillPreview({
   customerId,
-  customerName,
   preview,
   includedIds,
   enabled = true,
@@ -37,11 +35,7 @@ export function useCustomerBillPreview({
 
   return useQuery({
     queryKey: customerBillingKeys.billPreview(customerId, request),
-    queryFn: () =>
-      fetchCustomerBillPreview(request!, {
-        customerName,
-        preview: preview!,
-      }),
+    queryFn: () => fetchCustomerBillPreview(request!),
     enabled: enabled && Boolean(customerId && preview && hasItems),
   });
 }

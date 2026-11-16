@@ -18,8 +18,6 @@ import {
 import { useCustomerBillPreview } from "@/queries/customerBilling/useCustomerBillPreview";
 import { collectionKeys, customerBillingKeys } from "@/queries/queryKeys";
 
-const useMock = import.meta.env.VITE_USE_MOCK !== "false";
-
 type CustomerBillPaperProps = {
   customerId: string;
   customerName: string;
@@ -40,7 +38,6 @@ export function CustomerBillPaper({
 
   const { data, isLoading, isError, error } = useCustomerBillPreview({
     customerId,
-    customerName,
     preview,
     includedIds,
     enabled: hasItems,
@@ -56,7 +53,7 @@ export function CustomerBillPaper({
     setIsCreating(true);
     setCreateError(null);
     try {
-      await createCustomerBilling(request, { customerName, preview });
+      await createCustomerBilling(request);
       await queryClient.invalidateQueries({
         queryKey: customerBillingKeys.all,
       });
@@ -69,10 +66,10 @@ export function CustomerBillPaper({
     } finally {
       setIsCreating(false);
     }
-  }, [customerName, hasItems, navigate, preview, queryClient, request]);
+  }, [hasItems, navigate, queryClient, request]);
 
   const handleDownload = useCallback(async () => {
-    if (!hasItems || useMock) return;
+    if (!hasItems) return;
     setIsDownloading(true);
     setDownloadError(null);
     try {
@@ -105,14 +102,12 @@ export function CustomerBillPaper({
           <DownloadButton
             type="button"
             onClick={handleDownload}
-            disabled={isDownloading || useMock || isLoading}
-            title={useMock ? "זמין רק עם שרת" : undefined}
+            disabled={isDownloading || isLoading}
           >
             {isDownloading ? "מוריד..." : "הורד PDF"}
           </DownloadButton>
         </ToolbarActions>
       </BillToolbar>
-      {useMock && <MockNote>הורדת PDF זמינה רק עם שרת</MockNote>}
       {createError && <ErrorText role="alert">{createError}</ErrorText>}
       {downloadError && <ErrorText role="alert">{downloadError}</ErrorText>}
       {isLoading ? (
@@ -223,12 +218,6 @@ const StatusText = styled.p`
   margin: 0;
   font-size: 0.875rem;
   color: var(--text-secondary);
-`;
-
-const MockNote = styled.p`
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
 `;
 
 const ErrorText = styled.p`

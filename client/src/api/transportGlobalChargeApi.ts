@@ -44,17 +44,9 @@ export type GlobalTransportChargeDetail = {
   allocations: GlobalTransportAllocationDetail[];
 };
 
-const useMock = import.meta.env.VITE_USE_MOCK !== "false";
-
 export async function fetchGlobalTransportChargePreview(
   seasonYear: number,
 ): Promise<GlobalTransportChargePreview> {
-  if (useMock) {
-    const { previewGlobalTransportChargeMock } = await import(
-      "@/lib/transportGlobalChargeMock"
-    );
-    return previewGlobalTransportChargeMock(seasonYear);
-  }
   const { data } = await api.get<GlobalTransportChargePreview>(
     "/api/transport-global-charges/preview",
     { params: { season: seasonYear } },
@@ -65,12 +57,6 @@ export async function fetchGlobalTransportChargePreview(
 export async function executeGlobalTransportCharge(
   seasonYear: number,
 ): Promise<GlobalTransportChargeResult> {
-  if (useMock) {
-    const { executeGlobalTransportChargeMock } = await import(
-      "@/lib/transportGlobalChargeMock"
-    );
-    return executeGlobalTransportChargeMock(seasonYear);
-  }
   const { data } = await api.post<GlobalTransportChargeResult>(
     "/api/transport-global-charges",
     { season: seasonYear },
@@ -81,12 +67,6 @@ export async function executeGlobalTransportCharge(
 export async function listTransportGlobalCharges(
   seasonYear?: number,
 ): Promise<Record<string, unknown>[]> {
-  if (useMock) {
-    const { listTransportGlobalChargesMock } = await import(
-      "@/lib/transportGlobalChargeMock"
-    );
-    return listTransportGlobalChargesMock(seasonYear);
-  }
   const { data } = await api.get<Record<string, unknown>[]>(
     "/api/transport-global-charges",
     { params: seasonYear != null ? { season: seasonYear } : undefined },
@@ -97,12 +77,6 @@ export async function listTransportGlobalCharges(
 export async function fetchTransportGlobalChargeDetail(
   id: string,
 ): Promise<GlobalTransportChargeDetail> {
-  if (useMock) {
-    const { fetchTransportGlobalChargeDetailMock } = await import(
-      "@/lib/transportGlobalChargeMock"
-    );
-    return fetchTransportGlobalChargeDetailMock(id);
-  }
   const { data } = await api.get<GlobalTransportChargeDetail>(
     `/api/transport-global-charges/${id}`,
   );
@@ -110,11 +84,5 @@ export async function fetchTransportGlobalChargeDetail(
 }
 
 export async function cancelTransportGlobalCharge(id: string): Promise<void> {
-  if (useMock) {
-    const { cancelTransportGlobalChargeMock } = await import(
-      "@/lib/transportGlobalChargeMock"
-    );
-    return cancelTransportGlobalChargeMock(id);
-  }
   await api.delete(`/api/transport-global-charges/${id}`);
 }
