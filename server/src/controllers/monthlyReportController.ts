@@ -16,13 +16,4 @@ export const monthlyReportController = {
     );
     res.json(data);
   }),
-
-  updateAbsence: asyncHandler(async (req: Request, res: Response) => {
-    const data = await monthlyReportService.updateAbsenceDays(
-      req.params.employeeId,
-      req.params.month,
-      req.body ?? {},
-    );
-    res.json(data);
-  }),
 };

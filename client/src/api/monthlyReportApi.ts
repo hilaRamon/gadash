@@ -16,19 +16,12 @@ export type MonthlyTotals = {
   totalDaysWorked: number;
 };
 
-export type AbsenceDays = {
-  sickDays: number;
-  vacationDays: number;
-  reserveDays: number;
-};
-
 export type EmployeeMonthlyReport = {
   employeeId: string;
   employeeName: string;
   month: string;
   days: DailyHoursRow[];
   totals: MonthlyTotals;
-  absence: AbsenceDays;
 };
 
 export type MonthlySummaryRow = {
@@ -40,9 +33,6 @@ export type MonthlySummaryRow = {
   overtime125Hours: number;
   overtime150Hours: number;
   totalDaysWorked: number;
-  sickDays: number;
-  vacationDays: number;
-  reserveDays: number;
 };
 
 function currentMonth(): string {
@@ -130,14 +120,6 @@ export async function fetchMonthlySummary(
     { params: { month } },
   );
   return data.rows;
-}
-
-export async function updateMonthlyAbsenceDays(
-  employeeId: string,
-  month: string,
-  absence: AbsenceDays,
-): Promise<void> {
-  await api.patch(`/api/monthly-report/${employeeId}/${month}/absence`, absence);
 }
 
 export function formatHours(value: number): string {
