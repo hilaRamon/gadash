@@ -53,6 +53,7 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
       label: "הערות",
       type: "text",
       searchable: true,
+      width: "18rem",
       inlineEditable: () => true,
     },
   ],

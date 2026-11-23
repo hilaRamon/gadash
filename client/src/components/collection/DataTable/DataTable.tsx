@@ -94,8 +94,8 @@ const TableBodyCell = styled.td<{
       color: var(--color-error-text);
     `}
 
-  ${({ $editableNumber, $editableText }) =>
-    ($editableNumber || $editableText) &&
+  ${({ $editableNumber }) =>
+    $editableNumber &&
     css`
       vertical-align: middle;
       padding-top: 0.45rem;
@@ -103,6 +103,17 @@ const TableBodyCell = styled.td<{
       overflow: hidden;
       text-overflow: clip;
       white-space: nowrap;
+    `}
+
+  ${({ $editableText }) =>
+    $editableText &&
+    css`
+      vertical-align: top;
+      padding-top: 0.45rem;
+      padding-bottom: 0.45rem;
+      overflow: visible;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     `}
 `;
 

@@ -6,19 +6,19 @@ import { CellSavingIndicator } from "./CellSavingIndicator";
 
 const CellEditableWrap = styled.span`
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.2rem;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  vertical-align: middle;
+  vertical-align: top;
 `;
 
-const CellInput = styled.input<{ $saving?: boolean }>`
+const CellInput = styled.textarea<{ $saving?: boolean }>`
   flex: 1 1 0;
   min-width: 0;
   width: 0;
-  height: 1.25rem;
+  min-height: 1.25rem;
   margin: 0;
   padding: 0 0.35rem;
   box-sizing: border-box;
@@ -30,6 +30,11 @@ const CellInput = styled.input<{ $saving?: boolean }>`
   font-size: inherit;
   line-height: 1.25rem;
   text-align: right;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  field-sizing: content;
   appearance: none;
   -webkit-appearance: none;
 
@@ -78,7 +83,7 @@ export function EditableTextCell({
     setInputValue(serverInputValue);
   }, [serverInputValue, row._id]);
 
-  const handleBlur = async (event: FocusEvent<HTMLInputElement>) => {
+  const handleBlur = async (event: FocusEvent<HTMLTextAreaElement>) => {
     const nextInput = event.target.value;
     if (nextInput === serverInputValue) {
       setInputValue(serverInputValue);
@@ -99,7 +104,7 @@ export function EditableTextCell({
   return (
     <CellEditableWrap aria-busy={isSaving}>
       <CellInput
-        type="text"
+        rows={1}
         name={`cell-text-${row._id}-${column.key}`}
         autoComplete="off"
         autoCorrect="off"
