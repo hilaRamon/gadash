@@ -361,7 +361,7 @@ export const operationTrackingService = {
       startTime: patch.startTime,
       endTime: patch.endTime,
       notes: patch.notes ?? '',
-      billable: patch.billable ?? true,
+      billable: adminOperation ? false : (patch.billable ?? true),
       wasCharged: patch.wasCharged ?? false,
       amount,
       unitCost,
@@ -449,6 +449,7 @@ export const operationTrackingService = {
 
     const operationDetails = await resolveOperationDetails(nextOperationId);
     if (isAdminOperation(operationDetails.operationType)) {
+      patch.billable = false;
       if (amountExplicitlySent) {
         delete patch.amount;
       }
