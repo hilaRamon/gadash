@@ -1,3 +1,4 @@
+import { notesColumn } from "../columnHelpers";
 import type { CollectionSchema } from "../types";
 import { customerBillingStatusOptions } from "@/lib/customerBillingStatuses";
 import { formatTableDate } from "@/lib/dateFieldFormat";
@@ -48,13 +49,7 @@ export const customerBillingTrackingsSchema: CollectionSchema = {
       filterable: true,
       width: "5rem",
     },
-    {
-      key: "notes",
-      label: "הערות",
-      type: "text",
-      searchable: true,
-      inlineEditable: () => true,
-    },
+    notesColumn(),
   ],
   defaultSort: { field: "date", direction: "desc" },
   form: {

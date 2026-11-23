@@ -9,6 +9,7 @@ import type { ApiDocument } from "../types/apiDocument";
 import {
   assertTrackingNotCharged,
   assertTrackingNotChargedForDelete,
+  isNotesOnlyUpdate,
 } from "../utils/assertTrackingNotCharged";
 import {
   baleOrderTrackingToApiDocument,
@@ -333,6 +334,18 @@ export const baleOrderTrackingService = {
     const existing = await baleOrderTrackingRepository.findById(id);
     if (!existing) {
       throw new Error("לא נמצא");
+    }
+    if (
+      isNotesOnlyUpdate(body) &&
+      (existing as { wasCharged?: boolean }).wasCharged === true
+    ) {
+      const updated = await baleOrderTrackingRepository.update(id, {
+        notes: parseNotes(body.notes),
+      });
+      if (!updated) {
+        throw new Error("לא נמצא");
+      }
+      return baleOrderTrackingToApiDocument(updated as Record<string, unknown>);
     }
     assertTrackingNotCharged(existing as { wasCharged?: boolean });
 

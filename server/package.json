@@ -10,6 +10,7 @@
     "migrate:unset-material-billing-unit": "tsx scripts/unset-material-billing-unit.ts",
     "migrate:normalize-mobile": "tsx scripts/normalize-mobile-fields.ts",
     "migrate:admin-operations-to-field-work": "tsx scripts/migrate-admin-operations-to-field-work.ts",
+    "migrate:admin-tracking-billable": "tsx scripts/backfill-admin-tracking-billable.ts",
     "migrate:backfill-was-charged": "tsx scripts/backfill-was-charged.ts",
     "migrate:transport-customer-hourly-rate": "tsx scripts/backfill-transport-customer-hourly-rate.ts",
     "migrate:bale-order-pricing-form": "tsx scripts/migrate-bale-order-pricing-form.ts",

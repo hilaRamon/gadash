@@ -6,6 +6,10 @@ import type { ApiDocument } from '../types/apiDocument';
 import { pickMobileFromBody } from '../utils/mobileFormat';
 import { toApiDocument, toApiDocuments } from '../utils/toApiDocument';
 
+function hasKey(body: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(body, key);
+}
+
 function pickContractorFields(body: Record<string, unknown>): ContractorInput {
   return {
     name: String(body.name ?? ''),
@@ -13,6 +17,27 @@ function pickContractorFields(body: Record<string, unknown>): ContractorInput {
     email: String(body.email ?? ''),
     notes: String(body.notes ?? ''),
   };
+}
+
+function pickContractorPatch(body: Record<string, unknown>): Partial<ContractorInput> {
+  const patch: Partial<ContractorInput> = {};
+  if (hasKey(body, 'name')) {
+    const name = String(body.name ?? '');
+    if (!name.trim()) {
+      throw new Error('שם הוא שדה חובה');
+    }
+    patch.name = name;
+  }
+  if (hasKey(body, 'mobile')) {
+    patch.mobile = pickMobileFromBody(body);
+  }
+  if (hasKey(body, 'email')) {
+    patch.email = String(body.email ?? '');
+  }
+  if (hasKey(body, 'notes')) {
+    patch.notes = String(body.notes ?? '');
+  }
+  return patch;
 }
 
 export const contractorService = {
@@ -40,12 +65,12 @@ export const contractorService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const fields = pickContractorFields(body);
-    if (!fields.name.trim()) {
-      throw new Error('שם הוא שדה חובה');
+    const patch = pickContractorPatch(body);
+    if (Object.keys(patch).length === 0) {
+      throw new Error('לא נמצאו שדות לעדכון');
     }
 
-    const updated = await contractorRepository.update(id, fields);
+    const updated = await contractorRepository.update(id, patch);
     if (!updated) {
       throw new Error('לא נמצא');
     }

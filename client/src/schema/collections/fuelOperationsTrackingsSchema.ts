@@ -1,4 +1,5 @@
 import { formatTableDate } from "@/lib/dateFieldFormat";
+import { notesColumn } from "../columnHelpers";
 import type { CollectionSchema } from "../types";
 
 export const fuelOperationsTrackingsSchema: CollectionSchema = {
@@ -49,12 +50,7 @@ export const fuelOperationsTrackingsSchema: CollectionSchema = {
       searchable: true,
       getValue: (row) => row.employeeName ?? row.employee,
     },
-    {
-      key: "notes",
-      label: "הערות",
-      type: "text",
-      searchable: true,
-    },
+    notesColumn(),
   ],
   defaultSort: { field: "date", direction: "desc" },
   form: {

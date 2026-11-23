@@ -1,6 +1,7 @@
 import { formatNumber2 } from '@/lib/formatNumber'
 import { formatTableDate } from '@/lib/dateFieldFormat'
 import { getCurrentSeasonYear } from '@/lib/seasonRange'
+import { notesColumn } from '../columnHelpers'
 import type { CollectionSchema } from '../types'
 
 function seasonYearFromDate(value: unknown): string | number {
@@ -69,12 +70,7 @@ export const invoicesSchema: CollectionSchema = {
       format: (value) => (value ? 'שולם' : 'לא שולם'),
       width: '6rem',
     },
-    {
-      key: 'notes',
-      label: 'הערות',
-      type: 'text',
-      searchable: true,
-    },
+    notesColumn(),
   ],
   defaultSort: { field: 'date', direction: 'desc' },
   form: {

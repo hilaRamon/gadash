@@ -11,6 +11,7 @@ import type { ApiDocument } from '../types/apiDocument';
 import {
   assertTrackingNotCharged,
   assertTrackingNotChargedForDelete,
+  isNotesOnlyUpdate,
 } from '../utils/assertTrackingNotCharged';
 import {
   operationTrackingToApiDocument,
@@ -360,7 +361,7 @@ export const operationTrackingService = {
       startTime: patch.startTime,
       endTime: patch.endTime,
       notes: patch.notes ?? '',
-      billable: patch.billable ?? true,
+      billable: adminOperation ? false : (patch.billable ?? true),
       wasCharged: patch.wasCharged ?? false,
       amount,
       unitCost,
@@ -397,6 +398,18 @@ export const operationTrackingService = {
     const existing = await operationTrackingRepository.findById(id);
     if (!existing) {
       throw new Error('לא נמצא');
+    }
+    if (
+      isNotesOnlyUpdate(requestBody) &&
+      (existing as { wasCharged?: boolean }).wasCharged === true
+    ) {
+      const updated = await operationTrackingRepository.update(id, {
+        notes: parseNotes(requestBody.notes),
+      });
+      if (!updated) {
+        throw new Error('לא נמצא');
+      }
+      return operationTrackingToApiDocument(updated as Record<string, unknown>);
     }
     assertTrackingNotCharged(existing as { wasCharged?: boolean });
 
@@ -436,6 +449,7 @@ export const operationTrackingService = {
 
     const operationDetails = await resolveOperationDetails(nextOperationId);
     if (isAdminOperation(operationDetails.operationType)) {
+      patch.billable = false;
       if (amountExplicitlySent) {
         delete patch.amount;
       }

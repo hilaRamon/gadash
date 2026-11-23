@@ -14,6 +14,7 @@ import type { ApiDocument } from '../types/apiDocument';
 import {
   assertTrackingNotCharged,
   assertTrackingNotChargedForDelete,
+  isNotesOnlyUpdate,
 } from '../utils/assertTrackingNotCharged';
 import {
   contractorTrackingToApiDocument,
@@ -228,6 +229,18 @@ export const contractorTrackingService = {
     const existing = await contractorTrackingRepository.findById(id);
     if (!existing) {
       throw new Error('לא נמצא');
+    }
+    if (
+      isNotesOnlyUpdate(body) &&
+      (existing as { wasCharged?: boolean }).wasCharged === true
+    ) {
+      const updated = await contractorTrackingRepository.update(id, {
+        notes: parseNotes(body.notes),
+      });
+      if (!updated) {
+        throw new Error('לא נמצא');
+      }
+      return contractorTrackingToApiDocument(updated as Record<string, unknown>);
     }
     assertTrackingNotCharged(existing as { wasCharged?: boolean });
 

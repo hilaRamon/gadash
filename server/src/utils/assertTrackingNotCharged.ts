@@ -19,3 +19,8 @@ export function assertTrackingNotChargedForDelete(existing: {
 }): void {
   assertTrackingNotCharged(existing, CHARGED_TRACKING_DELETE_ERROR);
 }
+
+export function isNotesOnlyUpdate(body: Record<string, unknown>): boolean {
+  const keys = Object.keys(body);
+  return keys.length === 1 && keys[0] === 'notes';
+}
