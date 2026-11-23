@@ -1,4 +1,4 @@
-import { textColumn } from '../columnHelpers'
+import { notesColumn, textColumn } from '../columnHelpers'
 import { formatMobileDisplay } from "@/lib/mobileFormat"
 import type { CollectionSchema } from '../types'
 
@@ -13,7 +13,7 @@ export const contractorsSchema: CollectionSchema = {
       format: (value) => formatMobileDisplay(String(value ?? '')),
     }),
     textColumn('email', 'אימייל', { searchable: true }),
-    textColumn('notes', 'הערות', { searchable: true }),
+    notesColumn(),
   ],
   defaultSort: { field: 'name', direction: 'asc' },
   form: {

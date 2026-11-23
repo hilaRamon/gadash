@@ -10,6 +10,7 @@ import type { ApiDocument } from "../types/apiDocument";
 import {
   assertTrackingNotCharged,
   assertTrackingNotChargedForDelete,
+  isNotesOnlyUpdate,
 } from "../utils/assertTrackingNotCharged";
 import {
   materialUsageTrackingToApiDocument,
@@ -335,6 +336,20 @@ export const materialUsageTrackingService = {
     const existing = await materialUsageTrackingRepository.findById(id);
     if (!existing) {
       throw new Error("לא נמצא");
+    }
+    if (
+      isNotesOnlyUpdate(body) &&
+      (existing as { wasCharged?: boolean }).wasCharged === true
+    ) {
+      const updated = await materialUsageTrackingRepository.update(id, {
+        notes: parseNotes(body.notes),
+      });
+      if (!updated) {
+        throw new Error("לא נמצא");
+      }
+      return materialUsageTrackingToApiDocument(
+        updated as Record<string, unknown>,
+      );
     }
     assertTrackingNotCharged(existing as { wasCharged?: boolean });
 

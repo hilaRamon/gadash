@@ -284,7 +284,7 @@ function CollectionPageContent({
 
   const handleCellChange = useCallback(
     async (row: CollectionDocument, key: string, value: unknown) => {
-      if (isChargedTracking(row)) return;
+      if (isChargedTracking(row) && key !== "notes") return;
       if (
         schema.collection === "operationsTrackings" &&
         key === "unitCost" &&

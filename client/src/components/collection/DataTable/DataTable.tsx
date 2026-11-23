@@ -404,11 +404,11 @@ export function DataTable({
                       !col.render &&
                       col.inlineEditable?.(row) === true;
                     const canEditText =
-                      rowEditable &&
                       onCellChange &&
                       col.type === "text" &&
                       !col.render &&
-                      col.inlineEditable?.(row) === true;
+                      col.inlineEditable?.(row) === true &&
+                      (rowEditable || col.key === "notes");
                     const isNegativeNumber =
                       col.highlightWhenNegative === true &&
                       isNegativeNumberValue(value);

@@ -1,3 +1,4 @@
+import { notesColumn } from "../columnHelpers";
 import type {
   CollectionDocument,
   CollectionSchema,
@@ -183,12 +184,7 @@ const baseColumns: CollectionSchema["columns"] = [
     width: "6rem",
     inlineEditable: (row) => String(row.operationType ?? "") !== "מנהלה",
   },
-  {
-    key: "notes",
-    label: "הערות",
-    type: "text",
-    searchable: true,
-  },
+  notesColumn(),
 ];
 
 const adminColumns: CollectionSchema["columns"] = [

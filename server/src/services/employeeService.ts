@@ -17,6 +17,10 @@ function parseHourlyCost(value: unknown): number {
   return num;
 }
 
+function hasKey(body: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(body, key);
+}
+
 function pickEmployeeFields(body: Record<string, unknown>): EmployeeInput {
   return {
     name: String(body.name ?? ''),
@@ -25,6 +29,30 @@ function pickEmployeeFields(body: Record<string, unknown>): EmployeeInput {
     notes: String(body.notes ?? ''),
     hourlyCost: parseHourlyCost(body.hourlyCost),
   };
+}
+
+function pickEmployeePatch(body: Record<string, unknown>): Partial<EmployeeInput> {
+  const patch: Partial<EmployeeInput> = {};
+  if (hasKey(body, 'name')) {
+    const name = String(body.name ?? '');
+    if (!name.trim()) {
+      throw new Error('שם הוא שדה חובה');
+    }
+    patch.name = name;
+  }
+  if (hasKey(body, 'email')) {
+    patch.email = String(body.email ?? '');
+  }
+  if (hasKey(body, 'mobile')) {
+    patch.mobile = pickMobileFromBody(body);
+  }
+  if (hasKey(body, 'notes')) {
+    patch.notes = String(body.notes ?? '');
+  }
+  if (hasKey(body, 'hourlyCost')) {
+    patch.hourlyCost = parseHourlyCost(body.hourlyCost);
+  }
+  return patch;
 }
 
 export const employeeService = {
@@ -52,9 +80,9 @@ export const employeeService = {
   },
 
   async update(id: string, body: Record<string, unknown>): Promise<ApiDocument> {
-    const fields = pickEmployeeFields(body);
-    if (!fields.name.trim()) {
-      throw new Error('שם הוא שדה חובה');
+    const patch = pickEmployeePatch(body);
+    if (Object.keys(patch).length === 0) {
+      throw new Error('לא נמצאו שדות לעדכון');
     }
 
     const existing = await employeeRepository.findById(id);
@@ -63,10 +91,11 @@ export const employeeService = {
     }
 
     const previousHourlyCost = Number(existing.hourlyCost ?? 0);
-    const nextHourlyCost = Number(fields.hourlyCost ?? 0);
-    const hourlyCostChanged = previousHourlyCost !== nextHourlyCost;
+    const nextHourlyCost = Number(patch.hourlyCost ?? 0);
+    const hourlyCostChanged =
+      patch.hourlyCost != null && previousHourlyCost !== nextHourlyCost;
 
-    const updated = await employeeRepository.update(id, fields);
+    const updated = await employeeRepository.update(id, patch);
     if (!updated) {
       throw new Error('לא נמצא');
     }

@@ -1,3 +1,4 @@
+import { notesColumn } from "../columnHelpers";
 import type { CollectionSchema } from "../types";
 import { formatTableDate } from "@/lib/dateFieldFormat";
 import { formatNumber, formatWholeNumber } from "@/lib/formatNumber";
@@ -85,12 +86,7 @@ export const contractorTrackingsSchema: CollectionSchema = {
       format: (value) => formatWholeNumber(value),
       width: "8rem",
     },
-    {
-      key: "notes",
-      label: "הערות",
-      type: "text",
-      searchable: true,
-    },
+    notesColumn(),
   ],
   defaultSort: { field: "date", direction: "desc" },
   form: {
